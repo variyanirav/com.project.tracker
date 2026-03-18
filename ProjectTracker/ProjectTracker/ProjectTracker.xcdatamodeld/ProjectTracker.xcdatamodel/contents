@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model xmlns="http://schemas.apple.com/CoreData/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.apple.com/CoreData/2.0 http://www.apple.com/CoreData/types/CoreDataModel.xsd" userDefinedModelVersionIdentifier="">
+    <entity name="Item" representedClassName="Item" syncable="YES" codeGenerationType="class">
+        <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+    </entity>
+</model>
