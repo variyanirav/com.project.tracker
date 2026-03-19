@@ -20,6 +20,8 @@ class ProjectCard extends StatelessWidget {
   final String avatarEmoji;
   final List<RecentTask>? recentTasks;
   final VoidCallback? onViewPressed;
+  final VoidCallback? onEditPressed;
+  final VoidCallback? onDeletePressed;
   final Color? color;
 
   const ProjectCard({
@@ -30,6 +32,8 @@ class ProjectCard extends StatelessWidget {
     required this.avatarEmoji,
     this.recentTasks,
     this.onViewPressed,
+    this.onEditPressed,
+    this.onDeletePressed,
     this.color,
   }) : super(key: key);
 
@@ -59,35 +63,68 @@ class ProjectCard extends StatelessWidget {
                   child: Text(avatarEmoji, style: TextStyle(fontSize: 28)),
                 ),
               ),
-              // View Button
-              InkWell(
-                onTap: onViewPressed,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppConstants.spacing12,
-                    vertical: AppConstants.spacing8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: projectColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(
-                      AppConstants.roundRadius,
+              // Action Buttons (Edit, Delete, View)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Edit Button
+                  if (onEditPressed != null)
+                    Tooltip(
+                      message: 'Edit Project',
+                      child: IconButton(
+                        icon: Icon(Icons.edit, size: 18, color: projectColor),
+                        onPressed: onEditPressed,
+                        padding: EdgeInsets.all(AppConstants.spacing4),
+                        constraints: const BoxConstraints(),
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.arrow_forward, size: 16, color: projectColor),
-                      SizedBox(width: AppConstants.spacing4),
-                      Text(
-                        'View',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: projectColor,
-                          fontWeight: FontWeight.w600,
+                  // Delete Button
+                  if (onDeletePressed != null)
+                    Tooltip(
+                      message: 'Delete Project',
+                      child: IconButton(
+                        icon: Icon(Icons.delete, size: 18, color: Colors.red),
+                        onPressed: onDeletePressed,
+                        padding: EdgeInsets.all(AppConstants.spacing4),
+                        constraints: const BoxConstraints(),
+                      ),
+                    ),
+                  SizedBox(width: AppConstants.spacing4),
+                  // View Button
+                  InkWell(
+                    onTap: onViewPressed,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppConstants.spacing12,
+                        vertical: AppConstants.spacing8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: projectColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.roundRadius,
                         ),
                       ),
-                    ],
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.arrow_forward,
+                            size: 16,
+                            color: projectColor,
+                          ),
+                          SizedBox(width: AppConstants.spacing4),
+                          Text(
+                            'View',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: projectColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ],
           ),

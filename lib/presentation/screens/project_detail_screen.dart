@@ -1,40 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/colors.dart';
+import '../../core/constants/task_status.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_avatar.dart';
 import '../../core/widgets/custom_scaffold.dart';
 import '../../core/widgets/app_card.dart';
 import '../routes/app_router.dart';
-
-/// Task status enum
-enum TaskStatus {
-  todo('To Do'),
-  inProgress('In Progress'),
-  inReview('In Review'),
-  onHold('On Hold'),
-  complete('Complete');
-
-  final String label;
-  const TaskStatus(this.label);
-
-  /// Get color for this status
-  Color getColor() {
-    switch (this) {
-      case TaskStatus.todo:
-        return const Color(0xFF64748B); // Gray
-      case TaskStatus.inProgress:
-        return const Color(0xFF007BFF); // Blue
-      case TaskStatus.inReview:
-        return const Color(0xFFFCD34D); // Amber
-      case TaskStatus.onHold:
-        return const Color(0xFFFB923C); // Orange
-      case TaskStatus.complete:
-        return const Color(0xFF10B981); // Green
-    }
-  }
-}
+import '../widgets/dialogs/edit_task_dialog.dart';
+import '../widgets/dialogs/confirm_delete_dialog.dart';
 
 /// Project Detail Screen
 /// Shows project information, active timer, and task history
@@ -233,7 +208,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                       const SizedBox(height: 32),
 
                       // Start New Task Section
-                      Text('Start New Task', style: AppTextStyles.heading2),
+                      Text('Create New Task', style: AppTextStyles.heading2),
                       const SizedBox(height: 16),
                       AppCard(
                         padding: const EdgeInsets.all(16),
@@ -322,14 +297,21 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                             SizedBox(
                               width: double.infinity,
                               child: AppButton.primary(
-                                label: 'Start Timer',
+                                label: 'Create Task',
                                 onPressed: () {
-                                  // TODO: Implement start timer logic
-                                  // - Validate form
-                                  // - Check global timer constraint
-                                  // - Create task with selected status
-                                  // - Auto-change status to "In Progress"
-                                  // - Start timer
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Task "${_taskTitleController.text}" created!',
+                                      ),
+                                    ),
+                                  );
+                                  // Clear fields after creation
+                                  _taskTitleController.clear();
+                                  _taskDescriptionController.clear();
+                                  setState(() {
+                                    _selectedStatus = TaskStatus.todo;
+                                  });
                                 },
                               ),
                             ),
@@ -378,12 +360,13 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     return [
       ...paginatedTasks.map(
         (task) => Padding(
-          padding: const EdgeInsets.only(bottom: 12.0),
+          padding: const EdgeInsets.only(bottom: 16.0),
           child: AppCard(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header: Title & Status
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -391,36 +374,200 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                       child: Text(
                         task['title'] as String,
                         style: AppTextStyles.labelMedium,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
+                        horizontal: 10,
+                        vertical: 6,
                       ),
                       decoration: BoxDecoration(
                         color: task['statusColor'].withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         task['status'] as String,
                         style: AppTextStyles.labelSmall.copyWith(
                           color: task['statusColor'],
-                          fontSize: 10,
+                          fontSize: 11,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
+
+                // Metadata: Duration & Date
+                Text(
+                  '${task['duration']} · ${task['date']}',
+                  style: AppTextStyles.bodySmall,
+                ),
+                const SizedBox(height: 16),
+
+                // Action Buttons Row - Better spacing
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '${task['duration']} · ${task['date']}',
-                      style: AppTextStyles.bodySmall,
+                    // Start Timer Button - Primary Action
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.green.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Timer started for "${task['title']}"',
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 10,
+                                horizontal: 12,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.play_arrow,
+                                    size: 18,
+                                    color: Colors.green,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Start',
+                                    style: AppTextStyles.labelSmall.copyWith(
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Edit Button
+                    Tooltip(
+                      message: 'Edit task',
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.blue.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => EditTaskDialog(
+                                  taskId: task['id'] as String,
+                                  initialTitle: task['title'] as String,
+                                  initialDescription:
+                                      task['description'] as String,
+                                  initialStatus: TaskStatus.values.firstWhere(
+                                    (s) => s.label == task['status'],
+                                    orElse: () => TaskStatus.todo,
+                                  ),
+                                  onSavePressed:
+                                      (taskId, title, description, status) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Task "$title" updated!',
+                                            ),
+                                            duration: const Duration(
+                                              seconds: 2,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Icon(
+                                Icons.edit,
+                                size: 18,
+                                color: Colors.blue,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Delete Button
+                    Tooltip(
+                      message: 'Delete task',
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.red.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => ConfirmDeleteDialog(
+                                  itemName: task['title'] as String,
+                                  itemType: 'task',
+                                  onConfirmPressed: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Task "${task['title']}" deleted!',
+                                        ),
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Icon(
+                                Icons.delete,
+                                size: 18,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -579,7 +726,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     return List.generate(count, (index) {
       final status = statuses[index % statuses.length];
       return {
+        'id': 'task_${index + 1}',
         'title': 'Task ${index + 1}: Design Feature',
+        'description':
+            'This is a sample task description for task ${index + 1}',
         'status': status.$1,
         'statusColor': status.$2,
         'duration': '${2 + (index % 4)}h ${15 * (index % 4)}m',

@@ -7,6 +7,8 @@ import '../../core/theme/text_styles.dart';
 import '../providers/theme_provider.dart';
 import '../routes/app_router.dart';
 import '../widgets/dashboard/project_card.dart' show ProjectCard, RecentTask;
+import '../widgets/dialogs/edit_project_dialog.dart';
+import '../widgets/dialogs/confirm_delete_dialog.dart';
 
 /// Project List screen - Shows all projects
 class ProjectListScreen extends ConsumerWidget {
@@ -205,6 +207,50 @@ class ProjectListScreen extends ConsumerWidget {
                             // Navigate to project detail screen using Riverpod
                             ref.read(currentScreenProvider.notifier).state =
                                 AppRouter.projectDetail;
+                          },
+                          onEditPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => EditProjectDialog(
+                                projectId: 'project_${index + 1}',
+                                initialName: project['title'] as String,
+                                initialDescription:
+                                    project['description'] as String,
+                                initialEmoji: project['emoji'] as String,
+                                onSavePressed:
+                                    (projectId, name, description, emoji) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Project "$name" updated!',
+                                          ),
+                                        ),
+                                      );
+                                    },
+                              ),
+                            );
+                          },
+                          onDeletePressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => ConfirmDeleteDialog(
+                                itemName: project['title'] as String,
+                                itemType: 'project',
+                                description:
+                                    'All tasks in this project will also be deleted.',
+                                onConfirmPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Project "${project['title']}" deleted!',
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
                           },
                         );
                       },

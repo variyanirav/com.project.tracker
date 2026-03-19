@@ -162,9 +162,6 @@ class DashboardScreen extends ConsumerWidget {
                 ],
               ),
               SizedBox(height: AppConstants.spacing12),
-            ] else ...[
-              Text('Your Projects', style: AppTextStyles.titleLarge),
-              SizedBox(height: AppConstants.spacing12),
             ],
 
             // Projects Grid or Empty State
@@ -280,66 +277,6 @@ class DashboardScreen extends ConsumerWidget {
                     ],
                   );
                 },
-              )
-            else
-              // Empty State
-              Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    vertical: AppConstants.spacing40,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: AppColors.brandPrimary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(
-                            AppConstants.roundRadius,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.folder_open_outlined,
-                          size: 40,
-                          color: AppColors.brandPrimary,
-                        ),
-                      ),
-                      SizedBox(height: AppConstants.spacing24),
-                      Text('No Projects Yet', style: AppTextStyles.titleMedium),
-                      SizedBox(height: AppConstants.spacing8),
-                      Text(
-                        'Create your first project to start tracking time',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? AppColors.darkTextSecondary
-                              : AppColors.lightTextSecondary,
-                        ),
-                      ),
-                      SizedBox(height: AppConstants.spacing24),
-                      AppButton.primary(
-                        label: '+ Create First Project',
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => CreateProjectDialog(
-                              onCreatePressed: (title, description, emoji) {
-                                // TODO: Save to database via provider
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Project "$title" created!'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
               ),
           ],
         ),
