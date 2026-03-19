@@ -13,7 +13,7 @@ struct ContentView: View {
     @EnvironmentObject var timerManager: TimerManager
 
     var body: some View {
-        DashboardView()
+        RootNavigationView()
             .environmentObject(timerManager)
     }
 }
@@ -22,4 +22,5 @@ struct ContentView: View {
     ContentView()
         .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
         .environmentObject(TimerManager.shared)
+        .preferredColorScheme(.dark)
 }
