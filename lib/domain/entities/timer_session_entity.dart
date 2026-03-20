@@ -1,3 +1,5 @@
+import 'package:project_tracker/core/utils/timezone_helper.dart';
+
 /// Timer session entity - Represents a single timer session
 class TimerSessionEntity {
   final String id;
@@ -10,6 +12,7 @@ class TimerSessionEntity {
   final int totalSeconds;
   final bool isCompleted;
   final String sessionDate;
+  final String? notes;
   final DateTime createdAt;
 
   TimerSessionEntity({
@@ -23,6 +26,7 @@ class TimerSessionEntity {
     required this.totalSeconds,
     required this.isCompleted,
     required this.sessionDate,
+    this.notes,
     required this.createdAt,
   });
 
@@ -37,6 +41,7 @@ class TimerSessionEntity {
     int? totalSeconds,
     bool? isCompleted,
     String? sessionDate,
+    String? notes,
     DateTime? createdAt,
   }) {
     return TimerSessionEntity(
@@ -50,8 +55,27 @@ class TimerSessionEntity {
       totalSeconds: totalSeconds ?? this.totalSeconds,
       isCompleted: isCompleted ?? this.isCompleted,
       sessionDate: sessionDate ?? this.sessionDate,
+      notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
     );
+  }
+
+  /// Check if session is currently paused
+  bool get isPaused => pauseTime != null;
+
+  /// Check if session started today
+  bool get isToday {
+    final today = TimezoneHelper.getTodayStartUtc();
+    return startTime.isAfter(today) &&
+        startTime.isBefore(today.add(const Duration(days: 1)));
+  }
+
+  /// Check if session started this week
+  bool get isThisWeek {
+    final now = DateTime.now().toUtc();
+    final weekStart = now.subtract(Duration(days: now.weekday - 1));
+    final weekEnd = weekStart.add(const Duration(days: 7));
+    return startTime.isAfter(weekStart) && startTime.isBefore(weekEnd);
   }
 
   @override

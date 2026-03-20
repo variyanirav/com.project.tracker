@@ -6,6 +6,9 @@ import '../../core/widgets/app_avatar.dart';
 import '../../core/widgets/custom_scaffold.dart';
 import '../../core/widgets/app_card.dart';
 import '../routes/app_router.dart';
+import '../providers/project_provider.dart';
+import '../providers/task_provider.dart';
+import '../providers/reports_provider.dart';
 
 /// Reports & Export Screen
 /// Shows time tracking reports and CSV export functionality
@@ -72,58 +75,254 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            // Statistics Row
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    title: 'Total Hours',
-                    value: '23.5h',
-                    isDark: isDark,
+            // Statistics Row - Wired to real data
+            ref
+                .watch(weekProjectSummaryProvider)
+                .when(
+                  data: (summary) {
+                    final totalHours = summary.fold<double>(
+                      0.0,
+                      (sum, item) => sum + item.totalHours,
+                    );
+
+                    return ref
+                        .watch(projectsProvider)
+                        .when(
+                          data: (projects) {
+                            return Row(
+                              children: [
+                                Expanded(
+                                  child: _StatCard(
+                                    title: 'Total Hours',
+                                    value: '${totalHours.toStringAsFixed(1)}h',
+                                    isDark: isDark,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _StatCard(
+                                    title: 'Active Projects',
+                                    value: '${projects.length}',
+                                    isDark: isDark,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _StatCard(
+                                    title: 'Tasks Created',
+                                    value:
+                                        ref
+                                            .watch(projectsProvider)
+                                            .whenData((p) {
+                                              int count = 0;
+                                              for (var project in p) {
+                                                ref
+                                                    .watch(
+                                                      tasksByProjectProvider(
+                                                        project.id,
+                                                      ),
+                                                    )
+                                                    .whenData((tasks) {
+                                                      count += tasks.length;
+                                                    });
+                                              }
+                                              return count.toString();
+                                            })
+                                            .value
+                                            ?.toString() ??
+                                        '-',
+                                    isDark: isDark,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                          loading: () => Row(
+                            children: [
+                              Expanded(
+                                child: _StatCard(
+                                  title: 'Total Hours',
+                                  value: '-',
+                                  isDark: isDark,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _StatCard(
+                                  title: 'Active Projects',
+                                  value: '-',
+                                  isDark: isDark,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _StatCard(
+                                  title: 'Tasks Created',
+                                  value: '-',
+                                  isDark: isDark,
+                                ),
+                              ),
+                            ],
+                          ),
+                          error: (_, __) => Row(
+                            children: [
+                              Expanded(
+                                child: _StatCard(
+                                  title: 'Total Hours',
+                                  value: '0h',
+                                  isDark: isDark,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _StatCard(
+                                  title: 'Active Projects',
+                                  value: '0',
+                                  isDark: isDark,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _StatCard(
+                                  title: 'Tasks Created',
+                                  value: '0',
+                                  isDark: isDark,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                  },
+                  loading: () => Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          title: 'Total Hours',
+                          value: '-',
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _StatCard(
+                          title: 'Active Projects',
+                          value: '-',
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _StatCard(
+                          title: 'Tasks Created',
+                          value: '-',
+                          isDark: isDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                  error: (_, __) => Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          title: 'Total Hours',
+                          value: '0h',
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _StatCard(
+                          title: 'Active Projects',
+                          value: '0',
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _StatCard(
+                          title: 'Tasks Created',
+                          value: '0',
+                          isDark: isDark,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _StatCard(
-                    title: 'Active Projects',
-                    value: '5',
-                    isDark: isDark,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _StatCard(
-                    title: 'Tasks Completed',
-                    value: '34',
-                    isDark: isDark,
-                  ),
-                ),
-              ],
-            ),
             const SizedBox(height: 32),
-            // Project Summary Table
+            // Project Summary Table - Wired to real data
             Text('Project Breakdown', style: AppTextStyles.heading2),
             const SizedBox(height: 16),
             Expanded(
-              child: AppCard(
-                padding: const EdgeInsets.all(24),
-                child: SingleChildScrollView(
-                  child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text('Project')),
-                      DataColumn(label: Text('Tasks')),
-                      DataColumn(label: Text('Hours')),
-                      DataColumn(label: Text('Percentage')),
-                    ],
-                    rows: [
-                      _buildDataRow('Mobile App Redesign', '12', '8.5h', '36%'),
-                      _buildDataRow('Web Dashboard', '8', '6.2h', '26%'),
-                      _buildDataRow('API Integration', '10', '5.8h', '25%'),
-                      _buildDataRow('Testing & QA', '4', '3.0h', '13%'),
-                    ],
+              child: ref
+                  .watch(projectsProvider)
+                  .when(
+                    data: (projects) {
+                      if (projects.isEmpty) {
+                        return AppCard(
+                          padding: const EdgeInsets.all(24),
+                          child: Center(
+                            child: Text(
+                              'No projects yet',
+                              style: AppTextStyles.bodyMedium,
+                            ),
+                          ),
+                        );
+                      }
+
+                      return AppCard(
+                        padding: const EdgeInsets.all(24),
+                        child: SingleChildScrollView(
+                          child: DataTable(
+                            columns: const [
+                              DataColumn(label: Text('Project')),
+                              DataColumn(label: Text('Tasks')),
+                              DataColumn(label: Text('Hours')),
+                              DataColumn(label: Text('Status')),
+                            ],
+                            rows: projects.map((project) {
+                              final tasksAsync = ref.watch(
+                                tasksByProjectProvider(project.id),
+                              );
+                              final hoursAsync = ref.watch(
+                                projectTotalHoursProvider(project.id),
+                              );
+
+                              final taskCount =
+                                  tasksAsync
+                                      .whenData((tasks) => tasks.length)
+                                      .value ??
+                                  0;
+                              final hours =
+                                  hoursAsync
+                                      .whenData((h) => h.toStringAsFixed(1))
+                                      .value ??
+                                  '-';
+
+                              return _buildDataRow(
+                                project.name,
+                                '$taskCount',
+                                '${hours}h',
+                                'Active',
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      );
+                    },
+                    loading: () => AppCard(
+                      padding: const EdgeInsets.all(24),
+                      child: const Center(child: CircularProgressIndicator()),
+                    ),
+                    error: (_, __) => AppCard(
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Text(
+                          'Error loading data',
+                          style: AppTextStyles.bodyMedium,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
             ),
             const SizedBox(height: 24),
             // Export Section
@@ -144,14 +343,31 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         const SizedBox(height: 16),
                         AppButton.primary(
                           label: 'Download CSV',
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'CSV export ready for download...',
-                                ),
-                              ),
-                            );
+                          onPressed: () async {
+                            try {
+                              final csvData = await ref.read(
+                                weekCsvExportProvider.future,
+                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'CSV exported! (${csvData.length} bytes)',
+                                    ),
+                                    duration: Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error: ${e.toString()}'),
+                                    duration: Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                            }
                           },
                         ),
                       ],

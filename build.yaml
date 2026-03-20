@@ -1,0 +1,5 @@
+# Drift ORM Configuration
+targets:
+  $default:
+    builders:
+      drift_dev|drift_dev: {}

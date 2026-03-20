@@ -3,12 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/colors.dart';
 import '../../core/widgets/custom_scaffold.dart';
+import '../../core/widgets/app_button.dart';
 import '../../core/theme/text_styles.dart';
 import '../providers/theme_provider.dart';
+import '../providers/project_provider.dart';
+import '../providers/task_provider.dart';
 import '../routes/app_router.dart';
 import '../widgets/dashboard/project_card.dart' show ProjectCard, RecentTask;
 import '../widgets/dialogs/edit_project_dialog.dart';
 import '../widgets/dialogs/confirm_delete_dialog.dart';
+import '../widgets/dialogs/create_project_dialog.dart';
 
 /// Project List screen - Shows all projects
 class ProjectListScreen extends ConsumerWidget {
@@ -40,9 +44,7 @@ class ProjectListScreen extends ConsumerWidget {
                 ref.watch(themeProvider) ? Icons.light_mode : Icons.dark_mode,
               ),
               onPressed: () {
-                ref.read(themeProvider.notifier).state = !ref.read(
-                  themeProvider,
-                );
+                ref.read(themeProvider.notifier).toggle();
               },
             ),
           ),
@@ -72,6 +74,48 @@ class ProjectListScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
+                // Add New Project Button
+                AppButton.primary(
+                  label: '+ Add New Project',
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => CreateProjectDialog(
+                        onCreatePressed: (title, description, emoji) async {
+                          try {
+                            await ref.read(
+                              createProjectProvider(
+                                CreateProjectParams(
+                                  name: title,
+                                  description: description,
+                                  color: emoji,
+                                ),
+                              ).future,
+                            );
+                            ref.invalidate(projectsProvider);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Project "$title" created!'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error creating project: $e'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
             SizedBox(height: AppConstants.spacing32),
@@ -86,176 +130,252 @@ class ProjectListScreen extends ConsumerWidget {
                     ? 2
                     : 1;
 
-                return Column(
-                  children: [
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: columnCount,
-                        childAspectRatio: 1.1,
-                        mainAxisSpacing: AppConstants.spacing16,
-                        crossAxisSpacing: AppConstants.spacing16,
-                      ),
-                      itemCount: 6, // Sample data
-                      itemBuilder: (context, index) {
-                        final projects = [
-                          {
-                            'title': 'Mobile App Redesign',
-                            'description': 'Refresh the user interface and UX',
-                            'emoji': '📱',
-                            'hours': '12h 45m',
-                            'tasks': [
-                              RecentTask(
-                                name: 'Design mockups',
-                                status: 'Complete',
-                              ),
-                              RecentTask(
-                                name: 'User testing',
-                                status: 'In Progress',
-                              ),
-                            ],
-                          },
-                          {
-                            'title': 'Backend API',
-                            'description': 'RESTful API implementation',
-                            'emoji': '⚙️',
-                            'hours': '28h 30m',
-                            'tasks': [
-                              RecentTask(
-                                name: 'Authentication setup',
-                                status: 'Complete',
-                              ),
-                              RecentTask(
-                                name: 'Database schema design',
-                                status: 'In Review',
-                              ),
-                            ],
-                          },
-                          {
-                            'title': 'Design System',
-                            'description': 'Component library & tokens',
-                            'emoji': '🎨',
-                            'hours': '8h 15m',
-                            'tasks': [
-                              RecentTask(name: 'Color tokens', status: 'To Do'),
-                              RecentTask(
-                                name: 'Typography system',
-                                status: 'In Progress',
-                              ),
-                            ],
-                          },
-                          {
-                            'title': 'Marketing Website',
-                            'description': 'Company landing page redesign',
-                            'emoji': '🌐',
-                            'hours': '15h 20m',
-                            'tasks': [
-                              RecentTask(
-                                name: 'Homepage layout',
-                                status: 'In Progress',
-                              ),
-                              RecentTask(
-                                name: 'SEO optimization',
-                                status: 'To Do',
-                              ),
-                            ],
-                          },
-                          {
-                            'title': 'Mobile Testing',
-                            'description':
-                                'Cross-platform compatibility testing',
-                            'emoji': '📲',
-                            'hours': '6h 40m',
-                            'tasks': [
-                              RecentTask(
-                                name: 'iOS testing',
-                                status: 'Complete',
-                              ),
-                              RecentTask(
-                                name: 'Android testing',
-                                status: 'In Progress',
-                              ),
-                            ],
-                          },
-                          {
-                            'title': 'Documentation',
-                            'description': 'API and code documentation',
-                            'emoji': '📚',
-                            'hours': '4h 10m',
-                            'tasks': [
-                              RecentTask(
-                                name: 'API docs',
-                                status: 'In Progress',
-                              ),
-                              RecentTask(
-                                name: 'Code examples',
-                                status: 'To Do',
-                              ),
-                            ],
-                          },
-                        ];
+                final projectsAsync = ref.watch(projectsProvider);
 
-                        final project = projects[index];
-                        return ProjectCard(
-                          title: project['title'] as String,
-                          description: project['description'] as String,
-                          hours: project['hours'] as String,
-                          avatarEmoji: project['emoji'] as String,
-                          recentTasks: project['tasks'] as List<RecentTask>,
-                          onViewPressed: () {
-                            // Navigate to project detail screen using Riverpod
-                            ref.read(currentScreenProvider.notifier).state =
-                                AppRouter.projectDetail;
-                          },
-                          onEditPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) => EditProjectDialog(
-                                projectId: 'project_${index + 1}',
-                                initialName: project['title'] as String,
-                                initialDescription:
-                                    project['description'] as String,
-                                initialEmoji: project['emoji'] as String,
-                                onSavePressed:
-                                    (projectId, name, description, emoji) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Project "$name" updated!',
+                return projectsAsync.when(
+                  data: (projects) {
+                    if (projects.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppConstants.spacing32),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.folder_outlined,
+                                size: 64,
+                                color: AppColors.brandPrimary,
+                              ),
+                              SizedBox(height: AppConstants.spacing16),
+                              Text(
+                                'No projects yet',
+                                style: AppTextStyles.heading2,
+                              ),
+                              SizedBox(height: AppConstants.spacing8),
+                              Text(
+                                'Create your first project to get started!',
+                                style: AppTextStyles.bodyMedium,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    return Column(
+                      children: [
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: columnCount,
+                                childAspectRatio: 1.1,
+                                mainAxisSpacing: AppConstants.spacing16,
+                                crossAxisSpacing: AppConstants.spacing16,
+                              ),
+                          itemCount: projects.length,
+                          itemBuilder: (context, index) {
+                            final project = projects[index];
+                            final projectHours = ref.watch(
+                              projectTotalHoursProvider(project.id),
+                            );
+
+                            return projectHours.when(
+                              data: (hours) {
+                                final tasksList = ref.watch(
+                                  tasksByProjectProvider(project.id),
+                                );
+
+                                return tasksList.when(
+                                  data: (tasks) {
+                                    final recentTasks = tasks
+                                        .take(2)
+                                        .map(
+                                          (task) => RecentTask(
+                                            name: task.taskName,
+                                            status: task.status,
                                           ),
-                                        ),
+                                        )
+                                        .toList();
+
+                                    return ProjectCard(
+                                      title: project.name,
+                                      description: project.description ?? '',
+                                      hours: _formatHours(hours),
+                                      avatarEmoji: project.color ?? '📁',
+                                      recentTasks: recentTasks,
+                                      onViewPressed: () {
+                                        // Navigate to project detail screen with project ID
+                                        final navigate = ref.read(
+                                          navigateToProvider,
+                                        );
+                                        navigate(
+                                          AppRouter.projectDetail,
+                                          projectId: project.id,
+                                        );
+                                      },
+                                      onEditPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => EditProjectDialog(
+                                            projectId: project.id,
+                                            initialName: project.name,
+                                            initialDescription:
+                                                project.description ?? '',
+                                            initialEmoji: project.color ?? '📁',
+                                            onSavePressed:
+                                                (
+                                                  projectId,
+                                                  name,
+                                                  description,
+                                                  emoji,
+                                                ) async {
+                                                  try {
+                                                    await ref.read(
+                                                      updateProjectProvider(
+                                                        UpdateProjectParams(
+                                                          id: projectId,
+                                                          name: name,
+                                                          description:
+                                                              description,
+                                                          color: emoji,
+                                                          status:
+                                                              project.status,
+                                                          createdAt:
+                                                              project.createdAt,
+                                                        ),
+                                                      ).future,
+                                                    );
+
+                                                    ref.invalidate(
+                                                      projectsProvider,
+                                                    );
+
+                                                    if (context.mounted) {
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                            'Project "$name" updated!',
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }
+                                                  } catch (e) {
+                                                    if (context.mounted) {
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                            'Error updating project: $e',
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }
+                                                  }
+                                                },
+                                          ),
+                                        );
+                                      },
+                                      onDeletePressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => ConfirmDeleteDialog(
+                                            itemName: project.name,
+                                            itemType: 'project',
+                                            description:
+                                                'All tasks in this project will also be deleted.',
+                                            onConfirmPressed: () async {
+                                              try {
+                                                await ref.read(
+                                                  deleteProjectProvider(
+                                                    project.id,
+                                                  ).future,
+                                                );
+                                                ref.invalidate(
+                                                  projectsProvider,
+                                                );
+
+                                                if (context.mounted) {
+                                                  Navigator.pop(context);
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        'Project "${project.name}" deleted!',
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              } catch (e) {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        'Error deleting project: $e',
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              }
+                                            },
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                  loading: () => Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                  error: (err, stack) => ProjectCard(
+                                    title: project.name,
+                                    description: project.description ?? '',
+                                    hours: 'Error',
+                                    avatarEmoji: project.color ?? '📁',
+                                    recentTasks: [],
+                                    onViewPressed: () {
+                                      final navigate = ref.read(
+                                        navigateToProvider,
+                                      );
+                                      navigate(
+                                        AppRouter.projectDetail,
+                                        projectId: project.id,
                                       );
                                     },
-                              ),
-                            );
-                          },
-                          onDeletePressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) => ConfirmDeleteDialog(
-                                itemName: project['title'] as String,
-                                itemType: 'project',
-                                description:
-                                    'All tasks in this project will also be deleted.',
-                                onConfirmPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Project "${project['title']}" deleted!',
-                                      ),
-                                    ),
+                                  ),
+                                );
+                              },
+                              loading: () =>
+                                  Center(child: CircularProgressIndicator()),
+                              error: (err, stack) => ProjectCard(
+                                title: project.name,
+                                description: project.description ?? '',
+                                hours: 'Error',
+                                avatarEmoji: project.color ?? '📁',
+                                recentTasks: [],
+                                onViewPressed: () {
+                                  final navigate = ref.read(navigateToProvider);
+                                  navigate(
+                                    AppRouter.projectDetail,
+                                    projectId: project.id,
                                   );
                                 },
                               ),
                             );
                           },
-                        );
-                      },
-                    ),
-                  ],
+                        ),
+                      ],
+                    );
+                  },
+                  loading: () => Center(child: CircularProgressIndicator()),
+                  error: (err, stack) =>
+                      Center(child: Text('Error loading projects: $err')),
                 );
               },
             ),
@@ -263,5 +383,17 @@ class ProjectListScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Format hours (double) to readable format like "12h 45m"
+  String _formatHours(double hours) {
+    final wholeHours = hours.toInt();
+    final minutes = ((hours - wholeHours) * 60).toInt();
+    if (wholeHours == 0) {
+      return '${minutes}m';
+    } else if (minutes == 0) {
+      return '${wholeHours}h';
+    }
+    return '${wholeHours}h ${minutes}m';
   }
 }
