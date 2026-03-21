@@ -1,4 +1,6 @@
-/// Dart extensions for common operations
+// Dart extensions for common operations
+library;
+
 import 'dart:math';
 import 'package:uuid/uuid.dart';
 
@@ -7,16 +9,16 @@ const _uuid = Uuid();
 /// String extensions
 extension StringExtensions on String {
   /// Check if string is empty or null
-  bool get isEmpty => this.isEmpty;
+  bool get isEmpty => this == '';
 
   /// Check if string is not empty
-  bool get isNotEmpty => this.isNotEmpty;
+  bool get isNotEmpty => this != '';
 
   /// Capitalize first letter
   /// Example: "hello" → "Hello"
   String capitalize() {
     if (isEmpty) return this;
-    return this[0].toUpperCase() + substring(1);
+    return '${this[0].toUpperCase()}${substring(1)}';
   }
 
   /// Generate UUID from string (for IDs)
@@ -48,7 +50,7 @@ extension StringExtensions on String {
   /// Example: "Hello World".truncate(5) → "He..."
   String truncate(int length) {
     if (this.length <= length) return this;
-    return substring(0, length) + '...';
+    return '${substring(0, length)}...';
   }
 }
 

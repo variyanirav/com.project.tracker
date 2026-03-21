@@ -92,7 +92,7 @@ class DailyProgressCard extends ConsumerWidget {
                                 ),
                               ],
                             ),
-                            SizedBox(width: AppConstants.spacing40),
+                            SizedBox(width: AppConstants.spacing32),
                             // Daily Goal
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,7 +216,7 @@ class DailyProgressCard extends ConsumerWidget {
             size: Size(160, 160),
             painter: _RadialProgressPainter(
               progress: 1.0,
-              color: AppColors.darkBorder.withOpacity(0.2),
+              color: AppColors.darkBorder.withValues(alpha: 0.2),
               width: 12,
             ),
           ),

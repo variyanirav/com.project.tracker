@@ -11,7 +11,7 @@ import 'package:project_tracker/presentation/screens/dashboard_screen.dart';
 import 'package:project_tracker/presentation/screens/project_detail_screen.dart';
 
 class _FakeTimerNotifier extends TimerStateNotifier {
-  _FakeTimerNotifier(Ref ref, TimerState initial) : super(ref) {
+  _FakeTimerNotifier(super.ref, TimerState initial) {
     state = initial;
   }
 }

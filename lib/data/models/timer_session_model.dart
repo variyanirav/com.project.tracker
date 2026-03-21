@@ -164,8 +164,8 @@ class TimerSessionModel {
   String get sessionSummary {
     final startDate = TimezoneHelper.formatDateOnly(startTime);
     final startTimeStr = TimezoneHelper.formatTimeOnly(startTime);
-    final endTimeStr = this.endTime != null
-        ? TimezoneHelper.formatTimeOnly(this.endTime!)
+    final endTimeStr = endTime != null
+        ? TimezoneHelper.formatTimeOnly(endTime!)
         : 'Still running';
     return '$startDate $startTimeStr - $endTimeStr ($displayDuration)';
   }

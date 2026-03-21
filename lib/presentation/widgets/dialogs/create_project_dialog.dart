@@ -10,7 +10,7 @@ class CreateProjectDialog extends StatefulWidget {
   final Function(String title, String description, String emoji)?
   onCreatePressed;
 
-  const CreateProjectDialog({Key? key, this.onCreatePressed}) : super(key: key);
+  const CreateProjectDialog({super.key, this.onCreatePressed});
 
   @override
   State<CreateProjectDialog> createState() => _CreateProjectDialogState();
@@ -143,7 +143,7 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
                         height: 48,
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? AppColors.brandPrimary.withOpacity(0.1)
+                              ? AppColors.brandPrimary.withValues(alpha: 0.1)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(
                             AppConstants.roundRadius,
@@ -183,7 +183,7 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: AppColors.brandPrimary.withOpacity(0.1),
+                      color: AppColors.brandPrimary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(
                         AppConstants.roundRadius,
                       ),

@@ -1,5 +1,6 @@
-/// Barrel export file for all Riverpod providers
-/// Enables: import 'package:project_tracker/presentation/providers/providers.dart';
+// Barrel export file for all Riverpod providers.
+// Enables importing a single providers entrypoint.
+library;
 
 export 'database_provider.dart';
 export 'repository_provider.dart';

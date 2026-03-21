@@ -25,7 +25,7 @@ class ProjectCard extends StatelessWidget {
   final Color? color;
 
   const ProjectCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.description,
     required this.hours,
@@ -35,7 +35,7 @@ class ProjectCard extends StatelessWidget {
     this.onEditPressed,
     this.onDeletePressed,
     this.color,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +56,7 @@ class ProjectCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: projectColor.withOpacity(0.1),
+                  color: projectColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppConstants.roundRadius),
                 ),
                 child: Center(
@@ -99,7 +99,7 @@ class ProjectCard extends StatelessWidget {
                         vertical: AppConstants.spacing8,
                       ),
                       decoration: BoxDecoration(
-                        color: projectColor.withOpacity(0.1),
+                        color: projectColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(
                           AppConstants.roundRadius,
                         ),
@@ -204,7 +204,7 @@ class ProjectCard extends StatelessWidget {
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ],
       ),
@@ -243,7 +243,7 @@ class _TaskStatusBadge extends StatelessWidget {
         vertical: AppConstants.spacing4,
       ),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1),
+        color: statusColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(

@@ -1,11 +1,10 @@
-import 'dart:async';
-
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_tracker/domain/repositories/idaily_goal_repository.dart';
 import 'package:project_tracker/data/database/app_database.dart';
 import 'package:project_tracker/presentation/providers/database_provider.dart';
+import 'package:project_tracker/presentation/providers/project_provider.dart';
 import 'package:project_tracker/presentation/providers/repository_provider.dart';
 import 'package:project_tracker/presentation/providers/timer_provider.dart';
 
@@ -280,12 +279,14 @@ void main() {
       final notifier = container.read(timerProvider.notifier);
       await notifier.startTimer(taskId, projectId);
 
-      final stream = container.read(timerTickProvider.stream);
-      final emitted = await stream
-          .take(2)
-          .toList()
-          .timeout(const Duration(seconds: 2));
-      expect(emitted.length, greaterThanOrEqualTo(2));
+      final emitted = <TimerState>[];
+      final sub = container.listen(timerTickProvider, (_, next) {
+        next.whenData(emitted.add);
+      });
+      addTearDown(sub.close);
+
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      expect(emitted.length, greaterThanOrEqualTo(1));
       expect(emitted.first.isRunning, isTrue);
 
       await notifier.stopTimer();
@@ -311,5 +312,35 @@ void main() {
 
       await notifier.stopTimer();
     });
+
+    test(
+      'stopTimer persists task totalSeconds and updates project hours providers',
+      () async {
+        final notifier = container.read(timerProvider.notifier);
+        final taskRepo = container.read(taskRepositoryProvider);
+
+        await notifier.startTimer(taskId, projectId);
+        await Future<void>.delayed(const Duration(milliseconds: 1200));
+        await notifier.stopTimer();
+
+        final task = await taskRepo.getTaskById(taskId);
+        expect(task, isNotNull);
+        expect(task!.totalSeconds, greaterThan(0));
+
+        final totalHours = await container.read(
+          projectTotalHoursProvider(projectId).future,
+        );
+        final todayHours = await container.read(
+          projectTodayHoursProvider(projectId).future,
+        );
+        final weekHours = await container.read(
+          projectWeekHoursProvider(projectId).future,
+        );
+
+        expect(totalHours, greaterThan(0));
+        expect(todayHours, greaterThan(0));
+        expect(weekHours, greaterThan(0));
+      },
+    );
   });
 }

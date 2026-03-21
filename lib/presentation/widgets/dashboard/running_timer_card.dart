@@ -15,14 +15,14 @@ class RunningTimerCard extends StatelessWidget {
   final VoidCallback? onStopPressed;
 
   const RunningTimerCard({
-    Key? key,
+    super.key,
     required this.projectName,
     required this.taskName,
     required this.elapsedTime,
     this.isPaused = false,
     this.onTogglePausePressed,
     this.onStopPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -77,11 +77,11 @@ class RunningTimerCard extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               color: isDark
-                  ? AppColors.darkSurface.withOpacity(0.5)
-                  : AppColors.lightSurface.withOpacity(0.5),
+                  ? AppColors.darkSurface.withValues(alpha: 0.5)
+                  : AppColors.lightSurface.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(AppConstants.roundRadius),
               border: Border.all(
-                color: AppColors.brandPrimary.withOpacity(0.2),
+                color: AppColors.brandPrimary.withValues(alpha: 0.2),
               ),
             ),
             padding: EdgeInsets.symmetric(

@@ -155,8 +155,8 @@ class AppTheme {
 
       // ========== CHECKBOX & RADIO THEME ==========
       checkboxTheme: CheckboxThemeData(
-        fillColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return AppColors.brandPrimary;
           }
           return AppColors.darkBorder;
@@ -165,8 +165,8 @@ class AppTheme {
       ),
 
       radioTheme: RadioThemeData(
-        fillColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return AppColors.brandPrimary;
           }
           return AppColors.darkBorder;
@@ -175,15 +175,15 @@ class AppTheme {
 
       // ========== SWITCH THEME ==========
       switchTheme: SwitchThemeData(
-        thumbColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return AppColors.brandPrimary;
           }
           return AppColors.darkTextTertiary;
         }),
-        trackColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
-            return AppColors.brandPrimary.withOpacity(0.5);
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.brandPrimary.withValues(alpha: 0.5);
           }
           return AppColors.darkBorder;
         }),
@@ -191,7 +191,7 @@ class AppTheme {
 
       // ========== SCROLLBAR THEME ==========
       scrollbarTheme: ScrollbarThemeData(
-        thumbColor: MaterialStateProperty.all(AppColors.darkBorder),
+        thumbColor: WidgetStateProperty.all(AppColors.darkBorder),
         minThumbLength: 40,
       ),
     );
@@ -345,8 +345,8 @@ class AppTheme {
 
       // ========== CHECKBOX & RADIO THEME ==========
       checkboxTheme: CheckboxThemeData(
-        fillColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return AppColors.brandPrimary;
           }
           return Colors.transparent;
@@ -356,8 +356,8 @@ class AppTheme {
       ),
 
       radioTheme: RadioThemeData(
-        fillColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return AppColors.brandPrimary;
           }
           return AppColors.lightBorder;
@@ -366,15 +366,15 @@ class AppTheme {
 
       // ========== SWITCH THEME ==========
       switchTheme: SwitchThemeData(
-        thumbColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return AppColors.brandPrimary;
           }
           return AppColors.lightTextTertiary;
         }),
-        trackColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
-            return AppColors.brandPrimary.withOpacity(0.3);
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.brandPrimary.withValues(alpha: 0.3);
           }
           return AppColors.lightBorder;
         }),
@@ -382,7 +382,7 @@ class AppTheme {
 
       // ========== SCROLLBAR THEME ==========
       scrollbarTheme: ScrollbarThemeData(
-        thumbColor: MaterialStateProperty.all(AppColors.lightBorder),
+        thumbColor: WidgetStateProperty.all(AppColors.lightBorder),
         minThumbLength: 40,
       ),
     );

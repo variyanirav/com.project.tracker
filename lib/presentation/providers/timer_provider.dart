@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_tracker/domain/entities/timer_session_entity.dart';
 import 'package:project_tracker/core/utils/timezone_helper.dart';
+import 'project_provider.dart';
+import 'task_provider.dart';
 import 'repository_provider.dart';
 
 /// State notifier for managing timer state
@@ -183,6 +185,9 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
       return;
     }
 
+    final currentTaskId = state.taskId;
+    final currentProjectId = state.projectId;
+
     // Cancel tick timer
     _tickTimer?.cancel();
     debugPrint('[TIMER] ⏱️  Tick timer cancelled');
@@ -200,12 +205,39 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
       totalSeconds: duration,
     );
 
-    // Update task running state to false
-    if (state.taskId != null) {
+    // Persist the latest task total seconds and running state.
+    if (currentTaskId != null) {
       final taskRepository = ref.read(taskRepositoryProvider);
-      await taskRepository.updateTaskRunningState(state.taskId!, false);
-      debugPrint('[TIMER] ✅ Updated task ${state.taskId} to not running');
+      final totalTaskSeconds = await timerRepository.getTaskTotalSeconds(
+        currentTaskId,
+      );
+      await taskRepository.updateTaskTotalSeconds(
+        currentTaskId,
+        totalTaskSeconds,
+      );
+      await taskRepository.updateTaskRunningState(currentTaskId, false);
+      debugPrint(
+        '[TIMER] ✅ Updated task $currentTaskId totalSeconds=$totalTaskSeconds and set isRunning=false',
+      );
     }
+
+    // Refresh dependent UI providers so project/task stats update immediately.
+    ref.invalidate(tasksProvider);
+    ref.invalidate(activeTaskProvider);
+    if (currentTaskId != null) {
+      ref.invalidate(taskByIdProvider(currentTaskId));
+    }
+    if (currentProjectId != null) {
+      ref.invalidate(tasksByProjectProvider(currentProjectId));
+      ref.invalidate(projectTotalHoursProvider(currentProjectId));
+      ref.invalidate(projectTodayHoursProvider(currentProjectId));
+      ref.invalidate(projectWeekHoursProvider(currentProjectId));
+    }
+
+    // Dashboard aggregates
+    ref.invalidate(todayTotalHoursProvider);
+    ref.invalidate(weekTotalHoursProvider);
+    ref.invalidate(dailyProgressProvider);
 
     state = TimerState.idle();
     _baselineElapsedSeconds = 0;

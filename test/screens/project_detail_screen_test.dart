@@ -13,7 +13,7 @@ import 'package:project_tracker/presentation/routes/app_router.dart';
 import 'package:project_tracker/presentation/screens/project_detail_screen.dart';
 
 class _FakeTimerNotifier extends TimerStateNotifier {
-  _FakeTimerNotifier(Ref ref, TimerState initial) : super(ref) {
+  _FakeTimerNotifier(super.ref, TimerState initial) {
     state = initial;
   }
 }
@@ -109,7 +109,7 @@ void main() {
       await db.close();
     });
 
-    Future<void> _pumpScreen(
+    Future<void> pumpScreen(
       WidgetTester tester, {
       TimerState? timerState,
     }) async {
@@ -147,7 +147,7 @@ void main() {
     testWidgets('1) Total/Today/Week cards show updated and correct values', (
       tester,
     ) async {
-      await _pumpScreen(tester, timerState: TimerState.idle());
+      await pumpScreen(tester, timerState: TimerState.idle());
 
       expect(find.text('Total Hours'), findsOneWidget);
       expect(find.text("Today's Hours"), findsOneWidget);
@@ -162,7 +162,7 @@ void main() {
     testWidgets(
       '2) Project tasks list shows start/stop, date and duration correctly',
       (tester) async {
-        await _pumpScreen(tester);
+        await pumpScreen(tester);
 
         expect(find.text('Project Tasks'), findsOneWidget);
         expect(find.text('Today Task'), findsAtLeastNWidgets(2));
@@ -183,7 +183,7 @@ void main() {
     testWidgets(
       '3) Info dialog shows correct title, status, timer status, description and date',
       (tester) async {
-        await _pumpScreen(tester);
+        await pumpScreen(tester);
 
         final viewDetailsButton = find.byTooltip('View task details').first;
         await tester.ensureVisible(viewDetailsButton);
@@ -223,7 +223,7 @@ void main() {
     testWidgets(
       '4) Edit button updates title, progress status and description visible via info and list',
       (tester) async {
-        await _pumpScreen(tester);
+        await pumpScreen(tester);
 
         final editButton = find.byTooltip('Edit task').first;
         await tester.ensureVisible(editButton);
@@ -290,7 +290,7 @@ void main() {
     testWidgets('5) Today tasks section shows only today tasks with basic info', (
       tester,
     ) async {
-      await _pumpScreen(tester);
+      await pumpScreen(tester);
 
       expect(find.text("Today's Tasks"), findsOneWidget);
 

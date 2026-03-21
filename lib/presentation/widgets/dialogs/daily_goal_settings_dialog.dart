@@ -10,10 +10,10 @@ class DailyGoalSettingsDialog extends StatefulWidget {
   final Function(int hours)? onSavePressed;
 
   const DailyGoalSettingsDialog({
-    Key? key,
+    super.key,
     this.currentGoalHours = 8,
     this.onSavePressed,
-  }) : super(key: key);
+  });
 
   @override
   State<DailyGoalSettingsDialog> createState() =>
@@ -204,7 +204,7 @@ class _DailyGoalSettingsDialogState extends State<DailyGoalSettingsDialog> {
             // Info Text
             Container(
               decoration: BoxDecoration(
-                color: AppColors.brandPrimary.withOpacity(0.1),
+                color: AppColors.brandPrimary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppConstants.roundRadius),
               ),
               padding: EdgeInsets.all(AppConstants.spacing12),
