@@ -82,23 +82,25 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenSize = MediaQuery.of(context).size;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        width: 500,
-        constraints: const BoxConstraints(maxHeight: 700),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Theme.of(context).scaffoldBackgroundColor,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(AppConstants.spacing24),
-              child: Row(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: SingleChildScrollView(
+        child: Container(
+          width: screenSize.width > 600 ? 500 : screenSize.width - 40,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: Theme.of(context).scaffoldBackgroundColor,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with Close Button
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Edit Task', style: AppTextStyles.heading2),
@@ -108,106 +110,100 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
                   ),
                 ],
               ),
-            ),
-            Divider(height: 1),
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppConstants.spacing24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Task Title Field
-                    Text('Task Name', style: AppTextStyles.labelMedium),
-                    SizedBox(height: AppConstants.spacing8),
-                    AppTextField(
-                      controller: _titleController,
-                      label: 'Enter task name',
-                      keyboardType: TextInputType.text,
-                      onChanged: (_) {
-                        if (_titleError != null) {
-                          setState(() => _titleError = null);
-                        }
-                      },
-                    ),
-                    if (_titleError != null) ...[
-                      SizedBox(height: AppConstants.spacing8),
-                      Text(
-                        _titleError!,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: Colors.red,
-                        ),
-                      ),
-                    ],
-                    SizedBox(height: AppConstants.spacing16),
+              const SizedBox(height: 24),
 
-                    // Description Field
-                    Text('Description', style: AppTextStyles.labelMedium),
-                    SizedBox(height: AppConstants.spacing8),
-                    AppTextField(
-                      controller: _descriptionController,
-                      label: 'Enter task description (optional)',
-                      keyboardType: TextInputType.multiline,
-                      maxLines: 3,
-                    ),
-                    SizedBox(height: AppConstants.spacing16),
+              // Task Title Field
+              Text('Task Name', style: AppTextStyles.labelMedium),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  hintText: 'Enter task name',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  errorText: _titleError,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
+                onChanged: (_) {
+                  if (_titleError != null) {
+                    setState(() => _titleError = null);
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
 
-                    // Status Dropdown
-                    Text('Status', style: AppTextStyles.labelMedium),
-                    SizedBox(height: AppConstants.spacing8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppConstants.spacing12,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: DropdownButton<TaskStatus>(
-                        value: _selectedStatus,
-                        isExpanded: true,
-                        underline: const SizedBox(),
-                        items: TaskStatus.values
-                            .map(
-                              (status) => DropdownMenuItem(
-                                value: status,
-                                child: Text(status.label),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (status) {
-                          if (status != null) {
-                            setState(() => _selectedStatus = status);
-                          }
-                        },
-                      ),
-                    ),
-                  ],
+              // Description Field
+              Text('Description (Optional)', style: AppTextStyles.labelMedium),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _descriptionController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Enter task description',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
                 ),
               ),
-            ),
-            Divider(height: 1),
-            // Footer Buttons
-            Padding(
-              padding: const EdgeInsets.all(AppConstants.spacing24),
-              child: Row(
+              const SizedBox(height: 16),
+
+              // Status Dropdown
+              Text('Status', style: AppTextStyles.labelMedium),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: DropdownButton<TaskStatus>(
+                  value: _selectedStatus,
+                  isExpanded: true,
+                  underline: const SizedBox(),
+                  items: TaskStatus.values
+                      .map(
+                        (status) => DropdownMenuItem(
+                          value: status,
+                          child: Text(status.label),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (status) {
+                    if (status != null) {
+                      setState(() => _selectedStatus = status);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Action Buttons
+              Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  AppButton.secondary(
-                    label: 'Cancel',
+                  TextButton(
                     onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
                   ),
-                  SizedBox(width: AppConstants.spacing12),
-                  AppButton.primary(
-                    label: 'Save Changes',
+                  const SizedBox(width: 12),
+                  ElevatedButton(
                     onPressed: _validateAndSave,
+                    child: const Text('Save Changes'),
                   ),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

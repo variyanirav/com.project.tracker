@@ -43,10 +43,8 @@ final projectTodayHoursProvider = FutureProvider.family<double, String>((
   ref,
   projectId,
 ) async {
-  // TODO: Calculate today's hours from timer sessions
-  // Currently, this would require querying timer sessions filtered by date
-  // For now, return 0 as a placeholder
-  return 0.0;
+  final repository = ref.watch(projectRepositoryProvider);
+  return await repository.getProjectTodayHours(projectId);
 });
 
 /// Provider for project this week's hours
@@ -54,9 +52,8 @@ final projectWeekHoursProvider = FutureProvider.family<double, String>((
   ref,
   projectId,
 ) async {
-  // Similar to today's hours, we would filter timer sessions by week
-  // For now, we can use the total as a placeholder
-  return await ref.watch(projectTotalHoursProvider(projectId).future);
+  final repository = ref.watch(projectRepositoryProvider);
+  return await repository.getProjectWeekHours(projectId);
 });
 
 /// Provider for creating a new project

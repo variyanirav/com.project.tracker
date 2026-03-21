@@ -42,7 +42,7 @@ class ViewTaskDialog extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // Status
+            // Task Status (To Do, In Progress, Done)
             Row(
               children: [
                 Expanded(
@@ -50,7 +50,7 @@ class ViewTaskDialog extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Status',
+                        'Progress Status',
                         style: AppTextStyles.labelSmall.copyWith(
                           color: Colors.grey,
                         ),
@@ -79,18 +79,40 @@ class ViewTaskDialog extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
+            // Running Status (Currently Tracking or Not)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Timer Status',
+                  style: AppTextStyles.labelSmall.copyWith(color: Colors.grey),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  task.isRunning ? '⏱️ Currently Tracking' : '⏹️ Not Tracking',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: task.isRunning ? Colors.green : Colors.orange,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
             // Total Time
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Total Time Tracked',
+                  'Total Time Logged',
                   style: AppTextStyles.labelSmall.copyWith(color: Colors.grey),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   _formatSeconds(task.totalSeconds),
-                  style: AppTextStyles.bodyMedium,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -108,25 +130,6 @@ class ViewTaskDialog extends StatelessWidget {
                 Text(
                   _formatDate(task.createdAt),
                   style: AppTextStyles.bodyMedium,
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Running Status
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Status',
-                  style: AppTextStyles.labelSmall.copyWith(color: Colors.grey),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  task.isRunning ? 'Currently Running' : 'Not Running',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: task.isRunning ? Colors.green : Colors.orange,
-                  ),
                 ),
               ],
             ),

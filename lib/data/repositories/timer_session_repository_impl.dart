@@ -77,10 +77,7 @@ class TimerSessionRepositoryImpl implements ITimerSessionRepository {
     return sessions
         .where(
           (s) =>
-              (s.startTime.isAfter(startDate) &&
-                  s.startTime.isBefore(endDate)) ||
-              TimezoneHelper.isSameDay(s.startTime, startDate) ||
-              TimezoneHelper.isSameDay(s.startTime, endDate),
+              !s.startTime.isBefore(startDate) && !s.startTime.isAfter(endDate),
         )
         .map(_toEntity)
         .toList();

@@ -82,6 +82,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     );
     final tasksAsync = ref.watch(tasksByProjectProvider(selectedProject.id));
     final timerState = ref.watch(timerProvider);
+    // Watch timer ticks for real-time updates
+    final timerTickAsync = ref.watch(timerTickProvider);
     final hasActiveTimer = timerState.isRunning;
 
     return CustomScaffold(
@@ -286,7 +288,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                 },
                               ),
                               const SizedBox(height: 24),
-                              // Timer Display
+                              // Timer Display - Shows live elapsed time
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 32,
@@ -299,12 +301,41 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Center(
-                                  child: Text(
-                                    _formatElapsedTime(
-                                      timerState.elapsedSeconds,
+                                  child: timerTickAsync.when(
+                                    data: (tickTimer) {
+                                      return Text(
+                                        _formatElapsedTime(
+                                          tickTimer.elapsedSeconds,
+                                        ),
+                                        style: AppTextStyles.timerDisplay
+                                            .copyWith(
+                                              color: Theme.of(
+                                                context,
+                                              ).primaryColor,
+                                            ),
+                                      );
+                                    },
+                                    loading: () => Text(
+                                      _formatElapsedTime(
+                                        timerState.elapsedSeconds,
+                                      ),
+                                      style: AppTextStyles.timerDisplay
+                                          .copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).primaryColor,
+                                          ),
                                     ),
-                                    style: AppTextStyles.timerDisplay.copyWith(
-                                      color: Theme.of(context).primaryColor,
+                                    error: (err, stack) => Text(
+                                      _formatElapsedTime(
+                                        timerState.elapsedSeconds,
+                                      ),
+                                      style: AppTextStyles.timerDisplay
+                                          .copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).primaryColor,
+                                          ),
                                     ),
                                   ),
                                 ),
@@ -315,11 +346,40 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                 children: [
                                   Expanded(
                                     child: AppButton.primary(
-                                      label: 'Pause',
-                                      onPressed: () {
-                                        ref
-                                            .read(timerProvider.notifier)
-                                            .pauseTimer();
+                                      label: timerState.isPaused
+                                          ? 'Start'
+                                          : 'Pause',
+                                      onPressed: () async {
+                                        try {
+                                          if (timerState.isPaused) {
+                                            await ref
+                                                .read(timerProvider.notifier)
+                                                .resumeTimer();
+                                          } else {
+                                            await ref
+                                                .read(timerProvider.notifier)
+                                                .pauseTimer();
+                                          }
+                                          debugPrint(
+                                            '[UI] Pause/Start button pressed successfully',
+                                          );
+                                        } catch (e) {
+                                          debugPrint(
+                                            '[UI] Pause/Start error: $e',
+                                          );
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  'Pause/Start failed: $e',
+                                                ),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          }
+                                        }
                                       },
                                     ),
                                   ),
@@ -328,20 +388,42 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                     child: AppButton.danger(
                                       label: 'Stop',
                                       onPressed: () async {
-                                        await ref
-                                            .read(timerProvider.notifier)
-                                            .stopTimer();
-                                        // Invalidate task data to refresh totals
-                                        ref.invalidate(
-                                          tasksByProjectProvider(
-                                            selectedProject.id,
-                                          ),
-                                        );
-                                        ref.invalidate(
-                                          projectTotalHoursProvider(
-                                            selectedProject.id,
-                                          ),
-                                        );
+                                        try {
+                                          await ref
+                                              .read(timerProvider.notifier)
+                                              .stopTimer();
+                                          // Invalidate task data to refresh totals and totalSeconds
+                                          await Future.delayed(
+                                            const Duration(milliseconds: 100),
+                                          );
+                                          ref.invalidate(
+                                            tasksByProjectProvider(
+                                              selectedProject.id,
+                                            ),
+                                          );
+                                          ref.invalidate(
+                                            projectTotalHoursProvider(
+                                              selectedProject.id,
+                                            ),
+                                          );
+                                          debugPrint(
+                                            '[UI] Stop button pressed successfully',
+                                          );
+                                        } catch (e) {
+                                          debugPrint('[UI] Stop error: $e');
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  'Stop failed: $e',
+                                                ),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          }
+                                        }
                                       },
                                     ),
                                   ),
@@ -643,7 +725,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                               child: Container(
                                                 decoration: BoxDecoration(
                                                   color:
-                                                      (task.isRunning
+                                                      ((timerState.isRunning &&
+                                                                  timerState
+                                                                          .taskId ==
+                                                                      task.id)
                                                               ? Colors.orange
                                                               : Colors.green)
                                                           .withValues(
@@ -653,7 +738,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                                       BorderRadius.circular(8),
                                                   border: Border.all(
                                                     color:
-                                                        (task.isRunning
+                                                        ((timerState.isRunning &&
+                                                                    timerState
+                                                                            .taskId ==
+                                                                        task.id)
                                                                 ? Colors.orange
                                                                 : Colors.green)
                                                             .withValues(
@@ -666,16 +754,50 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                                   child: InkWell(
                                                     onTap: () async {
                                                       try {
-                                                        if (task.isRunning) {
+                                                        // Check if timer is already running for a different task
+                                                        if (!task.isRunning &&
+                                                            timerState
+                                                                .isRunning &&
+                                                            timerState.taskId !=
+                                                                task.id) {
+                                                          if (context.mounted) {
+                                                            ScaffoldMessenger.of(
+                                                              context,
+                                                            ).showSnackBar(
+                                                              SnackBar(
+                                                                content: Text(
+                                                                  'Please stop the current timer before starting a new one',
+                                                                ),
+                                                                backgroundColor:
+                                                                    Colors
+                                                                        .orange,
+                                                                duration:
+                                                                    const Duration(
+                                                                      seconds:
+                                                                          3,
+                                                                    ),
+                                                              ),
+                                                            );
+                                                          }
+                                                          return;
+                                                        }
+
+                                                        // Use real-time timerState instead of stale database state
+                                                        if (timerState
+                                                                .isRunning &&
+                                                            timerState.taskId ==
+                                                                task.id) {
                                                           // Stop the timer
+                                                          debugPrint(
+                                                            '[UI] Stop button clicked for task: ${task.id}',
+                                                          );
                                                           await ref
                                                               .read(
                                                                 timerProvider
                                                                     .notifier,
                                                               )
                                                               .stopTimer();
-                                                          // Don't invalidate immediately - let the timer state change reflect in the UI
-                                                          // A small delay allows the database to update before next refresh
+                                                          // Wait a bit for database to update
                                                           await Future.delayed(
                                                             const Duration(
                                                               milliseconds: 100,
@@ -705,6 +827,9 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                                           }
                                                         } else {
                                                           // Start the timer
+                                                          debugPrint(
+                                                            '[UI] Start button clicked for task: ${task.id}',
+                                                          );
                                                           await ref
                                                               .read(
                                                                 timerProvider
@@ -741,6 +866,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                                               content: Text(
                                                                 'Error: $e',
                                                               ),
+                                                              backgroundColor:
+                                                                  Colors.red,
                                                             ),
                                                           );
                                                         }
@@ -762,13 +889,21 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                                                 .center,
                                                         children: [
                                                           Icon(
-                                                            task.isRunning
+                                                            // Use real-time timer state
+                                                            (timerState.isRunning &&
+                                                                    timerState
+                                                                            .taskId ==
+                                                                        task.id)
                                                                 ? Icons.stop
                                                                 : Icons
                                                                       .play_arrow,
                                                             size: 18,
                                                             color:
-                                                                task.isRunning
+                                                                (timerState
+                                                                        .isRunning &&
+                                                                    timerState
+                                                                            .taskId ==
+                                                                        task.id)
                                                                 ? Colors.orange
                                                                 : Colors.green,
                                                           ),
@@ -776,22 +911,28 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                                             width: 6,
                                                           ),
                                                           Text(
-                                                            task.isRunning
+                                                            // Use real-time timer state
+                                                            (timerState.isRunning &&
+                                                                    timerState
+                                                                            .taskId ==
+                                                                        task.id)
                                                                 ? 'Stop'
                                                                 : 'Start',
-                                                            style: AppTextStyles
-                                                                .labelSmall
-                                                                .copyWith(
-                                                                  color:
-                                                                      task.isRunning
-                                                                      ? Colors
-                                                                            .orange
-                                                                      : Colors
-                                                                            .green,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w600,
-                                                                ),
+                                                            style: AppTextStyles.labelSmall.copyWith(
+                                                              color:
+                                                                  (timerState
+                                                                          .isRunning &&
+                                                                      timerState
+                                                                              .taskId ==
+                                                                          task.id)
+                                                                  ? Colors
+                                                                        .orange
+                                                                  : Colors
+                                                                        .green,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                            ),
                                                           ),
                                                         ],
                                                       ),
@@ -889,16 +1030,13 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                                                       SnackBar(
                                                                         content:
                                                                             Text(
-                                                                              'Task "$title"updated!',
+                                                                              'Task "$title" updated!',
                                                                             ),
                                                                         duration: const Duration(
                                                                           seconds:
                                                                               2,
                                                                         ),
                                                                       ),
-                                                                    );
-                                                                    Navigator.pop(
-                                                                      context,
                                                                     );
                                                                   }
                                                                 } catch (e) {

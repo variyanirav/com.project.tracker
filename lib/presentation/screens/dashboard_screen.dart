@@ -25,6 +25,8 @@ class DashboardScreen extends ConsumerWidget {
     // Watch providers for real-time data
     final projectsAsync = ref.watch(projectsProvider);
     final timerAsync = ref.watch(timerProvider);
+    // Watch timer ticks for real-time UI updates every 100ms
+    final timerTickAsync = ref.watch(timerTickProvider);
 
     // Check if we have projects
     final hasProjects =
@@ -146,20 +148,67 @@ class DashboardScreen extends ConsumerWidget {
                                 ? 'Loading...'
                                 : 'Unknown Task');
 
-                      return RunningTimerCard(
-                        projectName: projectName ?? 'Unknown Project',
-                        taskName: taskName ?? 'Unknown Task',
-                        elapsedTime: _formatElapsedTime(
-                          timerAsync.elapsedSeconds,
+                      return timerTickAsync.when(
+                        data: (tickTimer) {
+                          return RunningTimerCard(
+                            projectName: projectName ?? 'Unknown Project',
+                            taskName: taskName ?? 'Unknown Task',
+                            elapsedTime: _formatElapsedTime(
+                              tickTimer.elapsedSeconds,
+                            ),
+                            isPaused: tickTimer.isPaused,
+                            onTogglePausePressed: () {
+                              if (tickTimer.isPaused) {
+                                ref.read(timerProvider.notifier).resumeTimer();
+                              } else {
+                                ref.read(timerProvider.notifier).pauseTimer();
+                              }
+                            },
+                            onStopPressed: () async {
+                              await ref
+                                  .read(timerProvider.notifier)
+                                  .stopTimer();
+                              // Timer state change will automatically hide the card
+                              // because isTimerRunning will become false
+                            },
+                          );
+                        },
+                        loading: () => RunningTimerCard(
+                          projectName: projectName ?? 'Unknown Project',
+                          taskName: taskName ?? 'Unknown Task',
+                          elapsedTime: _formatElapsedTime(
+                            timerAsync.elapsedSeconds,
+                          ),
+                          isPaused: timerAsync.isPaused,
+                          onTogglePausePressed: () {
+                            if (timerAsync.isPaused) {
+                              ref.read(timerProvider.notifier).resumeTimer();
+                            } else {
+                              ref.read(timerProvider.notifier).pauseTimer();
+                            }
+                          },
+                          onStopPressed: () async {
+                            await ref.read(timerProvider.notifier).stopTimer();
+                          },
                         ),
-                        onPausePressed: () {
-                          ref.read(timerProvider.notifier).pauseTimer();
-                        },
-                        onStopPressed: () async {
-                          await ref.read(timerProvider.notifier).stopTimer();
-                          // Timer state change will automatically hide the card
-                          // because isTimerRunning will become false
-                        },
+                        error: (err, stack) => RunningTimerCard(
+                          projectName: projectName ?? 'Unknown Project',
+                          taskName: taskName ?? 'Unknown Task',
+                          elapsedTime: _formatElapsedTime(
+                            timerAsync.elapsedSeconds,
+                          ),
+                          isPaused: timerAsync.isPaused,
+                          onTogglePausePressed: () {
+                            if (timerAsync.isPaused) {
+                              ref.read(timerProvider.notifier).resumeTimer();
+                            } else {
+                              ref.read(timerProvider.notifier).pauseTimer();
+                            }
+                          },
+                          onStopPressed: () async {
+                            await ref.read(timerProvider.notifier).stopTimer();
+                          },
+                        ),
                       );
                     },
                   ),

@@ -10,7 +10,8 @@ class RunningTimerCard extends StatelessWidget {
   final String projectName;
   final String taskName;
   final String elapsedTime; // Format: HH:MM:SS
-  final VoidCallback? onPausePressed;
+  final bool isPaused;
+  final VoidCallback? onTogglePausePressed;
   final VoidCallback? onStopPressed;
 
   const RunningTimerCard({
@@ -18,7 +19,8 @@ class RunningTimerCard extends StatelessWidget {
     required this.projectName,
     required this.taskName,
     required this.elapsedTime,
-    this.onPausePressed,
+    this.isPaused = false,
+    this.onTogglePausePressed,
     this.onStopPressed,
   }) : super(key: key);
 
@@ -104,11 +106,11 @@ class RunningTimerCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Pause Button
+              // Pause/Start Button
               Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: onPausePressed,
+                  onTap: onTogglePausePressed,
                   borderRadius: BorderRadius.circular(AppConstants.roundRadius),
                   child: Container(
                     padding: EdgeInsets.symmetric(
@@ -127,7 +129,7 @@ class RunningTimerCard extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.pause,
+                          isPaused ? Icons.play_arrow : Icons.pause,
                           size: 20,
                           color: isDark
                               ? AppColors.darkTextPrimary
@@ -135,7 +137,7 @@ class RunningTimerCard extends StatelessWidget {
                         ),
                         SizedBox(width: AppConstants.spacing8),
                         Text(
-                          'Pause',
+                          isPaused ? 'Start' : 'Pause',
                           style: AppTextStyles.labelMedium.copyWith(
                             color: isDark
                                 ? AppColors.darkTextPrimary
