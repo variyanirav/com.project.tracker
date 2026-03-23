@@ -1975,6 +1975,678 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingData> {
   }
 }
 
+class $TodoItemsTable extends TodoItems
+    with TableInfo<$TodoItemsTable, TodoItemData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TodoItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('open'),
+  );
+  static const VerificationMeta _priorityMeta = const VerificationMeta(
+    'priority',
+  );
+  @override
+  late final GeneratedColumn<String> priority = GeneratedColumn<String>(
+    'priority',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('medium'),
+  );
+  static const VerificationMeta _referenceUrlMeta = const VerificationMeta(
+    'referenceUrl',
+  );
+  @override
+  late final GeneratedColumn<String> referenceUrl = GeneratedColumn<String>(
+    'reference_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _linkedProjectIdMeta = const VerificationMeta(
+    'linkedProjectId',
+  );
+  @override
+  late final GeneratedColumn<String> linkedProjectId = GeneratedColumn<String>(
+    'linked_project_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dueDateMeta = const VerificationMeta(
+    'dueDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dueDate = GeneratedColumn<DateTime>(
+    'due_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _snoozedUntilMeta = const VerificationMeta(
+    'snoozedUntil',
+  );
+  @override
+  late final GeneratedColumn<DateTime> snoozedUntil = GeneratedColumn<DateTime>(
+    'snoozed_until',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    title,
+    description,
+    status,
+    priority,
+    referenceUrl,
+    linkedProjectId,
+    dueDate,
+    snoozedUntil,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'todo_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TodoItemData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('priority')) {
+      context.handle(
+        _priorityMeta,
+        priority.isAcceptableOrUnknown(data['priority']!, _priorityMeta),
+      );
+    }
+    if (data.containsKey('reference_url')) {
+      context.handle(
+        _referenceUrlMeta,
+        referenceUrl.isAcceptableOrUnknown(
+          data['reference_url']!,
+          _referenceUrlMeta,
+        ),
+      );
+    }
+    if (data.containsKey('linked_project_id')) {
+      context.handle(
+        _linkedProjectIdMeta,
+        linkedProjectId.isAcceptableOrUnknown(
+          data['linked_project_id']!,
+          _linkedProjectIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('due_date')) {
+      context.handle(
+        _dueDateMeta,
+        dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta),
+      );
+    }
+    if (data.containsKey('snoozed_until')) {
+      context.handle(
+        _snoozedUntilMeta,
+        snoozedUntil.isAcceptableOrUnknown(
+          data['snoozed_until']!,
+          _snoozedUntilMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TodoItemData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TodoItemData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      priority: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}priority'],
+      )!,
+      referenceUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reference_url'],
+      ),
+      linkedProjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}linked_project_id'],
+      ),
+      dueDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}due_date'],
+      ),
+      snoozedUntil: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}snoozed_until'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TodoItemsTable createAlias(String alias) {
+    return $TodoItemsTable(attachedDatabase, alias);
+  }
+}
+
+class TodoItemData extends DataClass implements Insertable<TodoItemData> {
+  final String id;
+  final String title;
+  final String description;
+  final String status;
+  final String priority;
+  final String? referenceUrl;
+  final String? linkedProjectId;
+  final DateTime? dueDate;
+  final DateTime? snoozedUntil;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const TodoItemData({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.status,
+    required this.priority,
+    this.referenceUrl,
+    this.linkedProjectId,
+    this.dueDate,
+    this.snoozedUntil,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['title'] = Variable<String>(title);
+    map['description'] = Variable<String>(description);
+    map['status'] = Variable<String>(status);
+    map['priority'] = Variable<String>(priority);
+    if (!nullToAbsent || referenceUrl != null) {
+      map['reference_url'] = Variable<String>(referenceUrl);
+    }
+    if (!nullToAbsent || linkedProjectId != null) {
+      map['linked_project_id'] = Variable<String>(linkedProjectId);
+    }
+    if (!nullToAbsent || dueDate != null) {
+      map['due_date'] = Variable<DateTime>(dueDate);
+    }
+    if (!nullToAbsent || snoozedUntil != null) {
+      map['snoozed_until'] = Variable<DateTime>(snoozedUntil);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  TodoItemsCompanion toCompanion(bool nullToAbsent) {
+    return TodoItemsCompanion(
+      id: Value(id),
+      title: Value(title),
+      description: Value(description),
+      status: Value(status),
+      priority: Value(priority),
+      referenceUrl: referenceUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(referenceUrl),
+      linkedProjectId: linkedProjectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(linkedProjectId),
+      dueDate: dueDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dueDate),
+      snoozedUntil: snoozedUntil == null && nullToAbsent
+          ? const Value.absent()
+          : Value(snoozedUntil),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory TodoItemData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TodoItemData(
+      id: serializer.fromJson<String>(json['id']),
+      title: serializer.fromJson<String>(json['title']),
+      description: serializer.fromJson<String>(json['description']),
+      status: serializer.fromJson<String>(json['status']),
+      priority: serializer.fromJson<String>(json['priority']),
+      referenceUrl: serializer.fromJson<String?>(json['referenceUrl']),
+      linkedProjectId: serializer.fromJson<String?>(json['linkedProjectId']),
+      dueDate: serializer.fromJson<DateTime?>(json['dueDate']),
+      snoozedUntil: serializer.fromJson<DateTime?>(json['snoozedUntil']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'title': serializer.toJson<String>(title),
+      'description': serializer.toJson<String>(description),
+      'status': serializer.toJson<String>(status),
+      'priority': serializer.toJson<String>(priority),
+      'referenceUrl': serializer.toJson<String?>(referenceUrl),
+      'linkedProjectId': serializer.toJson<String?>(linkedProjectId),
+      'dueDate': serializer.toJson<DateTime?>(dueDate),
+      'snoozedUntil': serializer.toJson<DateTime?>(snoozedUntil),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  TodoItemData copyWith({
+    String? id,
+    String? title,
+    String? description,
+    String? status,
+    String? priority,
+    Value<String?> referenceUrl = const Value.absent(),
+    Value<String?> linkedProjectId = const Value.absent(),
+    Value<DateTime?> dueDate = const Value.absent(),
+    Value<DateTime?> snoozedUntil = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => TodoItemData(
+    id: id ?? this.id,
+    title: title ?? this.title,
+    description: description ?? this.description,
+    status: status ?? this.status,
+    priority: priority ?? this.priority,
+    referenceUrl: referenceUrl.present ? referenceUrl.value : this.referenceUrl,
+    linkedProjectId: linkedProjectId.present
+        ? linkedProjectId.value
+        : this.linkedProjectId,
+    dueDate: dueDate.present ? dueDate.value : this.dueDate,
+    snoozedUntil: snoozedUntil.present ? snoozedUntil.value : this.snoozedUntil,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  TodoItemData copyWithCompanion(TodoItemsCompanion data) {
+    return TodoItemData(
+      id: data.id.present ? data.id.value : this.id,
+      title: data.title.present ? data.title.value : this.title,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      status: data.status.present ? data.status.value : this.status,
+      priority: data.priority.present ? data.priority.value : this.priority,
+      referenceUrl: data.referenceUrl.present
+          ? data.referenceUrl.value
+          : this.referenceUrl,
+      linkedProjectId: data.linkedProjectId.present
+          ? data.linkedProjectId.value
+          : this.linkedProjectId,
+      dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
+      snoozedUntil: data.snoozedUntil.present
+          ? data.snoozedUntil.value
+          : this.snoozedUntil,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TodoItemData(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('description: $description, ')
+          ..write('status: $status, ')
+          ..write('priority: $priority, ')
+          ..write('referenceUrl: $referenceUrl, ')
+          ..write('linkedProjectId: $linkedProjectId, ')
+          ..write('dueDate: $dueDate, ')
+          ..write('snoozedUntil: $snoozedUntil, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    title,
+    description,
+    status,
+    priority,
+    referenceUrl,
+    linkedProjectId,
+    dueDate,
+    snoozedUntil,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TodoItemData &&
+          other.id == this.id &&
+          other.title == this.title &&
+          other.description == this.description &&
+          other.status == this.status &&
+          other.priority == this.priority &&
+          other.referenceUrl == this.referenceUrl &&
+          other.linkedProjectId == this.linkedProjectId &&
+          other.dueDate == this.dueDate &&
+          other.snoozedUntil == this.snoozedUntil &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class TodoItemsCompanion extends UpdateCompanion<TodoItemData> {
+  final Value<String> id;
+  final Value<String> title;
+  final Value<String> description;
+  final Value<String> status;
+  final Value<String> priority;
+  final Value<String?> referenceUrl;
+  final Value<String?> linkedProjectId;
+  final Value<DateTime?> dueDate;
+  final Value<DateTime?> snoozedUntil;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const TodoItemsCompanion({
+    this.id = const Value.absent(),
+    this.title = const Value.absent(),
+    this.description = const Value.absent(),
+    this.status = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.referenceUrl = const Value.absent(),
+    this.linkedProjectId = const Value.absent(),
+    this.dueDate = const Value.absent(),
+    this.snoozedUntil = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TodoItemsCompanion.insert({
+    required String id,
+    required String title,
+    this.description = const Value.absent(),
+    this.status = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.referenceUrl = const Value.absent(),
+    this.linkedProjectId = const Value.absent(),
+    this.dueDate = const Value.absent(),
+    this.snoozedUntil = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       title = Value(title),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<TodoItemData> custom({
+    Expression<String>? id,
+    Expression<String>? title,
+    Expression<String>? description,
+    Expression<String>? status,
+    Expression<String>? priority,
+    Expression<String>? referenceUrl,
+    Expression<String>? linkedProjectId,
+    Expression<DateTime>? dueDate,
+    Expression<DateTime>? snoozedUntil,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (title != null) 'title': title,
+      if (description != null) 'description': description,
+      if (status != null) 'status': status,
+      if (priority != null) 'priority': priority,
+      if (referenceUrl != null) 'reference_url': referenceUrl,
+      if (linkedProjectId != null) 'linked_project_id': linkedProjectId,
+      if (dueDate != null) 'due_date': dueDate,
+      if (snoozedUntil != null) 'snoozed_until': snoozedUntil,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TodoItemsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? title,
+    Value<String>? description,
+    Value<String>? status,
+    Value<String>? priority,
+    Value<String?>? referenceUrl,
+    Value<String?>? linkedProjectId,
+    Value<DateTime?>? dueDate,
+    Value<DateTime?>? snoozedUntil,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return TodoItemsCompanion(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      status: status ?? this.status,
+      priority: priority ?? this.priority,
+      referenceUrl: referenceUrl ?? this.referenceUrl,
+      linkedProjectId: linkedProjectId ?? this.linkedProjectId,
+      dueDate: dueDate ?? this.dueDate,
+      snoozedUntil: snoozedUntil ?? this.snoozedUntil,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (priority.present) {
+      map['priority'] = Variable<String>(priority.value);
+    }
+    if (referenceUrl.present) {
+      map['reference_url'] = Variable<String>(referenceUrl.value);
+    }
+    if (linkedProjectId.present) {
+      map['linked_project_id'] = Variable<String>(linkedProjectId.value);
+    }
+    if (dueDate.present) {
+      map['due_date'] = Variable<DateTime>(dueDate.value);
+    }
+    if (snoozedUntil.present) {
+      map['snoozed_until'] = Variable<DateTime>(snoozedUntil.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TodoItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('description: $description, ')
+          ..write('status: $status, ')
+          ..write('priority: $priority, ')
+          ..write('referenceUrl: $referenceUrl, ')
+          ..write('linkedProjectId: $linkedProjectId, ')
+          ..write('dueDate: $dueDate, ')
+          ..write('snoozedUntil: $snoozedUntil, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1982,6 +2654,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TasksTable tasks = $TasksTable(this);
   late final $TimerSessionsTable timerSessions = $TimerSessionsTable(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
+  late final $TodoItemsTable todoItems = $TodoItemsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1991,6 +2664,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     tasks,
     timerSessions,
     appSettings,
+    todoItems,
   ];
 }
 
@@ -2992,6 +3666,328 @@ typedef $$AppSettingsTableProcessedTableManager =
       AppSettingData,
       PrefetchHooks Function()
     >;
+typedef $$TodoItemsTableCreateCompanionBuilder =
+    TodoItemsCompanion Function({
+      required String id,
+      required String title,
+      Value<String> description,
+      Value<String> status,
+      Value<String> priority,
+      Value<String?> referenceUrl,
+      Value<String?> linkedProjectId,
+      Value<DateTime?> dueDate,
+      Value<DateTime?> snoozedUntil,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$TodoItemsTableUpdateCompanionBuilder =
+    TodoItemsCompanion Function({
+      Value<String> id,
+      Value<String> title,
+      Value<String> description,
+      Value<String> status,
+      Value<String> priority,
+      Value<String?> referenceUrl,
+      Value<String?> linkedProjectId,
+      Value<DateTime?> dueDate,
+      Value<DateTime?> snoozedUntil,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$TodoItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $TodoItemsTable> {
+  $$TodoItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get referenceUrl => $composableBuilder(
+    column: $table.referenceUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get linkedProjectId => $composableBuilder(
+    column: $table.linkedProjectId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get snoozedUntil => $composableBuilder(
+    column: $table.snoozedUntil,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TodoItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $TodoItemsTable> {
+  $$TodoItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get referenceUrl => $composableBuilder(
+    column: $table.referenceUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get linkedProjectId => $composableBuilder(
+    column: $table.linkedProjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get snoozedUntil => $composableBuilder(
+    column: $table.snoozedUntil,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TodoItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TodoItemsTable> {
+  $$TodoItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get priority =>
+      $composableBuilder(column: $table.priority, builder: (column) => column);
+
+  GeneratedColumn<String> get referenceUrl => $composableBuilder(
+    column: $table.referenceUrl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get linkedProjectId => $composableBuilder(
+    column: $table.linkedProjectId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get dueDate =>
+      $composableBuilder(column: $table.dueDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get snoozedUntil => $composableBuilder(
+    column: $table.snoozedUntil,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$TodoItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TodoItemsTable,
+          TodoItemData,
+          $$TodoItemsTableFilterComposer,
+          $$TodoItemsTableOrderingComposer,
+          $$TodoItemsTableAnnotationComposer,
+          $$TodoItemsTableCreateCompanionBuilder,
+          $$TodoItemsTableUpdateCompanionBuilder,
+          (
+            TodoItemData,
+            BaseReferences<_$AppDatabase, $TodoItemsTable, TodoItemData>,
+          ),
+          TodoItemData,
+          PrefetchHooks Function()
+        > {
+  $$TodoItemsTableTableManager(_$AppDatabase db, $TodoItemsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TodoItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TodoItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TodoItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> description = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> priority = const Value.absent(),
+                Value<String?> referenceUrl = const Value.absent(),
+                Value<String?> linkedProjectId = const Value.absent(),
+                Value<DateTime?> dueDate = const Value.absent(),
+                Value<DateTime?> snoozedUntil = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TodoItemsCompanion(
+                id: id,
+                title: title,
+                description: description,
+                status: status,
+                priority: priority,
+                referenceUrl: referenceUrl,
+                linkedProjectId: linkedProjectId,
+                dueDate: dueDate,
+                snoozedUntil: snoozedUntil,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String title,
+                Value<String> description = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> priority = const Value.absent(),
+                Value<String?> referenceUrl = const Value.absent(),
+                Value<String?> linkedProjectId = const Value.absent(),
+                Value<DateTime?> dueDate = const Value.absent(),
+                Value<DateTime?> snoozedUntil = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => TodoItemsCompanion.insert(
+                id: id,
+                title: title,
+                description: description,
+                status: status,
+                priority: priority,
+                referenceUrl: referenceUrl,
+                linkedProjectId: linkedProjectId,
+                dueDate: dueDate,
+                snoozedUntil: snoozedUntil,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TodoItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TodoItemsTable,
+      TodoItemData,
+      $$TodoItemsTableFilterComposer,
+      $$TodoItemsTableOrderingComposer,
+      $$TodoItemsTableAnnotationComposer,
+      $$TodoItemsTableCreateCompanionBuilder,
+      $$TodoItemsTableUpdateCompanionBuilder,
+      (
+        TodoItemData,
+        BaseReferences<_$AppDatabase, $TodoItemsTable, TodoItemData>,
+      ),
+      TodoItemData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3004,4 +4000,6 @@ class $AppDatabaseManager {
       $$TimerSessionsTableTableManager(_db, _db.timerSessions);
   $$AppSettingsTableTableManager get appSettings =>
       $$AppSettingsTableTableManager(_db, _db.appSettings);
+  $$TodoItemsTableTableManager get todoItems =>
+      $$TodoItemsTableTableManager(_db, _db.todoItems);
 }

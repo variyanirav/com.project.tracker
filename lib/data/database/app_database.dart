@@ -8,19 +8,20 @@ import 'tables/projects_table.dart';
 import 'tables/tasks_table.dart';
 import 'tables/timer_sessions_table.dart';
 import 'tables/app_settings_table.dart';
+import 'tables/todo_items_table.dart';
 
 part 'app_database.g.dart';
 
 /// App Database
 /// Main Drift database class that manages all tables and migrations
-@DriftDatabase(tables: [Projects, Tasks, TimerSessions, AppSettings])
+@DriftDatabase(tables: [Projects, Tasks, TimerSessions, AppSettings, TodoItems])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   // Getters for DAOs (optional, for convenience)
   late final projectsDao = ProjectsDao(this);
@@ -34,8 +35,9 @@ class AppDatabase extends _$AppDatabase {
         return m.createAll();
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        // Handle migrations here as schema evolves
-        // Currently at version 1, so no migrations needed
+        if (from < 2) {
+          await m.createTable(todoItems);
+        }
       },
     );
   }
