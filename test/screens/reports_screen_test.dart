@@ -63,7 +63,9 @@ void main() {
     expect(find.text('Last export location: Not exported yet'), findsOneWidget);
     expect(find.text('Category Filter'), findsOneWidget);
 
-    await tester.tap(find.text('Download CSV'));
+    final downloadButtonFinder = find.text('Download CSV');
+    await tester.ensureVisible(downloadButtonFinder);
+    await tester.tap(downloadButtonFinder);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 

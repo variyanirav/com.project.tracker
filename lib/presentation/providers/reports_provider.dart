@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:project_tracker/data/database/app_database.dart';
@@ -181,10 +182,12 @@ final detailedCsvExportProvider = FutureProvider<String>((ref) async {
 
       final endTime = session.endTime ?? DateTime.now();
       final durationHours = session.totalSeconds / 3600.0;
-      final dateStr = TimezoneHelper.formatDateOnly(session.startTime);
+      final dateStr = _formatHumanReadableDate(session.startTime);
+      final startTimeStr = _formatHumanReadableDateTime(session.startTime);
+      final endTimeStr = _formatHumanReadableDateTime(endTime);
 
       csvBuffer.writeln(
-        '${project.name},${task.taskName},${session.startTime.toIso8601String()},${endTime.toIso8601String()},${durationHours.toStringAsFixed(2)},$dateStr',
+        '${project.name},${task.taskName},$startTimeStr,$endTimeStr,${durationHours.toStringAsFixed(2)},$dateStr',
       );
     }
   }
@@ -226,6 +229,36 @@ String _periodLabel(ReportPeriod period) {
     case ReportPeriod.thisMonth:
       return 'this_month';
   }
+}
+
+String _ordinalSuffix(int day) {
+  if (day >= 11 && day <= 13) {
+    return 'th';
+  }
+
+  switch (day % 10) {
+    case 1:
+      return 'st';
+    case 2:
+      return 'nd';
+    case 3:
+      return 'rd';
+    default:
+      return 'th';
+  }
+}
+
+String _formatHumanReadableDate(DateTime dateTime) {
+  final local = dateTime.toLocal();
+  final monthYear = DateFormat('MMMM yyyy').format(local);
+  return '${local.day}${_ordinalSuffix(local.day)} $monthYear';
+}
+
+String _formatHumanReadableDateTime(DateTime dateTime) {
+  final local = dateTime.toLocal();
+  final datePart = _formatHumanReadableDate(local);
+  final timePart = DateFormat('hh:mm a').format(local);
+  return '$datePart, $timePart';
 }
 
 /// Task-level CSV breakdown for a selected period, optionally scoped to one project.
@@ -284,10 +317,11 @@ final taskBreakdownCsvExportProvider = FutureProvider.family<String, CsvExportPa
           'Uncategorized';
       final latestSession = taskSessions.isEmpty
           ? null
-          : taskSessions
-                .map((s) => s.startTime)
-                .reduce((a, b) => a.isAfter(b) ? a : b)
-                .toIso8601String();
+          : _formatHumanReadableDateTime(
+              taskSessions
+                  .map((s) => s.startTime)
+                  .reduce((a, b) => a.isAfter(b) ? a : b),
+            );
 
       csvBuffer.writeln(
         '${_escapeCsv(project.name)},${_escapeCsv(task.taskName)},${_escapeCsv(categoryName)},${_escapeCsv(TaskStatus.formatLabel(task.status))},${taskSessions.length},$totalHours,${_escapeCsv(latestSession ?? '')}',

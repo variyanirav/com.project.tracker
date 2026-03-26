@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_tracker/domain/repositories/idaily_goal_repository.dart';
+import 'package:project_tracker/core/constants/app_constants.dart';
 import 'package:project_tracker/presentation/providers/project_provider.dart';
 import 'package:project_tracker/presentation/providers/repository_provider.dart';
 import 'package:project_tracker/presentation/providers/task_provider.dart';
@@ -120,6 +121,7 @@ void main() {
 
     await tester.pumpAndSettle();
     expect(find.text('8h 00m'), findsOneWidget);
+    expect(find.text('Version ${AppConstants.appVersion}'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Daily Goal Settings'));
     await tester.pumpAndSettle();

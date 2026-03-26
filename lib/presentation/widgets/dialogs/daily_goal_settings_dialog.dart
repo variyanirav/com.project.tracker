@@ -228,6 +228,18 @@ class _DailyGoalSettingsDialogState extends State<DailyGoalSettingsDialog> {
               ),
             ),
 
+            SizedBox(height: AppConstants.spacing12),
+            Center(
+              child: Text(
+                'App Version ${AppConstants.appVersion}',
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: isDark
+                      ? AppColors.darkTextTertiary
+                      : AppColors.lightTextTertiary,
+                ),
+              ),
+            ),
+
             SizedBox(height: AppConstants.spacing32),
 
             // Action Buttons

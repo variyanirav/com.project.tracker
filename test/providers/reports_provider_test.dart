@@ -284,5 +284,93 @@ void main() {
       expect(development.taskCount, 1);
       expect(development.totalHours, closeTo(1800 / 3600, 0.01));
     });
+
+    test('detailed export uses human-readable date format', () async {
+      final projectRepo = container.read(projectRepositoryProvider);
+      final taskRepo = container.read(taskRepositoryProvider);
+      final timerRepo = container.read(timerSessionRepositoryProvider);
+
+      final project = await projectRepo.createProject(
+        name: 'Readable Date Project',
+        description: 'R',
+        color: 'R',
+      );
+
+      final task = await taskRepo.createTask(
+        projectId: project.id,
+        taskName: 'Readable Task',
+        description: null,
+      );
+
+      final start = DateTime.utc(2026, 3, 26, 10, 30);
+      final session = await timerRepo.createSession(
+        taskId: task.id,
+        projectId: project.id,
+        startTime: start,
+      );
+
+      await timerRepo.stopSession(
+        session.id,
+        endTime: start.add(const Duration(minutes: 30)),
+        totalSeconds: 1800,
+      );
+
+      final csv = await container.read(detailedCsvExportProvider.future);
+
+      expect(csv, isNot(contains(RegExp(r'\d{4}-\d{2}-\d{2}T'))));
+      expect(
+        csv,
+        contains(RegExp(r'\b\d{1,2}(st|nd|rd|th)\s+[A-Za-z]+\s+\d{4}\b')),
+      );
+    });
+
+    test(
+      'task breakdown latest session uses human-readable date format',
+      () async {
+        final projectRepo = container.read(projectRepositoryProvider);
+        final taskRepo = container.read(taskRepositoryProvider);
+        final timerRepo = container.read(timerSessionRepositoryProvider);
+
+        final project = await projectRepo.createProject(
+          name: 'Readable Breakdown',
+          description: 'RB',
+          color: 'RB',
+        );
+
+        final task = await taskRepo.createTask(
+          projectId: project.id,
+          taskName: 'Breakdown Task',
+          description: null,
+        );
+
+        final start = DateTime.utc(2026, 3, 26, 14, 45);
+        final session = await timerRepo.createSession(
+          taskId: task.id,
+          projectId: project.id,
+          startTime: start,
+        );
+
+        await timerRepo.stopSession(
+          session.id,
+          endTime: start.add(const Duration(minutes: 10)),
+          totalSeconds: 600,
+        );
+
+        final csv = await container.read(
+          taskBreakdownCsvExportProvider(
+            CsvExportParams(
+              period: ReportPeriod.thisWeek,
+              projectId: project.id,
+            ),
+          ).future,
+        );
+
+        expect(csv, isNot(contains(RegExp(r'\d{4}-\d{2}-\d{2}T'))));
+        expect(
+          csv,
+          contains(RegExp(r'\b\d{1,2}(st|nd|rd|th)\s+[A-Za-z]+\s+\d{4}\b')),
+        );
+      },
+    );
   });
 }

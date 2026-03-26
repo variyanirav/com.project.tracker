@@ -2,8 +2,6 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:project_tracker/core/constants/colors.dart';
-import 'package:project_tracker/core/theme/text_styles.dart';
 import 'package:project_tracker/data/database/app_database.dart';
 import 'package:project_tracker/presentation/providers/database_provider.dart';
 import 'package:project_tracker/presentation/providers/project_provider.dart';
@@ -187,7 +185,7 @@ void main() {
       // Search for "review"
       final searchField = find.byType(TextField);
       await tester.tap(searchField);
-      await tester.typeText(searchField, 'review');
+      await tester.enterText(searchField, 'review');
       await tester.pumpAndSettle();
 
       // Verify only matching todo is shown
@@ -217,7 +215,7 @@ void main() {
       // Search for "meeting"
       final searchField = find.byType(TextField);
       await tester.tap(searchField);
-      await tester.typeText(searchField, 'meeting');
+      await tester.enterText(searchField, 'meeting');
       await tester.pumpAndSettle();
 
       // Verify filtered by description
@@ -240,7 +238,7 @@ void main() {
       // Search to filter
       final searchField = find.byType(TextField);
       await tester.tap(searchField);
-      await tester.typeText(searchField, 'Todo 1');
+      await tester.enterText(searchField, 'Todo 1');
       await tester.pumpAndSettle();
 
       // Clear search
@@ -314,16 +312,10 @@ void main() {
       await renderTodoListScreen(tester);
       await tester.pumpAndSettle();
 
-      final todoTexts = find.byType(Text);
-      // Newest first means Todo 2 should appear before Todo 0
-      final todo2Index = todoTexts.allCandidates.toList().indexWhere(
-        (w) => w is Text && w.data == 'Todo 2',
-      );
-      final todo0Index = todoTexts.allCandidates.toList().indexWhere(
-        (w) => w is Text && w.data == 'Todo 0',
-      );
-
-      expect(todo2Index < todo0Index, isTrue);
+      // Newest first means Todo 2 should appear above Todo 0 in the list.
+      final todo2Y = tester.getTopLeft(find.text('Todo 2')).dy;
+      final todo0Y = tester.getTopLeft(find.text('Todo 0')).dy;
+      expect(todo2Y < todo0Y, isTrue);
     });
 
     testWidgets('display todo with linked project', (tester) async {
@@ -490,7 +482,7 @@ void main() {
       // Search with lowercase
       final searchField = find.byType(TextField);
       await tester.tap(searchField);
-      await tester.typeText(searchField, 'review code');
+      await tester.enterText(searchField, 'review code');
       await tester.pumpAndSettle();
 
       expect(find.text('Review CODE'), findsOneWidget);

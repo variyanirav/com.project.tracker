@@ -115,6 +115,15 @@ class DashboardScreen extends ConsumerWidget {
                             : AppColors.lightTextSecondary,
                       ),
                     ),
+                    SizedBox(height: AppConstants.spacing4),
+                    Text(
+                      'Version ${AppConstants.appVersion}',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkTextTertiary
+                            : AppColors.lightTextTertiary,
+                      ),
+                    ),
                   ],
                 ),
                 CircleAvatar(

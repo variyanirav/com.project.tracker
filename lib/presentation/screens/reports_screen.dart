@@ -132,579 +132,612 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Time Reports', style: AppTextStyles.heading1),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Track your productivity metrics',
-                      style: AppTextStyles.bodyMedium,
-                    ),
-                  ],
-                ),
-                AppAvatar(initials: 'TR'),
-              ],
-            ),
-            const SizedBox(height: 32),
-            // Period Selector
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                ...['This Week', 'Last Week', 'This Month'].map((period) {
-                  return FilterChip(
-                    label: Text(period),
-                    selected: selectedPeriod == period,
-                    onSelected: (selected) {
-                      setState(() => selectedPeriod = period);
-                    },
-                  );
-                }),
-                SizedBox(
-                  width: 260,
-                  child: ref
-                      .watch(categoriesProvider)
-                      .when(
-                        data: (categories) => DropdownButtonFormField<String>(
-                          initialValue: _selectedReportCategoryId,
-                          decoration: const InputDecoration(
-                            labelText: 'Category Filter',
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final projectTableHeight = (constraints.maxHeight * 0.34).clamp(
+            220.0,
+            420.0,
+          );
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Time Reports', style: AppTextStyles.heading1),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Track your productivity metrics',
+                            style: AppTextStyles.bodyMedium,
                           ),
-                          items: [
-                            const DropdownMenuItem<String>(
-                              value: 'all',
-                              child: Text('All Categories'),
+                        ],
+                      ),
+                      AppAvatar(initials: 'TR'),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  // Period Selector
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      ...['This Week', 'Last Week', 'This Month'].map((period) {
+                        return FilterChip(
+                          label: Text(period),
+                          selected: selectedPeriod == period,
+                          onSelected: (selected) {
+                            setState(() => selectedPeriod = period);
+                          },
+                        );
+                      }),
+                      SizedBox(
+                        width: 260,
+                        child: ref
+                            .watch(categoriesProvider)
+                            .when(
+                              data: (categories) =>
+                                  DropdownButtonFormField<String>(
+                                    initialValue: _selectedReportCategoryId,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Category Filter',
+                                    ),
+                                    items: [
+                                      const DropdownMenuItem<String>(
+                                        value: 'all',
+                                        child: Text('All Categories'),
+                                      ),
+                                      ...categories.map(
+                                        (category) => DropdownMenuItem<String>(
+                                          value: category.id,
+                                          child: Text(category.name),
+                                        ),
+                                      ),
+                                    ],
+                                    onChanged: (value) {
+                                      if (value == null) return;
+                                      setState(
+                                        () => _selectedReportCategoryId = value,
+                                      );
+                                    },
+                                  ),
+                              loading: () =>
+                                  const LinearProgressIndicator(minHeight: 2),
+                              error: (_, __) => const SizedBox.shrink(),
                             ),
-                            ...categories.map(
-                              (category) => DropdownMenuItem<String>(
-                                value: category.id,
-                                child: Text(category.name),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  // Statistics Row - Wired to real data
+                  ref
+                      .watch(weekProjectSummaryProvider)
+                      .when(
+                        data: (summary) {
+                          final totalHours = summary.fold<double>(
+                            0.0,
+                            (sum, item) => sum + item.totalHours,
+                          );
+                          final liveTotalHours =
+                              LiveHoursOverlay.withLiveOverlay(
+                                persistedHours: totalHours,
+                                isTimerRunning: timerState.isRunning,
+                                elapsedSeconds: timerState.elapsedSeconds,
+                                timerStartTime: timerState.startTime,
+                                timerProjectId: timerState.projectId,
+                                scope: LiveHoursScope.week,
+                              );
+
+                          final liveTodayHours = todayHoursAsync
+                              .whenData(
+                                (hours) => LiveHoursOverlay.withLiveOverlay(
+                                  persistedHours: hours,
+                                  isTimerRunning: timerState.isRunning,
+                                  elapsedSeconds: timerState.elapsedSeconds,
+                                  timerStartTime: timerState.startTime,
+                                  timerProjectId: timerState.projectId,
+                                  scope: LiveHoursScope.today,
+                                ),
+                              )
+                              .value;
+
+                          return ref
+                              .watch(projectsProvider)
+                              .when(
+                                data: (projects) {
+                                  return Row(
+                                    children: [
+                                      Expanded(
+                                        child: _StatCard(
+                                          title: 'Total Hours',
+                                          value:
+                                              '${liveTotalHours.toStringAsFixed(1)}h',
+                                          isDark: isDark,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: _StatCard(
+                                          title: 'Today Hours',
+                                          value: liveTodayHours != null
+                                              ? '${liveTodayHours.toStringAsFixed(1)}h'
+                                              : '-',
+                                          isDark: isDark,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: _StatCard(
+                                          title: 'Active Projects',
+                                          value: '${projects.length}',
+                                          isDark: isDark,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: _StatCard(
+                                          title: 'Tasks Created',
+                                          value:
+                                              ref
+                                                  .watch(projectsProvider)
+                                                  .whenData((p) {
+                                                    int count = 0;
+                                                    for (var project in p) {
+                                                      ref
+                                                          .watch(
+                                                            tasksByProjectProvider(
+                                                              project.id,
+                                                            ),
+                                                          )
+                                                          .whenData((tasks) {
+                                                            count +=
+                                                                tasks.length;
+                                                          });
+                                                    }
+                                                    return count.toString();
+                                                  })
+                                                  .value
+                                                  ?.toString() ??
+                                              '-',
+                                          isDark: isDark,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                                loading: () => Row(
+                                  children: [
+                                    Expanded(
+                                      child: _StatCard(
+                                        title: 'Total Hours',
+                                        value: '-',
+                                        isDark: isDark,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: _StatCard(
+                                        title: 'Active Projects',
+                                        value: '-',
+                                        isDark: isDark,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: _StatCard(
+                                        title: 'Today Hours',
+                                        value: '-',
+                                        isDark: isDark,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: _StatCard(
+                                        title: 'Tasks Created',
+                                        value: '-',
+                                        isDark: isDark,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                error: (_, __) => Row(
+                                  children: [
+                                    Expanded(
+                                      child: _StatCard(
+                                        title: 'Total Hours',
+                                        value: '0h',
+                                        isDark: isDark,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: _StatCard(
+                                        title: 'Active Projects',
+                                        value: '0',
+                                        isDark: isDark,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: _StatCard(
+                                        title: 'Today Hours',
+                                        value: '0h',
+                                        isDark: isDark,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: _StatCard(
+                                        title: 'Tasks Created',
+                                        value: '0',
+                                        isDark: isDark,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                        },
+                        loading: () => Row(
+                          children: [
+                            Expanded(
+                              child: _StatCard(
+                                title: 'Total Hours',
+                                value: '-',
+                                isDark: isDark,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _StatCard(
+                                title: 'Active Projects',
+                                value: '-',
+                                isDark: isDark,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _StatCard(
+                                title: 'Today Hours',
+                                value: '-',
+                                isDark: isDark,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _StatCard(
+                                title: 'Tasks Created',
+                                value: '-',
+                                isDark: isDark,
                               ),
                             ),
                           ],
-                          onChanged: (value) {
-                            if (value == null) return;
-                            setState(() => _selectedReportCategoryId = value);
-                          },
                         ),
-                        loading: () =>
-                            const LinearProgressIndicator(minHeight: 2),
-                        error: (_, __) => const SizedBox.shrink(),
+                        error: (_, __) => Row(
+                          children: [
+                            Expanded(
+                              child: _StatCard(
+                                title: 'Total Hours',
+                                value: '0h',
+                                isDark: isDark,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _StatCard(
+                                title: 'Active Projects',
+                                value: '0',
+                                isDark: isDark,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _StatCard(
+                                title: 'Today Hours',
+                                value: '0h',
+                                isDark: isDark,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _StatCard(
+                                title: 'Tasks Created',
+                                value: '0',
+                                isDark: isDark,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-            // Statistics Row - Wired to real data
-            ref
-                .watch(weekProjectSummaryProvider)
-                .when(
-                  data: (summary) {
-                    final totalHours = summary.fold<double>(
-                      0.0,
-                      (sum, item) => sum + item.totalHours,
-                    );
-                    final liveTotalHours = LiveHoursOverlay.withLiveOverlay(
-                      persistedHours: totalHours,
-                      isTimerRunning: timerState.isRunning,
-                      elapsedSeconds: timerState.elapsedSeconds,
-                      timerStartTime: timerState.startTime,
-                      timerProjectId: timerState.projectId,
-                      scope: LiveHoursScope.week,
-                    );
-
-                    final liveTodayHours = todayHoursAsync
-                        .whenData(
-                          (hours) => LiveHoursOverlay.withLiveOverlay(
-                            persistedHours: hours,
-                            isTimerRunning: timerState.isRunning,
-                            elapsedSeconds: timerState.elapsedSeconds,
-                            timerStartTime: timerState.startTime,
-                            timerProjectId: timerState.projectId,
-                            scope: LiveHoursScope.today,
+                  const SizedBox(height: 32),
+                  Text('Category Breakdown', style: AppTextStyles.heading2),
+                  const SizedBox(height: 16),
+                  ref
+                      .watch(
+                        categorySummaryProvider(
+                          CsvExportParams(
+                            period: _selectedReportPeriod,
+                            projectId: _selectedExportProjectId == 'all'
+                                ? null
+                                : _selectedExportProjectId,
+                            categoryId: _selectedReportCategoryId == 'all'
+                                ? null
+                                : _selectedReportCategoryId,
                           ),
-                        )
-                        .value;
+                        ),
+                      )
+                      .when(
+                        data: (summary) {
+                          if (summary.isEmpty) {
+                            return AppCard(
+                              padding: const EdgeInsets.all(16),
+                              child: Text(
+                                'No category data for selected filters',
+                                style: AppTextStyles.bodyMedium,
+                              ),
+                            );
+                          }
 
-                    return ref
+                          return AppCard(
+                            padding: const EdgeInsets.all(16),
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: DataTable(
+                                columns: const [
+                                  DataColumn(label: Text('Category')),
+                                  DataColumn(label: Text('Task Count')),
+                                  DataColumn(label: Text('Sessions')),
+                                  DataColumn(label: Text('Hours')),
+                                ],
+                                rows: summary
+                                    .map(
+                                      (row) => DataRow(
+                                        cells: [
+                                          DataCell(Text(row.categoryName)),
+                                          DataCell(Text('${row.taskCount}')),
+                                          DataCell(Text('${row.sessionCount}')),
+                                          DataCell(
+                                            Text(
+                                              '${row.totalHours.toStringAsFixed(2)}h',
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
+                            ),
+                          );
+                        },
+                        loading: () =>
+                            const Center(child: CircularProgressIndicator()),
+                        error: (_, __) => AppCard(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            'Error loading category report',
+                            style: AppTextStyles.bodyMedium,
+                          ),
+                        ),
+                      ),
+                  const SizedBox(height: 24),
+                  // Project Summary Table - Wired to real data
+                  Text('Project Breakdown', style: AppTextStyles.heading2),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: projectTableHeight,
+                    child: ref
                         .watch(projectsProvider)
                         .when(
                           data: (projects) {
-                            return Row(
-                              children: [
-                                Expanded(
-                                  child: _StatCard(
-                                    title: 'Total Hours',
-                                    value:
-                                        '${liveTotalHours.toStringAsFixed(1)}h',
-                                    isDark: isDark,
+                            if (projects.isEmpty) {
+                              return AppCard(
+                                padding: const EdgeInsets.all(24),
+                                child: Center(
+                                  child: Text(
+                                    'No projects yet',
+                                    style: AppTextStyles.bodyMedium,
                                   ),
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: _StatCard(
-                                    title: 'Today Hours',
-                                    value: liveTodayHours != null
-                                        ? '${liveTodayHours.toStringAsFixed(1)}h'
-                                        : '-',
-                                    isDark: isDark,
-                                  ),
+                              );
+                            }
+
+                            return AppCard(
+                              padding: const EdgeInsets.all(24),
+                              child: SingleChildScrollView(
+                                child: DataTable(
+                                  columns: const [
+                                    DataColumn(label: Text('Project')),
+                                    DataColumn(label: Text('Tasks')),
+                                    DataColumn(label: Text('Hours')),
+                                    DataColumn(label: Text('Status')),
+                                  ],
+                                  rows: projects.map((project) {
+                                    final tasksAsync = ref.watch(
+                                      tasksByProjectProvider(project.id),
+                                    );
+                                    final hoursAsync = ref.watch(
+                                      projectTotalHoursProvider(project.id),
+                                    );
+
+                                    final taskCount =
+                                        tasksAsync
+                                            .whenData((tasks) => tasks.length)
+                                            .value ??
+                                        0;
+                                    final hours =
+                                        hoursAsync
+                                            .whenData(
+                                              (h) => h.toStringAsFixed(1),
+                                            )
+                                            .value ??
+                                        '-';
+
+                                    return _buildDataRow(
+                                      project.name,
+                                      '$taskCount',
+                                      '${hours}h',
+                                      'Active',
+                                    );
+                                  }).toList(),
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: _StatCard(
-                                    title: 'Active Projects',
-                                    value: '${projects.length}',
-                                    isDark: isDark,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: _StatCard(
-                                    title: 'Tasks Created',
-                                    value:
-                                        ref
-                                            .watch(projectsProvider)
-                                            .whenData((p) {
-                                              int count = 0;
-                                              for (var project in p) {
-                                                ref
-                                                    .watch(
-                                                      tasksByProjectProvider(
-                                                        project.id,
-                                                      ),
-                                                    )
-                                                    .whenData((tasks) {
-                                                      count += tasks.length;
-                                                    });
-                                              }
-                                              return count.toString();
-                                            })
-                                            .value
-                                            ?.toString() ??
-                                        '-',
-                                    isDark: isDark,
-                                  ),
-                                ),
-                              ],
+                              ),
                             );
                           },
-                          loading: () => Row(
-                            children: [
-                              Expanded(
-                                child: _StatCard(
-                                  title: 'Total Hours',
-                                  value: '-',
-                                  isDark: isDark,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _StatCard(
-                                  title: 'Active Projects',
-                                  value: '-',
-                                  isDark: isDark,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _StatCard(
-                                  title: 'Today Hours',
-                                  value: '-',
-                                  isDark: isDark,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _StatCard(
-                                  title: 'Tasks Created',
-                                  value: '-',
-                                  isDark: isDark,
-                                ),
-                              ),
-                            ],
-                          ),
-                          error: (_, __) => Row(
-                            children: [
-                              Expanded(
-                                child: _StatCard(
-                                  title: 'Total Hours',
-                                  value: '0h',
-                                  isDark: isDark,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _StatCard(
-                                  title: 'Active Projects',
-                                  value: '0',
-                                  isDark: isDark,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _StatCard(
-                                  title: 'Today Hours',
-                                  value: '0h',
-                                  isDark: isDark,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _StatCard(
-                                  title: 'Tasks Created',
-                                  value: '0',
-                                  isDark: isDark,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                  },
-                  loading: () => Row(
-                    children: [
-                      Expanded(
-                        child: _StatCard(
-                          title: 'Total Hours',
-                          value: '-',
-                          isDark: isDark,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _StatCard(
-                          title: 'Active Projects',
-                          value: '-',
-                          isDark: isDark,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _StatCard(
-                          title: 'Today Hours',
-                          value: '-',
-                          isDark: isDark,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _StatCard(
-                          title: 'Tasks Created',
-                          value: '-',
-                          isDark: isDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                  error: (_, __) => Row(
-                    children: [
-                      Expanded(
-                        child: _StatCard(
-                          title: 'Total Hours',
-                          value: '0h',
-                          isDark: isDark,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _StatCard(
-                          title: 'Active Projects',
-                          value: '0',
-                          isDark: isDark,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _StatCard(
-                          title: 'Today Hours',
-                          value: '0h',
-                          isDark: isDark,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _StatCard(
-                          title: 'Tasks Created',
-                          value: '0',
-                          isDark: isDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            const SizedBox(height: 32),
-            Text('Category Breakdown', style: AppTextStyles.heading2),
-            const SizedBox(height: 16),
-            ref
-                .watch(
-                  categorySummaryProvider(
-                    CsvExportParams(
-                      period: _selectedReportPeriod,
-                      projectId: _selectedExportProjectId == 'all'
-                          ? null
-                          : _selectedExportProjectId,
-                      categoryId: _selectedReportCategoryId == 'all'
-                          ? null
-                          : _selectedReportCategoryId,
-                    ),
-                  ),
-                )
-                .when(
-                  data: (summary) {
-                    if (summary.isEmpty) {
-                      return AppCard(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(
-                          'No category data for selected filters',
-                          style: AppTextStyles.bodyMedium,
-                        ),
-                      );
-                    }
-
-                    return AppCard(
-                      padding: const EdgeInsets.all(16),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                          columns: const [
-                            DataColumn(label: Text('Category')),
-                            DataColumn(label: Text('Task Count')),
-                            DataColumn(label: Text('Sessions')),
-                            DataColumn(label: Text('Hours')),
-                          ],
-                          rows: summary
-                              .map(
-                                (row) => DataRow(
-                                  cells: [
-                                    DataCell(Text(row.categoryName)),
-                                    DataCell(Text('${row.taskCount}')),
-                                    DataCell(Text('${row.sessionCount}')),
-                                    DataCell(
-                                      Text(
-                                        '${row.totalHours.toStringAsFixed(2)}h',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ),
-                    );
-                  },
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (_, __) => AppCard(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'Error loading category report',
-                      style: AppTextStyles.bodyMedium,
-                    ),
-                  ),
-                ),
-            const SizedBox(height: 24),
-            // Project Summary Table - Wired to real data
-            Text('Project Breakdown', style: AppTextStyles.heading2),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ref
-                  .watch(projectsProvider)
-                  .when(
-                    data: (projects) {
-                      if (projects.isEmpty) {
-                        return AppCard(
-                          padding: const EdgeInsets.all(24),
-                          child: Center(
-                            child: Text(
-                              'No projects yet',
-                              style: AppTextStyles.bodyMedium,
+                          loading: () => AppCard(
+                            padding: const EdgeInsets.all(24),
+                            child: const Center(
+                              child: CircularProgressIndicator(),
                             ),
                           ),
-                        );
-                      }
-
-                      return AppCard(
-                        padding: const EdgeInsets.all(24),
-                        child: SingleChildScrollView(
-                          child: DataTable(
-                            columns: const [
-                              DataColumn(label: Text('Project')),
-                              DataColumn(label: Text('Tasks')),
-                              DataColumn(label: Text('Hours')),
-                              DataColumn(label: Text('Status')),
-                            ],
-                            rows: projects.map((project) {
-                              final tasksAsync = ref.watch(
-                                tasksByProjectProvider(project.id),
-                              );
-                              final hoursAsync = ref.watch(
-                                projectTotalHoursProvider(project.id),
-                              );
-
-                              final taskCount =
-                                  tasksAsync
-                                      .whenData((tasks) => tasks.length)
-                                      .value ??
-                                  0;
-                              final hours =
-                                  hoursAsync
-                                      .whenData((h) => h.toStringAsFixed(1))
-                                      .value ??
-                                  '-';
-
-                              return _buildDataRow(
-                                project.name,
-                                '$taskCount',
-                                '${hours}h',
-                                'Active',
-                              );
-                            }).toList(),
+                          error: (_, __) => AppCard(
+                            padding: const EdgeInsets.all(24),
+                            child: Center(
+                              child: Text(
+                                'Error loading data',
+                                style: AppTextStyles.bodyMedium,
+                              ),
+                            ),
                           ),
                         ),
-                      );
-                    },
-                    loading: () => AppCard(
-                      padding: const EdgeInsets.all(24),
-                      child: const Center(child: CircularProgressIndicator()),
-                    ),
-                    error: (_, __) => AppCard(
-                      padding: const EdgeInsets.all(24),
-                      child: Center(
-                        child: Text(
-                          'Error loading data',
-                          style: AppTextStyles.bodyMedium,
-                        ),
-                      ),
-                    ),
                   ),
-            ),
-            const SizedBox(height: 24),
-            // Export Section
-            Row(
-              children: [
-                Expanded(
-                  child: AppCard(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Export Data', style: AppTextStyles.heading2),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Download your time tracking data as CSV',
-                          style: AppTextStyles.bodySmall,
-                        ),
-                        const SizedBox(height: 16),
-                        ref
-                            .watch(projectsProvider)
-                            .when(
-                              data: (projects) {
-                                return DropdownButtonFormField<String>(
-                                  initialValue: _selectedExportProjectId,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Export Scope',
+                  const SizedBox(height: 24),
+                  // Export Section
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppCard(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Export Data',
+                                style: AppTextStyles.heading2,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Download your time tracking data as CSV',
+                                style: AppTextStyles.bodySmall,
+                              ),
+                              const SizedBox(height: 16),
+                              ref
+                                  .watch(projectsProvider)
+                                  .when(
+                                    data: (projects) {
+                                      return DropdownButtonFormField<String>(
+                                        initialValue: _selectedExportProjectId,
+                                        decoration: const InputDecoration(
+                                          labelText: 'Export Scope',
+                                        ),
+                                        items: [
+                                          const DropdownMenuItem<String>(
+                                            value: 'all',
+                                            child: Text('All Projects'),
+                                          ),
+                                          ...projects.map(
+                                            (project) =>
+                                                DropdownMenuItem<String>(
+                                                  value: project.id,
+                                                  child: Text(project.name),
+                                                ),
+                                          ),
+                                        ],
+                                        onChanged: (value) {
+                                          if (value == null) return;
+                                          setState(() {
+                                            _selectedExportProjectId = value;
+                                          });
+                                        },
+                                      );
+                                    },
+                                    loading: () => const SizedBox.shrink(),
+                                    error: (_, __) => const SizedBox.shrink(),
                                   ),
-                                  items: [
-                                    const DropdownMenuItem<String>(
-                                      value: 'all',
-                                      child: Text('All Projects'),
-                                    ),
-                                    ...projects.map(
-                                      (project) => DropdownMenuItem<String>(
-                                        value: project.id,
-                                        child: Text(project.name),
-                                      ),
-                                    ),
-                                  ],
-                                  onChanged: (value) {
-                                    if (value == null) return;
+                              const SizedBox(height: 12),
+                              AppButton.primary(
+                                label: 'Download CSV',
+                                onPressed: () async {
+                                  try {
+                                    final savedPath = await ref.read(
+                                      csvExportFileProvider(
+                                        CsvExportParams(
+                                          period: _selectedReportPeriod,
+                                          projectId:
+                                              _selectedExportProjectId == 'all'
+                                              ? null
+                                              : _selectedExportProjectId,
+                                          categoryId:
+                                              _selectedReportCategoryId == 'all'
+                                              ? null
+                                              : _selectedReportCategoryId,
+                                        ),
+                                      ).future,
+                                    );
                                     setState(() {
-                                      _selectedExportProjectId = value;
+                                      _lastExportedCsvPath = savedPath;
                                     });
-                                  },
-                                );
-                              },
-                              loading: () => const SizedBox.shrink(),
-                              error: (_, __) => const SizedBox.shrink(),
-                            ),
-                        const SizedBox(height: 12),
-                        AppButton.primary(
-                          label: 'Download CSV',
-                          onPressed: () async {
-                            try {
-                              final savedPath = await ref.read(
-                                csvExportFileProvider(
-                                  CsvExportParams(
-                                    period: _selectedReportPeriod,
-                                    projectId: _selectedExportProjectId == 'all'
-                                        ? null
-                                        : _selectedExportProjectId,
-                                    categoryId:
-                                        _selectedReportCategoryId == 'all'
-                                        ? null
-                                        : _selectedReportCategoryId,
-                                  ),
-                                ).future,
-                              );
-                              setState(() {
-                                _lastExportedCsvPath = savedPath;
-                              });
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'CSV exported to: $savedPath',
-                                    ),
-                                    duration: Duration(seconds: 3),
-                                  ),
-                                );
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Error: ${e.toString()}'),
-                                    duration: Duration(seconds: 3),
-                                  ),
-                                );
-                              }
-                            }
-                          },
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'CSV exported to: $savedPath',
+                                          ),
+                                          duration: Duration(seconds: 3),
+                                        ),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Error: ${e.toString()}',
+                                          ),
+                                          duration: Duration(seconds: 3),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                              ),
+                              const SizedBox(height: 12),
+                              AppButton.secondary(
+                                label: 'Open Export Folder',
+                                isEnabled: _lastExportedCsvPath != null,
+                                onPressed: _lastExportedCsvPath == null
+                                    ? null
+                                    : () => _openExportFolder(context),
+                              ),
+                              const SizedBox(height: 12),
+                              SelectableText(
+                                _lastExportedCsvPath == null
+                                    ? 'Last export location: Not exported yet'
+                                    : 'Last export location: $_lastExportedCsvPath',
+                                style: AppTextStyles.bodySmall,
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 12),
-                        AppButton.secondary(
-                          label: 'Open Export Folder',
-                          isEnabled: _lastExportedCsvPath != null,
-                          onPressed: _lastExportedCsvPath == null
-                              ? null
-                              : () => _openExportFolder(context),
-                        ),
-                        const SizedBox(height: 12),
-                        SelectableText(
-                          _lastExportedCsvPath == null
-                              ? 'Last export location: Not exported yet'
-                              : 'Last export location: $_lastExportedCsvPath',
-                          style: AppTextStyles.bodySmall,
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

@@ -59,11 +59,11 @@ void main() {
 
       // Fill title
       await tester.tap(find.byType(TextFormField).at(0));
-      await tester.typeText(find.byType(TextFormField).at(0), 'New Task');
+      await tester.enterText(find.byType(TextFormField).at(0), 'New Task');
 
       // Fill description
       await tester.tap(find.byType(TextFormField).at(1));
-      await tester.typeText(
+      await tester.enterText(
         find.byType(TextFormField).at(1),
         'Task description',
       );
@@ -99,7 +99,7 @@ void main() {
 
       // Enter single character (too short)
       await tester.tap(find.byType(TextFormField).at(0));
-      await tester.typeText(find.byType(TextFormField).at(0), 'A');
+      await tester.enterText(find.byType(TextFormField).at(0), 'A');
 
       // Try to save
       await tester.tap(find.text('Save'));
@@ -117,20 +117,10 @@ void main() {
 
       // Fill title
       await tester.tap(find.byType(TextFormField).at(0));
-      await tester.typeText(find.byType(TextFormField).at(0), 'Task');
+      await tester.enterText(find.byType(TextFormField).at(0), 'Task');
 
       // Click priority dropdown
-      final priorityDropdown = find
-          .byType(DropdownButtonFormField)
-          .evaluate()
-          .toList()
-          .where((w) {
-            final widget = w.widget;
-            return widget is DropdownButtonFormField &&
-                widget.items?.any((item) => item.value == 'high') == true;
-          });
-
-      if (priorityDropdown.isNotEmpty) {
+      if (find.byType(DropdownButton).evaluate().isNotEmpty) {
         await tester.tap(find.byType(DropdownButton).first);
         await tester.pumpAndSettle();
         await tester.tap(find.text('High').last);
@@ -150,7 +140,7 @@ void main() {
 
       // Fill title
       await tester.tap(find.byType(TextFormField).at(0));
-      await tester.typeText(find.byType(TextFormField).at(0), 'Task');
+      await tester.enterText(find.byType(TextFormField).at(0), 'Task');
 
       // Click status dropdown and select "in_progress"
       final statusDropdown = find.byType(DropdownButtonFormField).last;
@@ -173,7 +163,7 @@ void main() {
 
       // Fill title
       await tester.tap(find.byType(TextFormField).at(0));
-      await tester.typeText(find.byType(TextFormField).at(0), 'Task');
+      await tester.enterText(find.byType(TextFormField).at(0), 'Task');
 
       // Tap due date field
       await tester.tap(find.text('Due Date'));
@@ -196,11 +186,10 @@ void main() {
 
       // Enter title
       await tester.tap(find.byType(TextFormField).at(0));
-      await tester.typeText(find.byType(TextFormField).at(0), 'Task');
+      await tester.enterText(find.byType(TextFormField).at(0), 'Task');
 
       // Clear it
-      await tester.triple_tap(find.byType(TextFormField).at(0));
-      await tester.typeText(find.byType(TextFormField).at(0), '');
+      await tester.enterText(find.byType(TextFormField).at(0), '');
 
       // Try save
       await tester.tap(find.text('Save'));
@@ -214,14 +203,14 @@ void main() {
 
       // Enter title with whitespace
       await tester.tap(find.byType(TextFormField).at(0));
-      await tester.typeText(
+      await tester.enterText(
         find.byType(TextFormField).at(0),
         '  Trimmed Task  ',
       );
 
       // Enter description with whitespace
       await tester.tap(find.byType(TextFormField).at(1));
-      await tester.typeText(
+      await tester.enterText(
         find.byType(TextFormField).at(1),
         '  Trimmed desc  ',
       );
@@ -240,7 +229,7 @@ void main() {
 
       // Enter data
       await tester.tap(find.byType(TextFormField).at(0));
-      await tester.typeText(find.byType(TextFormField).at(0), 'Task');
+      await tester.enterText(find.byType(TextFormField).at(0), 'Task');
 
       // Tap Cancel
       await tester.tap(find.text('Cancel'));
@@ -330,13 +319,11 @@ void main() {
 
       // Clear and update title
       final titleField = find.byType(TextFormField).at(0);
-      await tester.triple_tap(titleField);
-      await tester.typeText(titleField, 'Updated Title');
+      await tester.enterText(titleField, 'Updated Title');
 
       // Clear and update description
       final descField = find.byType(TextFormField).at(1);
-      await tester.triple_tap(descField);
-      await tester.typeText(descField, 'Updated Description');
+      await tester.enterText(descField, 'Updated Description');
 
       // Save
       await tester.tap(find.text('Save'));
@@ -397,8 +384,7 @@ void main() {
 
       // Clear title to empty
       final titleField = find.byType(TextFormField).at(0);
-      await tester.triple_tap(titleField);
-      await tester.typeText(titleField, '');
+      await tester.enterText(titleField, '');
 
       // Try to save
       await tester.tap(find.text('Save'));
@@ -479,7 +465,7 @@ void main() {
           'issues if not handled properly in the form fields';
 
       await tester.tap(find.byType(TextFormField).at(0));
-      await tester.typeText(find.byType(TextFormField).at(0), longText);
+      await tester.enterText(find.byType(TextFormField).at(0), longText);
 
       await tester.pumpAndSettle();
 
@@ -506,7 +492,7 @@ void main() {
       );
 
       await tester.tap(find.byType(TextFormField).at(0));
-      await tester.typeText(
+      await tester.enterText(
         find.byType(TextFormField).at(0),
         'Task with @mention, #tags, & special chars!',
       );
@@ -538,7 +524,7 @@ void main() {
       );
 
       await tester.tap(find.byType(TextFormField).at(0));
-      await tester.typeText(find.byType(TextFormField).at(0), '    ');
+      await tester.enterText(find.byType(TextFormField).at(0), '    ');
 
       await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
