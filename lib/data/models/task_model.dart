@@ -7,6 +7,7 @@ import 'package:project_tracker/core/utils/timezone_helper.dart';
 class TaskModel {
   final String id;
   final String projectId;
+  final String? categoryId;
   final String taskName;
   final String description;
   final String status;
@@ -20,6 +21,7 @@ class TaskModel {
   TaskModel({
     required this.id,
     required this.projectId,
+    this.categoryId,
     required this.taskName,
     required this.description,
     required this.status,
@@ -36,6 +38,7 @@ class TaskModel {
     return TaskModel(
       id: data.id,
       projectId: data.projectId,
+      categoryId: data.categoryId,
       taskName: data.taskName,
       description: data.description ?? '',
       status: data.status,
@@ -53,6 +56,7 @@ class TaskModel {
     return TaskData(
       id: id,
       projectId: projectId,
+      categoryId: categoryId,
       taskName: taskName,
       description: description,
       status: status,

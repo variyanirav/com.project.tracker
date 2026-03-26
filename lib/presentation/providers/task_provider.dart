@@ -72,6 +72,7 @@ final createTaskProvider = FutureProvider.family<void, CreateTaskParams>((
 
   await repository.createTask(
     projectId: params.projectId,
+    categoryId: params.categoryId,
     taskName: params.taskName,
     description: params.description,
   );
@@ -91,6 +92,7 @@ final updateTaskProvider = FutureProvider.family<void, UpdateTaskParams>((
   final updatedTask = TaskEntity(
     id: params.id,
     projectId: params.projectId,
+    categoryId: params.categoryId,
     taskName: params.taskName,
     description: params.description,
     status: params.status,
@@ -176,11 +178,13 @@ final taskCountProvider = FutureProvider<int>((ref) async {
 /// Parameters for creating a task
 class CreateTaskParams {
   final String projectId;
+  final String? categoryId;
   final String taskName;
   final String? description;
 
   CreateTaskParams({
     required this.projectId,
+    this.categoryId,
     required this.taskName,
     this.description,
   });
@@ -190,6 +194,7 @@ class CreateTaskParams {
 class UpdateTaskParams {
   final String id;
   final String projectId;
+  final String? categoryId;
   final String taskName;
   final String? description;
   final String status;
@@ -202,6 +207,7 @@ class UpdateTaskParams {
   UpdateTaskParams({
     required this.id,
     required this.projectId,
+    this.categoryId,
     required this.taskName,
     this.description,
     required this.status,

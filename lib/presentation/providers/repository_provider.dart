@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_tracker/data/repositories/repositories.dart';
+import 'package:project_tracker/domain/repositories/icategory_repository.dart';
 import 'package:project_tracker/domain/repositories/iproject_repository.dart';
 import 'package:project_tracker/domain/repositories/itask_repository.dart';
 import 'package:project_tracker/domain/repositories/itimer_session_repository.dart';
@@ -10,6 +11,12 @@ import 'database_provider.dart';
 final projectRepositoryProvider = Provider<IProjectRepository>((ref) {
   final db = ref.watch(databaseProvider);
   return ProjectRepositoryImpl(db);
+});
+
+/// Provides the category repository implementation
+final categoryRepositoryProvider = Provider<ICategoryRepository>((ref) {
+  final db = ref.watch(databaseProvider);
+  return CategoryRepositoryImpl(db);
 });
 
 /// Provides the task repository implementation

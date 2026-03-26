@@ -14,6 +14,7 @@ import '../routes/app_router.dart';
 import '../providers/project_provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/reports_provider.dart';
+import '../providers/category_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/timer_provider.dart';
 import '../providers/repository_provider.dart';
@@ -32,6 +33,7 @@ class ReportsScreen extends ConsumerStatefulWidget {
 
 class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   String selectedPeriod = 'This Week';
+  String _selectedReportCategoryId = 'all';
   String _selectedExportProjectId = 'all';
   String? _lastExportedCsvPath;
 
@@ -155,24 +157,53 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             ),
             const SizedBox(height: 32),
             // Period Selector
-            SizedBox(
-              height: 40,
-              child: Row(
-                children: ['This Week', 'Last Week', 'This Month'].map((
-                  period,
-                ) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12.0),
-                    child: FilterChip(
-                      label: Text(period),
-                      selected: selectedPeriod == period,
-                      onSelected: (selected) {
-                        setState(() => selectedPeriod = period);
-                      },
-                    ),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                ...['This Week', 'Last Week', 'This Month'].map((period) {
+                  return FilterChip(
+                    label: Text(period),
+                    selected: selectedPeriod == period,
+                    onSelected: (selected) {
+                      setState(() => selectedPeriod = period);
+                    },
                   );
-                }).toList(),
-              ),
+                }),
+                SizedBox(
+                  width: 260,
+                  child: ref
+                      .watch(categoriesProvider)
+                      .when(
+                        data: (categories) => DropdownButtonFormField<String>(
+                          initialValue: _selectedReportCategoryId,
+                          decoration: const InputDecoration(
+                            labelText: 'Category Filter',
+                          ),
+                          items: [
+                            const DropdownMenuItem<String>(
+                              value: 'all',
+                              child: Text('All Categories'),
+                            ),
+                            ...categories.map(
+                              (category) => DropdownMenuItem<String>(
+                                value: category.id,
+                                child: Text(category.name),
+                              ),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            if (value == null) return;
+                            setState(() => _selectedReportCategoryId = value);
+                          },
+                        ),
+                        loading: () =>
+                            const LinearProgressIndicator(minHeight: 2),
+                        error: (_, __) => const SizedBox.shrink(),
+                      ),
+                ),
+              ],
             ),
             const SizedBox(height: 32),
             // Statistics Row - Wired to real data
@@ -413,6 +444,76 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   ),
                 ),
             const SizedBox(height: 32),
+            Text('Category Breakdown', style: AppTextStyles.heading2),
+            const SizedBox(height: 16),
+            ref
+                .watch(
+                  categorySummaryProvider(
+                    CsvExportParams(
+                      period: _selectedReportPeriod,
+                      projectId: _selectedExportProjectId == 'all'
+                          ? null
+                          : _selectedExportProjectId,
+                      categoryId: _selectedReportCategoryId == 'all'
+                          ? null
+                          : _selectedReportCategoryId,
+                    ),
+                  ),
+                )
+                .when(
+                  data: (summary) {
+                    if (summary.isEmpty) {
+                      return AppCard(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          'No category data for selected filters',
+                          style: AppTextStyles.bodyMedium,
+                        ),
+                      );
+                    }
+
+                    return AppCard(
+                      padding: const EdgeInsets.all(16),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: DataTable(
+                          columns: const [
+                            DataColumn(label: Text('Category')),
+                            DataColumn(label: Text('Task Count')),
+                            DataColumn(label: Text('Sessions')),
+                            DataColumn(label: Text('Hours')),
+                          ],
+                          rows: summary
+                              .map(
+                                (row) => DataRow(
+                                  cells: [
+                                    DataCell(Text(row.categoryName)),
+                                    DataCell(Text('${row.taskCount}')),
+                                    DataCell(Text('${row.sessionCount}')),
+                                    DataCell(
+                                      Text(
+                                        '${row.totalHours.toStringAsFixed(2)}h',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ),
+                    );
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (_, __) => AppCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Error loading category report',
+                      style: AppTextStyles.bodyMedium,
+                    ),
+                  ),
+                ),
+            const SizedBox(height: 24),
             // Project Summary Table - Wired to real data
             Text('Project Breakdown', style: AppTextStyles.heading2),
             const SizedBox(height: 16),
@@ -549,6 +650,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                     projectId: _selectedExportProjectId == 'all'
                                         ? null
                                         : _selectedExportProjectId,
+                                    categoryId:
+                                        _selectedReportCategoryId == 'all'
+                                        ? null
+                                        : _selectedReportCategoryId,
                                   ),
                                 ).future,
                               );

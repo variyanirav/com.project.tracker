@@ -23,6 +23,7 @@ abstract class ITaskRepository {
   /// Create new task
   Future<TaskEntity> createTask({
     required String projectId,
+    String? categoryId,
     required String taskName,
     required String? description,
   });

@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:project_tracker/data/database/app_database.dart';
 import '../../../core/constants/task_status.dart';
 import '../../../core/theme/text_styles.dart';
+import '../../providers/category_provider.dart';
 
 /// Edit Task Dialog
 /// Opens as a modal dialog to edit an existing task
-class EditTaskDialog extends StatefulWidget {
+class EditTaskDialog extends ConsumerStatefulWidget {
   final String taskId;
+  final String? initialCategoryId;
   final String initialTitle;
   final String initialDescription;
   final TaskStatus initialStatus;
   final Function(
     String taskId,
+    String categoryId,
     String title,
     String description,
     TaskStatus status,
@@ -20,6 +25,7 @@ class EditTaskDialog extends StatefulWidget {
   const EditTaskDialog({
     super.key,
     required this.taskId,
+    this.initialCategoryId,
     required this.initialTitle,
     required this.initialDescription,
     required this.initialStatus,
@@ -27,13 +33,14 @@ class EditTaskDialog extends StatefulWidget {
   });
 
   @override
-  State<EditTaskDialog> createState() => _EditTaskDialogState();
+  ConsumerState<EditTaskDialog> createState() => _EditTaskDialogState();
 }
 
-class _EditTaskDialogState extends State<EditTaskDialog> {
+class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
   late TaskStatus _selectedStatus;
+  late String _selectedCategoryId;
   String? _titleError;
 
   @override
@@ -44,6 +51,8 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
       text: widget.initialDescription,
     );
     _selectedStatus = widget.initialStatus;
+    _selectedCategoryId =
+        widget.initialCategoryId ?? AppDatabase.uncategorizedCategoryId;
   }
 
   @override
@@ -68,6 +77,7 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
 
     widget.onSavePressed(
       widget.taskId,
+      _selectedCategoryId,
       _titleController.text.trim(),
       _descriptionController.text.trim(),
       _selectedStatus,
@@ -150,6 +160,74 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Category Dropdown
+              Text('Category', style: AppTextStyles.labelMedium),
+              const SizedBox(height: 8),
+              ref
+                  .watch(categoriesProvider)
+                  .when(
+                    data: (categories) {
+                      final selectedExists = categories.any(
+                        (c) => c.id == _selectedCategoryId,
+                      );
+                      if (!selectedExists && categories.isNotEmpty) {
+                        _selectedCategoryId = categories.first.id;
+                      }
+
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.grey[700]!
+                                : Colors.grey[300]!,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: DropdownButton<String>(
+                          value: _selectedCategoryId,
+                          isExpanded: true,
+                          underline: const SizedBox(),
+                          items: categories
+                              .map(
+                                (category) => DropdownMenuItem<String>(
+                                  value: category.id,
+                                  child: Text(category.name),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (categoryId) {
+                            if (categoryId == null) return;
+                            setState(() => _selectedCategoryId = categoryId);
+                          },
+                        ),
+                      );
+                    },
+                    loading: () => const LinearProgressIndicator(minHeight: 2),
+                    error: (_, __) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButton<String>(
+                        value: AppDatabase.uncategorizedCategoryId,
+                        isExpanded: true,
+                        underline: const SizedBox(),
+                        items: const [
+                          DropdownMenuItem<String>(
+                            value: AppDatabase.uncategorizedCategoryId,
+                            child: Text('Uncategorized'),
+                          ),
+                        ],
+                        onChanged: (_) {},
+                      ),
+                    ),
+                  ),
               const SizedBox(height: 16),
 
               // Status Dropdown

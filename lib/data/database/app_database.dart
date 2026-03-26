@@ -6,6 +6,7 @@ import 'dart:io';
 
 import 'tables/projects_table.dart';
 import 'tables/tasks_table.dart';
+import 'tables/categories_table.dart';
 import 'tables/timer_sessions_table.dart';
 import 'tables/app_settings_table.dart';
 import 'tables/todo_items_table.dart';
@@ -14,25 +15,30 @@ part 'app_database.g.dart';
 
 /// App Database
 /// Main Drift database class that manages all tables and migrations
-@DriftDatabase(tables: [Projects, Tasks, TimerSessions, AppSettings, TodoItems])
+@DriftDatabase(
+  tables: [Projects, Categories, Tasks, TimerSessions, AppSettings, TodoItems],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   // Getters for DAOs (optional, for convenience)
   late final projectsDao = ProjectsDao(this);
+  late final categoriesDao = CategoriesDao(this);
   late final tasksDao = TasksDao(this);
   late final timerSessionsDao = TimerSessionsDao(this);
 
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
-      onCreate: (Migrator m) {
-        return m.createAll();
+      onCreate: (Migrator m) async {
+        await m.createAll();
+        await _seedDefaultCategories();
+        await _backfillTaskCategories();
       },
       onUpgrade: (Migrator m, int from, int to) async {
         if (from < 2) {
@@ -41,7 +47,75 @@ class AppDatabase extends _$AppDatabase {
         if (from < 3) {
           await normalizeLegacyTaskStatuses();
         }
+        if (from < 4) {
+          await m.createTable(categories);
+          await m.addColumn(tasks, tasks.categoryId);
+          await _seedDefaultCategories();
+          await _backfillTaskCategories();
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_tasks_category_id ON tasks(category_id)',
+          );
+        }
       },
+    );
+  }
+
+  static const String uncategorizedCategoryId = 'cat_uncategorized';
+  static const String learningCategoryId = 'cat_learning';
+  static const String developmentCategoryId = 'cat_development';
+  static const String researchCategoryId = 'cat_research';
+
+  Future<void> _seedDefaultCategories() async {
+    final now = DateTime.now().toUtc();
+
+    final defaults = <CategoryData>[
+      CategoryData(
+        id: uncategorizedCategoryId,
+        name: 'Uncategorized',
+        colorHex: '#9E9E9E',
+        createdAt: now,
+        updatedAt: now,
+      ),
+      CategoryData(
+        id: learningCategoryId,
+        name: 'Learning',
+        colorHex: '#3B82F6',
+        createdAt: now,
+        updatedAt: now,
+      ),
+      CategoryData(
+        id: developmentCategoryId,
+        name: 'Development',
+        colorHex: '#10B981',
+        createdAt: now,
+        updatedAt: now,
+      ),
+      CategoryData(
+        id: researchCategoryId,
+        name: 'Research',
+        colorHex: '#F59E0B',
+        createdAt: now,
+        updatedAt: now,
+      ),
+    ];
+
+    for (final category in defaults) {
+      await into(categories).insertOnConflictUpdate(category);
+    }
+  }
+
+  Future<void> _backfillTaskCategories() async {
+    await customStatement(
+      "UPDATE tasks SET category_id = '$learningCategoryId' WHERE category_id IS NULL AND lower(trim(task_name)) LIKE 'learning%';",
+    );
+    await customStatement(
+      "UPDATE tasks SET category_id = '$developmentCategoryId' WHERE category_id IS NULL AND lower(trim(task_name)) LIKE 'development%';",
+    );
+    await customStatement(
+      "UPDATE tasks SET category_id = '$researchCategoryId' WHERE category_id IS NULL AND lower(trim(task_name)) LIKE 'research%';",
+    );
+    await customStatement(
+      "UPDATE tasks SET category_id = '$uncategorizedCategoryId' WHERE category_id IS NULL;",
     );
   }
 
@@ -105,6 +179,35 @@ class ProjectsDao {
   /// Delete project (cascade deletes tasks and sessions)
   Future<int> deleteProject(String id) {
     return (db.delete(db.projects)..where((t) => t.id.equals(id))).go();
+  }
+}
+
+class CategoriesDao {
+  final AppDatabase db;
+  CategoriesDao(this.db);
+
+  Future<List<CategoryData>> getAllCategories() {
+    return (db.select(
+      db.categories,
+    )..orderBy([(t) => OrderingTerm(expression: t.name)])).get();
+  }
+
+  Future<CategoryData?> getCategoryById(String id) {
+    return (db.select(
+      db.categories,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+
+  Future<void> createCategory(CategoryData category) {
+    return db.into(db.categories).insert(category);
+  }
+
+  Future<bool> updateCategory(CategoryData category) {
+    return db.update(db.categories).replace(category);
+  }
+
+  Future<int> deleteCategory(String id) {
+    return (db.delete(db.categories)..where((t) => t.id.equals(id))).go();
   }
 }
 

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:project_tracker/data/database/app_database.dart';
 import 'package:project_tracker/domain/entities/timer_session_entity.dart';
 import 'package:project_tracker/domain/entities/task_entity.dart';
 import 'package:project_tracker/core/constants/task_status.dart';
@@ -15,18 +16,24 @@ enum ReportPeriod { thisWeek, lastWeek, thisMonth }
 class CsvExportParams {
   final ReportPeriod period;
   final String? projectId;
+  final String? categoryId;
 
-  const CsvExportParams({required this.period, this.projectId});
+  const CsvExportParams({
+    required this.period,
+    this.projectId,
+    this.categoryId,
+  });
 
   @override
   bool operator ==(Object other) {
     return other is CsvExportParams &&
         other.period == period &&
-        other.projectId == projectId;
+        other.projectId == projectId &&
+        other.categoryId == categoryId;
   }
 
   @override
-  int get hashCode => Object.hash(period, projectId);
+  int get hashCode => Object.hash(period, projectId, categoryId);
 }
 
 /// Provider for this week's project summary (for reports)
@@ -229,7 +236,10 @@ final taskBreakdownCsvExportProvider = FutureProvider.family<String, CsvExportPa
 ) async {
   final timerRepository = ref.read(timerSessionRepositoryProvider);
   final taskRepository = ref.read(taskRepositoryProvider);
+  final categoryRepository = ref.read(categoryRepositoryProvider);
   final allProjects = await ref.watch(projectsProvider.future);
+  final categories = await categoryRepository.getAllCategories();
+  final categoryMap = {for (final c in categories) c.id: c.name};
   final range = _periodRange(params.period);
 
   final projects = params.projectId == null
@@ -238,7 +248,7 @@ final taskBreakdownCsvExportProvider = FutureProvider.family<String, CsvExportPa
 
   final csvBuffer = StringBuffer();
   csvBuffer.writeln(
-    'Project,Task,Task Status,Session Count,Total Hours (${_periodLabel(params.period)}),Last Session Start',
+    'Project,Task,Category,Task Status,Session Count,Total Hours (${_periodLabel(params.period)}),Last Session Start',
   );
 
   for (final project in projects) {
@@ -258,12 +268,20 @@ final taskBreakdownCsvExportProvider = FutureProvider.family<String, CsvExportPa
     }
 
     for (final task in tasks) {
+      if (params.categoryId != null && task.categoryId != params.categoryId) {
+        continue;
+      }
+
       final taskSessions = sessionsByTask[task.id] ?? const [];
       final totalSeconds = taskSessions.fold<int>(
         0,
         (sum, s) => sum + s.totalSeconds,
       );
       final totalHours = (totalSeconds / 3600.0).toStringAsFixed(2);
+      final categoryName =
+          categoryMap[task.categoryId] ??
+          categoryMap[AppDatabase.uncategorizedCategoryId] ??
+          'Uncategorized';
       final latestSession = taskSessions.isEmpty
           ? null
           : taskSessions
@@ -272,7 +290,7 @@ final taskBreakdownCsvExportProvider = FutureProvider.family<String, CsvExportPa
                 .toIso8601String();
 
       csvBuffer.writeln(
-        '${_escapeCsv(project.name)},${_escapeCsv(task.taskName)},${_escapeCsv(TaskStatus.formatLabel(task.status))},${taskSessions.length},$totalHours,${_escapeCsv(latestSession ?? '')}',
+        '${_escapeCsv(project.name)},${_escapeCsv(task.taskName)},${_escapeCsv(categoryName)},${_escapeCsv(TaskStatus.formatLabel(task.status))},${taskSessions.length},$totalHours,${_escapeCsv(latestSession ?? '')}',
       );
     }
   }
@@ -301,7 +319,7 @@ final csvExportFileProvider = FutureProvider.family<String, CsvExportParams>((
   );
   final now = DateTime.now();
   final filename =
-      'project_tracker_${_periodLabel(params.period)}_${params.projectId ?? 'all_projects'}_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}.csv';
+      'project_tracker_${_periodLabel(params.period)}_${params.projectId ?? 'all_projects'}_${params.categoryId ?? 'all_categories'}_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}.csv';
 
   final directories = <Directory>[];
 
@@ -371,4 +389,119 @@ class ProjectReportData {
     required this.sessionCount,
     required this.sessions,
   });
+}
+
+/// Category-level summary for selected report params.
+final categorySummaryProvider =
+    FutureProvider.family<List<CategoryReportData>, CsvExportParams>((
+      ref,
+      params,
+    ) async {
+      final taskRepository = ref.read(taskRepositoryProvider);
+      final timerRepository = ref.read(timerSessionRepositoryProvider);
+      final categoryRepository = ref.read(categoryRepositoryProvider);
+      final allProjects = await ref.watch(projectsProvider.future);
+      final categories = await categoryRepository.getAllCategories();
+      final categoryMap = {for (final c in categories) c.id: c.name};
+      final range = _periodRange(params.period);
+
+      final projects = params.projectId == null
+          ? allProjects
+          : allProjects.where((p) => p.id == params.projectId).toList();
+
+      final summaries = <String, CategoryReportData>{};
+      for (final project in projects) {
+        final tasks = await taskRepository.getTasksByProject(project.id);
+        final sessions = await timerRepository.getSessionsByProject(project.id);
+        final periodSessions = sessions
+            .where(
+              (s) =>
+                  !s.startTime.isBefore(range.start) &&
+                  s.startTime.isBefore(range.end),
+            )
+            .toList();
+
+        final taskMap = {for (final task in tasks) task.id: task};
+        final touchedTasksByCategory = <String, Set<String>>{};
+
+        for (final session in periodSessions) {
+          final task = taskMap[session.taskId];
+          if (task == null) {
+            continue;
+          }
+          final categoryId =
+              task.categoryId ?? AppDatabase.uncategorizedCategoryId;
+          if (params.categoryId != null && categoryId != params.categoryId) {
+            continue;
+          }
+
+          final existing = summaries[categoryId];
+          final totalHours = (session.totalSeconds / 3600.0);
+
+          if (existing == null) {
+            summaries[categoryId] = CategoryReportData(
+              categoryId: categoryId,
+              categoryName: categoryMap[categoryId] ?? 'Uncategorized',
+              totalHours: totalHours,
+              sessionCount: 1,
+              taskCount: 0,
+            );
+          } else {
+            summaries[categoryId] = existing.copyWith(
+              totalHours: existing.totalHours + totalHours,
+              sessionCount: existing.sessionCount + 1,
+            );
+          }
+
+          touchedTasksByCategory
+              .putIfAbsent(categoryId, () => <String>{})
+              .add(task.id);
+        }
+
+        touchedTasksByCategory.forEach((categoryId, taskIds) {
+          final existing = summaries[categoryId];
+          if (existing != null) {
+            summaries[categoryId] = existing.copyWith(
+              taskCount: existing.taskCount + taskIds.length,
+            );
+          }
+        });
+      }
+
+      final sorted = summaries.values.toList()
+        ..sort((a, b) => b.totalHours.compareTo(a.totalHours));
+
+      return sorted;
+    });
+
+class CategoryReportData {
+  final String categoryId;
+  final String categoryName;
+  final double totalHours;
+  final int sessionCount;
+  final int taskCount;
+
+  const CategoryReportData({
+    required this.categoryId,
+    required this.categoryName,
+    required this.totalHours,
+    required this.sessionCount,
+    required this.taskCount,
+  });
+
+  CategoryReportData copyWith({
+    String? categoryId,
+    String? categoryName,
+    double? totalHours,
+    int? sessionCount,
+    int? taskCount,
+  }) {
+    return CategoryReportData(
+      categoryId: categoryId ?? this.categoryId,
+      categoryName: categoryName ?? this.categoryName,
+      totalHours: totalHours ?? this.totalHours,
+      sessionCount: sessionCount ?? this.sessionCount,
+      taskCount: taskCount ?? this.taskCount,
+    );
+  }
 }

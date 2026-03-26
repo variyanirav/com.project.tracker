@@ -6,6 +6,7 @@ class AppRouter {
   static const String dashboard = 'dashboard';
   static const String projectList = 'project_list';
   static const String projectDetail = 'project_detail';
+  static const String categories = 'categories';
   static const String reports = 'reports';
   static const String todoList = 'todo_list';
   static const String settings = 'settings';

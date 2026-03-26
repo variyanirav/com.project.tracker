@@ -48,7 +48,11 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
   }
 
   /// Start a timer for a task
-  Future<void> startTimer(String taskId, String projectId) async {
+  Future<void> startTimer(
+    String taskId,
+    String projectId, {
+    String? startNote,
+  }) async {
     if (state.isRunning) {
       debugPrint('[TIMER] Timer already running for task: ${state.taskId}');
       return;
@@ -104,6 +108,18 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
       debugPrint(
         '[TIMER] ▶️  Resumed paused session - SessionID: ${session.id}',
       );
+    }
+
+    final trimmedStartNote = startNote?.trim();
+    if (trimmedStartNote != null && trimmedStartNote.isNotEmpty) {
+      try {
+        await timerRepository.updateSessionNotes(
+          session.id,
+          'START: $trimmedStartNote',
+        );
+      } catch (e) {
+        debugPrint('[TIMER] Failed to save start note: $e');
+      }
     }
 
     // Update UI state with actual start time
@@ -191,7 +207,7 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
   }
 
   /// Stop the current timer
-  Future<void> stopTimer() async {
+  Future<void> stopTimer({String? stopNote}) async {
     if (state.sessionId == null) {
       debugPrint('[TIMER] ⚠️  No active session to stop');
       return;
@@ -216,6 +232,21 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
       endTime: endTime,
       totalSeconds: duration,
     );
+
+    final trimmedStopNote = stopNote?.trim();
+    if (trimmedStopNote != null && trimmedStopNote.isNotEmpty) {
+      try {
+        final session = await timerRepository.getSessionById(state.sessionId!);
+        final previousNotes = session?.notes?.trim();
+        final newLine = 'STOP: $trimmedStopNote';
+        final mergedNotes = previousNotes == null || previousNotes.isEmpty
+            ? newLine
+            : '$previousNotes\n$newLine';
+        await timerRepository.updateSessionNotes(state.sessionId!, mergedNotes);
+      } catch (e) {
+        debugPrint('[TIMER] Failed to save stop note: $e');
+      }
+    }
 
     // Persist the latest task total seconds and running state.
     if (currentTaskId != null) {
@@ -425,6 +456,28 @@ final deleteTimerSessionProvider = FutureProvider.family<void, String>((
   ref.invalidate(todayTimerSessionsProvider);
   ref.invalidate(weekTimerSessionsProvider);
 });
+
+/// Params for updating timer session notes.
+class UpdateTimerSessionNotesParams {
+  final String sessionId;
+  final String? notes;
+
+  const UpdateTimerSessionNotesParams({required this.sessionId, this.notes});
+}
+
+/// Provider for updating notes on a timer session.
+final updateTimerSessionNotesProvider =
+    FutureProvider.family<void, UpdateTimerSessionNotesParams>((
+      ref,
+      params,
+    ) async {
+      final timerRepository = ref.watch(timerSessionRepositoryProvider);
+      await timerRepository.updateSessionNotes(params.sessionId, params.notes);
+
+      ref.invalidate(timerSessionsProvider);
+      ref.invalidate(todayTimerSessionsProvider);
+      ref.invalidate(weekTimerSessionsProvider);
+    });
 
 /// Timer state model
 class TimerState {

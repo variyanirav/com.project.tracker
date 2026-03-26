@@ -6,6 +6,7 @@ import 'package:drift/drift.dart';
 class Tasks extends Table {
   TextColumn get id => text()();
   TextColumn get projectId => text()();
+  TextColumn get categoryId => text().nullable()();
   TextColumn get taskName => text()();
   TextColumn get description => text().nullable()();
   TextColumn get status => text().withDefault(

@@ -13,6 +13,8 @@ import '../providers/timer_provider.dart';
 import '../routes/app_router.dart';
 import '../widgets/dialogs/edit_task_dialog.dart';
 import '../widgets/dialogs/confirm_delete_dialog.dart';
+import '../widgets/dialogs/manage_categories_dialog.dart';
+import '../widgets/dialogs/timer_session_note_dialog.dart';
 import '../widgets/dialogs/view_task_dialog.dart';
 import '../widgets/project_detail/active_timer_card.dart';
 import '../widgets/project_detail/create_task_form.dart';
@@ -230,9 +232,15 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                               },
                               onStopPressed: () async {
                                 try {
+                                  final stopNote = await showTimerSessionNoteDialog(
+                                    context,
+                                    title: 'Session Outcome',
+                                    hintText:
+                                        'What did you complete in this session?',
+                                  );
                                   await ref
                                       .read(timerProvider.notifier)
-                                      .stopTimer();
+                                      .stopTimer(stopNote: stopNote);
                                   await Future.delayed(
                                     const Duration(milliseconds: 100),
                                   );
@@ -278,18 +286,38 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                       const SizedBox(height: 32),
 
                       // Create New Task Section
-                      Text(
-                        AppStrings.screenTitles.createNewTask,
-                        style: AppTextStyles.heading2,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            AppStrings.screenTitles.createNewTask,
+                            style: AppTextStyles.heading2,
+                          ),
+                          TextButton.icon(
+                            onPressed: () async {
+                              await showDialog<void>(
+                                context: context,
+                                builder: (_) => const ManageCategoriesDialog(),
+                              );
+
+                              ref.invalidate(
+                                tasksByProjectProvider(selectedProject.id),
+                              );
+                            },
+                            icon: const Icon(Icons.category_outlined),
+                            label: const Text('Manage Categories'),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
                       CreateTaskForm(
-                        onCreateTask: (title, description) async {
+                        onCreateTask: (title, description, categoryId) async {
                           try {
                             await ref.read(
                               createTaskProvider(
                                 CreateTaskParams(
                                   projectId: selectedProject.id,
+                                  categoryId: categoryId,
                                   taskName: title,
                                   description: description,
                                 ),
@@ -376,7 +404,14 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                 );
                                 await ref
                                     .read(timerProvider.notifier)
-                                    .stopTimer();
+                                    .stopTimer(
+                                      stopNote: await showTimerSessionNoteDialog(
+                                        context,
+                                        title: 'Session Outcome',
+                                        hintText:
+                                            'What did you complete in this session?',
+                                      ),
+                                    );
                                 await Future.delayed(
                                   const Duration(milliseconds: 100),
                                 );
@@ -411,7 +446,16 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                 );
                                 await ref
                                     .read(timerProvider.notifier)
-                                    .startTimer(task.id, selectedProject.id);
+                                    .startTimer(
+                                      task.id,
+                                      selectedProject.id,
+                                      startNote: await showTimerSessionNoteDialog(
+                                        context,
+                                        title: 'Session Plan',
+                                        hintText:
+                                            'What are you going to work on now?',
+                                      ),
+                                    );
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -445,19 +489,27 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                               context: context,
                               builder: (context) => EditTaskDialog(
                                 taskId: task.id,
+                                initialCategoryId: task.categoryId,
                                 initialTitle: task.taskName,
                                 initialDescription: task.description ?? '',
                                 initialStatus: TaskStatus.fromValue(
                                   task.status,
                                 ),
                                 onSavePressed:
-                                    (taskId, title, description, status) async {
+                                    (
+                                      taskId,
+                                      categoryId,
+                                      title,
+                                      description,
+                                      status,
+                                    ) async {
                                       try {
                                         await ref.read(
                                           updateTaskProvider(
                                             UpdateTaskParams(
                                               id: taskId,
                                               projectId: selectedProject.id,
+                                              categoryId: categoryId,
                                               taskName: title,
                                               description: description,
                                               status: status.code,

@@ -160,5 +160,32 @@ void main() {
       expect(state.sessionId, isNull);
       expect(state.elapsedSeconds, 0);
     });
+
+    test('start and stop notes are persisted in timer session', () async {
+      final notifier = container.read(timerProvider.notifier);
+      final timerRepo = container.read(timerSessionRepositoryProvider);
+
+      await notifier.startTimer(
+        taskId,
+        projectId,
+        startNote: 'Review clean architecture chapter',
+      );
+
+      final runningState = container.read(timerProvider);
+      expect(runningState.sessionId, isNotNull);
+
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      await notifier.stopTimer(stopNote: 'Summarized key points');
+
+      final stoppedSession = await timerRepo.getSessionById(
+        runningState.sessionId!,
+      );
+      expect(stoppedSession, isNotNull);
+      expect(
+        stoppedSession!.notes,
+        contains('START: Review clean architecture chapter'),
+      );
+      expect(stoppedSession.notes, contains('STOP: Summarized key points'));
+    });
   });
 }

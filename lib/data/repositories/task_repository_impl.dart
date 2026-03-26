@@ -52,6 +52,7 @@ class TaskRepositoryImpl implements ITaskRepository {
   @override
   Future<TaskEntity> createTask({
     required String projectId,
+    String? categoryId,
     required String taskName,
     required String? description,
   }) async {
@@ -61,6 +62,7 @@ class TaskRepositoryImpl implements ITaskRepository {
     final task = TaskData(
       id: id,
       projectId: projectId,
+      categoryId: categoryId ?? AppDatabase.uncategorizedCategoryId,
       taskName: taskName,
       description: description ?? '',
       status: 'todo',
@@ -81,6 +83,7 @@ class TaskRepositoryImpl implements ITaskRepository {
     final data = TaskData(
       id: task.id,
       projectId: task.projectId,
+      categoryId: task.categoryId ?? AppDatabase.uncategorizedCategoryId,
       taskName: task.taskName,
       description: task.description ?? '',
       status: task.status,
@@ -215,6 +218,7 @@ class TaskRepositoryImpl implements ITaskRepository {
     return TaskEntity(
       id: data.id,
       projectId: data.projectId,
+      categoryId: data.categoryId,
       taskName: data.taskName,
       description: (data.description?.isNotEmpty ?? false)
           ? data.description

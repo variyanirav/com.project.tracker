@@ -27,6 +27,11 @@ class CustomScaffold extends ConsumerWidget {
       _NavItem(icon: Icons.dashboard, label: 'Dashboard', route: 'dashboard'),
       _NavItem(icon: Icons.list_alt, label: 'Projects', route: 'project_list'),
       _NavItem(
+        icon: Icons.category_outlined,
+        label: 'Categories',
+        route: 'categories',
+      ),
+      _NavItem(
         icon: Icons.check_circle_outline,
         label: 'To-Do',
         route: 'todo_list',

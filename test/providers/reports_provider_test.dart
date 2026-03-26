@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_tracker/core/utils/timezone_helper.dart';
 import 'package:project_tracker/data/database/app_database.dart';
+import 'package:project_tracker/domain/entities/task_entity.dart';
 import 'package:project_tracker/presentation/providers/database_provider.dart';
 import 'package:project_tracker/presentation/providers/reports_provider.dart';
 import 'package:project_tracker/presentation/providers/repository_provider.dart';
@@ -69,11 +70,14 @@ void main() {
           ).future,
         );
 
-        expect(csv, contains('Project,Task,Task Status,Session Count'));
+        expect(
+          csv,
+          contains('Project,Task,Category,Task Status,Session Count'),
+        );
         expect(csv, contains('"TaskA"'));
         expect(csv, contains('"TaskB"'));
-        expect(csv, contains('"TaskA","To Do",1,'));
-        expect(csv, contains('"TaskB","To Do",0,'));
+        expect(csv, contains('"TaskA","Uncategorized","To Do",1,'));
+        expect(csv, contains('"TaskB","Uncategorized","To Do",0,'));
       },
     );
 
@@ -138,11 +142,147 @@ void main() {
         ).future,
       );
 
-      expect(thisWeekCsv, contains('"TaskThisWeek","To Do",1,'));
-      expect(thisWeekCsv, contains('"TaskLastWeek","To Do",0,'));
+      expect(
+        thisWeekCsv,
+        contains('"TaskThisWeek","Uncategorized","To Do",1,'),
+      );
+      expect(
+        thisWeekCsv,
+        contains('"TaskLastWeek","Uncategorized","To Do",0,'),
+      );
 
-      expect(lastWeekCsv, contains('"TaskThisWeek","To Do",0,'));
-      expect(lastWeekCsv, contains('"TaskLastWeek","To Do",1,'));
+      expect(
+        lastWeekCsv,
+        contains('"TaskThisWeek","Uncategorized","To Do",0,'),
+      );
+      expect(
+        lastWeekCsv,
+        contains('"TaskLastWeek","Uncategorized","To Do",1,'),
+      );
+    });
+
+    test('task breakdown export respects selected category filter', () async {
+      final projectRepo = container.read(projectRepositoryProvider);
+      final taskRepo = container.read(taskRepositoryProvider);
+      final timerRepo = container.read(timerSessionRepositoryProvider);
+
+      final project = await projectRepo.createProject(
+        name: 'Gamma',
+        description: 'G',
+        color: 'G',
+      );
+
+      final learningTask = await taskRepo.createTask(
+        projectId: project.id,
+        categoryId: AppDatabase.learningCategoryId,
+        taskName: 'Learn Dart',
+        description: 'study',
+      );
+      final devTask = await taskRepo.createTask(
+        projectId: project.id,
+        categoryId: AppDatabase.developmentCategoryId,
+        taskName: 'Build UI',
+        description: 'build',
+      );
+
+      final now = DateTime.now().toUtc();
+      final learningSession = await timerRepo.createSession(
+        taskId: learningTask.id,
+        projectId: project.id,
+        startTime: now.subtract(const Duration(minutes: 30)),
+      );
+      await timerRepo.stopSession(
+        learningSession.id,
+        endTime: now,
+        totalSeconds: 1800,
+      );
+
+      final devSession = await timerRepo.createSession(
+        taskId: devTask.id,
+        projectId: project.id,
+        startTime: now.subtract(const Duration(minutes: 20)),
+      );
+      await timerRepo.stopSession(
+        devSession.id,
+        endTime: now,
+        totalSeconds: 1200,
+      );
+
+      final learningCsv = await container.read(
+        taskBreakdownCsvExportProvider(
+          CsvExportParams(
+            period: ReportPeriod.thisWeek,
+            projectId: project.id,
+            categoryId: AppDatabase.learningCategoryId,
+          ),
+        ).future,
+      );
+
+      expect(learningCsv, contains('"Learn Dart"'));
+      expect(learningCsv, isNot(contains('"Build UI"')));
+    });
+
+    test('category summary provider aggregates hours and counts', () async {
+      final projectRepo = container.read(projectRepositoryProvider);
+      final taskRepo = container.read(taskRepositoryProvider);
+      final timerRepo = container.read(timerSessionRepositoryProvider);
+
+      final project = await projectRepo.createProject(
+        name: 'Delta',
+        description: 'D',
+        color: 'D',
+      );
+
+      final tasks = <TaskEntity>[
+        await taskRepo.createTask(
+          projectId: project.id,
+          categoryId: AppDatabase.learningCategoryId,
+          taskName: 'Learn architecture',
+          description: null,
+        ),
+        await taskRepo.createTask(
+          projectId: project.id,
+          categoryId: AppDatabase.developmentCategoryId,
+          taskName: 'Implement feature',
+          description: null,
+        ),
+      ];
+
+      final now = DateTime.now().toUtc();
+      final s1 = await timerRepo.createSession(
+        taskId: tasks[0].id,
+        projectId: project.id,
+        startTime: now.subtract(const Duration(minutes: 50)),
+      );
+      await timerRepo.stopSession(s1.id, endTime: now, totalSeconds: 3000);
+
+      final s2 = await timerRepo.createSession(
+        taskId: tasks[1].id,
+        projectId: project.id,
+        startTime: now.subtract(const Duration(minutes: 30)),
+      );
+      await timerRepo.stopSession(s2.id, endTime: now, totalSeconds: 1800);
+
+      final summary = await container.read(
+        categorySummaryProvider(
+          const CsvExportParams(period: ReportPeriod.thisWeek),
+        ).future,
+      );
+
+      final learning = summary.firstWhere(
+        (item) => item.categoryId == AppDatabase.learningCategoryId,
+      );
+      final development = summary.firstWhere(
+        (item) => item.categoryId == AppDatabase.developmentCategoryId,
+      );
+
+      expect(learning.sessionCount, 1);
+      expect(learning.taskCount, 1);
+      expect(learning.totalHours, closeTo(3000 / 3600, 0.01));
+
+      expect(development.sessionCount, 1);
+      expect(development.taskCount, 1);
+      expect(development.totalHours, closeTo(1800 / 3600, 0.01));
     });
   });
 }

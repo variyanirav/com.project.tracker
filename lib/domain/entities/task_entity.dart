@@ -2,6 +2,7 @@
 class TaskEntity {
   final String id;
   final String projectId;
+  final String? categoryId;
   final String taskName;
   final String? description;
   final String status;
@@ -15,6 +16,7 @@ class TaskEntity {
   TaskEntity({
     required this.id,
     required this.projectId,
+    this.categoryId,
     required this.taskName,
     this.description,
     required this.status,
@@ -29,6 +31,7 @@ class TaskEntity {
   TaskEntity copyWith({
     String? id,
     String? projectId,
+    String? categoryId,
     String? taskName,
     String? description,
     String? status,
@@ -42,6 +45,7 @@ class TaskEntity {
     return TaskEntity(
       id: id ?? this.id,
       projectId: projectId ?? this.projectId,
+      categoryId: categoryId ?? this.categoryId,
       taskName: taskName ?? this.taskName,
       description: description ?? this.description,
       status: status ?? this.status,

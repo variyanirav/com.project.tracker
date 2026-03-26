@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:project_tracker/domain/entities/category_entity.dart';
+import 'package:project_tracker/data/database/app_database.dart';
+import 'package:project_tracker/presentation/providers/category_provider.dart';
 import 'package:project_tracker/presentation/providers/project_provider.dart';
 import 'package:project_tracker/presentation/providers/reports_provider.dart';
 import 'package:project_tracker/presentation/providers/timer_provider.dart';
@@ -28,6 +31,17 @@ void main() {
           weekProjectSummaryProvider.overrideWith((ref) async => []),
           todayTotalHoursProvider.overrideWith((ref) async => 0.0),
           dailyGoalProvider.overrideWith((ref) async => 8.0),
+          categoriesProvider.overrideWith(
+            (ref) async => [
+              CategoryEntity(
+                id: AppDatabase.learningCategoryId,
+                name: 'Learning',
+                colorHex: '#3B82F6',
+                createdAt: DateTime.now().toUtc(),
+                updatedAt: DateTime.now().toUtc(),
+              ),
+            ],
+          ),
           timerProvider.overrideWith((ref) => _FakeTimerNotifier(ref, idle)),
           csvExportFileProvider.overrideWith(
             (ref, params) async => '/tmp/test_export.csv',
@@ -37,7 +51,8 @@ void main() {
       ),
     );
 
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     final openButtonFinder = find.widgetWithText(
       OutlinedButton,
@@ -46,9 +61,11 @@ void main() {
     OutlinedButton openButton = tester.widget<OutlinedButton>(openButtonFinder);
     expect(openButton.onPressed, isNull);
     expect(find.text('Last export location: Not exported yet'), findsOneWidget);
+    expect(find.text('Category Filter'), findsOneWidget);
 
     await tester.tap(find.text('Download CSV'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     openButton = tester.widget<OutlinedButton>(openButtonFinder);
     expect(openButton.onPressed, isNotNull);

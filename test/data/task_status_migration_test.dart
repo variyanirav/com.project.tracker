@@ -38,6 +38,7 @@ void main() {
               TaskData(
                 id: id,
                 projectId: 'p1',
+                categoryId: AppDatabase.uncategorizedCategoryId,
                 taskName: 'Task $id',
                 description: 'd',
                 status: status,

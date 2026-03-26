@@ -6,6 +6,7 @@ import 'presentation/providers/theme_provider.dart';
 import 'presentation/screens/dashboard_screen.dart';
 import 'presentation/screens/project_list_screen.dart';
 import 'presentation/screens/project_detail_screen.dart';
+import 'presentation/screens/categories_screen.dart';
 import 'presentation/screens/reports_screen.dart';
 import 'presentation/screens/todo_list_screen.dart';
 import 'presentation/routes/app_router.dart';
@@ -38,6 +39,8 @@ class TimeTrackerApp extends ConsumerWidget {
         return const ProjectListScreen();
       case AppRouter.projectDetail:
         return const ProjectDetailScreen();
+      case AppRouter.categories:
+        return const CategoriesScreen();
       case AppRouter.reports:
         return const ReportsScreen();
       case AppRouter.todoList:
