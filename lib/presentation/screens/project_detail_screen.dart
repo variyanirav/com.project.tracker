@@ -4,6 +4,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/constants/task_status.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/utils/date_time_formatter.dart';
+import '../../core/utils/live_hours_overlay.dart';
 import '../../core/widgets/custom_scaffold.dart';
 import '../../domain/entities/task_entity.dart';
 import '../providers/project_provider.dart';
@@ -97,12 +98,24 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                 // Total Hours
                 Expanded(
                   child: projectHours.when(
-                    data: (hours) => StatsCard(
-                      title: AppStrings.labels.totalHours,
-                      value: DateTimeFormatter.formatHours(hours),
-                      icon: Icons.trending_up,
-                      isDark: isDark,
-                    ),
+                    data: (hours) {
+                      final liveTotalHours = LiveHoursOverlay.withLiveOverlay(
+                        persistedHours: hours,
+                        isTimerRunning: timerState.isRunning,
+                        elapsedSeconds: timerState.elapsedSeconds,
+                        timerStartTime: timerState.startTime,
+                        timerProjectId: timerState.projectId,
+                        scope: LiveHoursScope.project,
+                        targetProjectId: selectedProject.id,
+                      );
+
+                      return StatsCard(
+                        title: AppStrings.labels.totalHours,
+                        value: DateTimeFormatter.formatHours(liveTotalHours),
+                        icon: Icons.trending_up,
+                        isDark: isDark,
+                      );
+                    },
                     loading: () => StatsCard(
                       title: AppStrings.labels.totalHours,
                       value: 'Loading...',
@@ -434,9 +447,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                 taskId: task.id,
                                 initialTitle: task.taskName,
                                 initialDescription: task.description ?? '',
-                                initialStatus: TaskStatus.values.firstWhere(
-                                  (s) => s.label == task.status,
-                                  orElse: () => TaskStatus.todo,
+                                initialStatus: TaskStatus.fromValue(
+                                  task.status,
                                 ),
                                 onSavePressed:
                                     (taskId, title, description, status) async {
@@ -448,7 +460,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                               projectId: selectedProject.id,
                                               taskName: title,
                                               description: description,
-                                              status: status.label,
+                                              status: status.code,
                                               totalSeconds: task.totalSeconds,
                                               isRunning: task.isRunning,
                                               createdAt: task.createdAt,

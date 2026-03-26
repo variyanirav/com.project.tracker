@@ -116,5 +116,109 @@ void main() {
       final afterDelete = await container.read(projectsProvider.future);
       expect(afterDelete.length, 1);
     });
+
+    test(
+      'recentWorkedProjectsProvider prioritizes recently worked projects',
+      () async {
+        final projectRepo = container.read(projectRepositoryProvider);
+        final taskRepo = container.read(taskRepositoryProvider);
+        final timerRepo = container.read(timerSessionRepositoryProvider);
+
+        final alpha = await projectRepo.createProject(
+          name: 'Alpha',
+          description: 'A',
+          color: 'A',
+        );
+        final beta = await projectRepo.createProject(
+          name: 'Beta',
+          description: 'B',
+          color: 'B',
+        );
+        final gamma = await projectRepo.createProject(
+          name: 'Gamma',
+          description: 'C',
+          color: 'C',
+        );
+
+        final taskBeta = await taskRepo.createTask(
+          projectId: beta.id,
+          taskName: 'Task Beta',
+          description: 'desc',
+        );
+        final taskGamma = await taskRepo.createTask(
+          projectId: gamma.id,
+          taskName: 'Task Gamma',
+          description: 'desc',
+        );
+
+        final now = DateTime.now().toUtc();
+
+        final betaSession = await timerRepo.createSession(
+          taskId: taskBeta.id,
+          projectId: beta.id,
+          startTime: now.subtract(const Duration(hours: 2)),
+        );
+        await timerRepo.stopSession(
+          betaSession.id,
+          endTime: now.subtract(const Duration(hours: 1, minutes: 30)),
+          totalSeconds: 1800,
+        );
+
+        final gammaSession = await timerRepo.createSession(
+          taskId: taskGamma.id,
+          projectId: gamma.id,
+          startTime: now.subtract(const Duration(minutes: 30)),
+        );
+        await timerRepo.stopSession(
+          gammaSession.id,
+          endTime: now.subtract(const Duration(minutes: 10)),
+          totalSeconds: 1200,
+        );
+
+        final recent = await container.read(
+          recentWorkedProjectsProvider(3).future,
+        );
+
+        expect(recent.length, 3);
+        expect(recent[0].id, gamma.id);
+        expect(recent[1].id, beta.id);
+        expect(recent.map((p) => p.id), contains(alpha.id));
+      },
+    );
+
+    test(
+      'recentWorkedProjectsProvider falls back to newest created when no work exists',
+      () async {
+        final projectRepo = container.read(projectRepositoryProvider);
+
+        await projectRepo.createProject(
+          name: 'One',
+          description: '1',
+          color: '1',
+        );
+        await projectRepo.createProject(
+          name: 'Two',
+          description: '2',
+          color: '2',
+        );
+        await projectRepo.createProject(
+          name: 'Three',
+          description: '3',
+          color: '3',
+        );
+
+        final allProjects = await container.read(projectsProvider.future);
+        final recent = await container.read(
+          recentWorkedProjectsProvider(2).future,
+        );
+
+        expect(recent.length, 2);
+
+        final expected = [...allProjects]
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        expect(recent[0].id, expected[0].id);
+        expect(recent[1].id, expected[1].id);
+      },
+    );
   });
 }

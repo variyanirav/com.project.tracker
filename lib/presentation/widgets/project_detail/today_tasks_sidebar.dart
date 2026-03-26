@@ -46,10 +46,7 @@ class TodayTasksSidebar extends StatelessWidget {
 
   /// Build individual today's task item
   Widget _buildTodayTaskItem(TaskEntity task) {
-    final taskStatus = TaskStatus.values.firstWhere(
-      (s) => s.label == task.status,
-      orElse: () => TaskStatus.todo,
-    );
+    final taskStatus = TaskStatus.fromValue(task.status);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
@@ -90,7 +87,7 @@ class TodayTasksSidebar extends StatelessWidget {
                     borderRadius: BorderRadius.circular(3),
                   ),
                   child: Text(
-                    task.status,
+                    TaskStatus.formatLabel(task.status),
                     style: AppTextStyles.labelSmall.copyWith(
                       color: taskStatus.getColor(),
                       fontSize: 9,

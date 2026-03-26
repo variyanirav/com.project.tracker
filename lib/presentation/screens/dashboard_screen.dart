@@ -5,10 +5,12 @@ import '../../core/constants/colors.dart';
 import '../../core/widgets/custom_scaffold.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/theme/text_styles.dart';
+import '../../core/constants/task_status.dart';
 import '../providers/theme_provider.dart';
 import '../providers/project_provider.dart';
 import '../providers/timer_provider.dart';
 import '../providers/task_provider.dart';
+import '../providers/repository_provider.dart';
 import '../routes/app_router.dart';
 import '../widgets/dashboard/daily_progress_card.dart';
 import '../widgets/dashboard/project_card.dart' show ProjectCard, RecentTask;
@@ -27,6 +29,8 @@ class DashboardScreen extends ConsumerWidget {
     final timerAsync = ref.watch(timerProvider);
     // Watch timer ticks for real-time UI updates every 100ms
     final timerTickAsync = ref.watch(timerTickProvider);
+    final dailyGoalHoursAsync = ref.watch(dailyGoalProvider);
+    final recentProjectsAsync = ref.watch(recentWorkedProjectsProvider(3));
 
     // Check if we have projects
     final hasProjects =
@@ -47,9 +51,21 @@ class DashboardScreen extends ConsumerWidget {
                 showDialog(
                   context: context,
                   builder: (context) => DailyGoalSettingsDialog(
-                    currentGoalHours: 8,
-                    onSavePressed: (hours) {
-                      // Save to database
+                    currentGoalHours: dailyGoalHoursAsync.when(
+                      data: (hours) => hours.round(),
+                      loading: () => 8,
+                      error: (_, __) => 8,
+                    ),
+                    onSavePressed: (hours) async {
+                      await ref
+                          .read(dailyGoalRepositoryProvider)
+                          .setDailyGoal(hours * 60);
+
+                      // Refresh cached providers so dashboard updates immediately.
+                      ref.invalidate(dailyGoalProvider);
+                      ref.invalidate(dailyProgressProvider);
+
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Daily goal set to $hours hours'),
@@ -295,12 +311,15 @@ class DashboardScreen extends ConsumerWidget {
                 ],
               ),
 
-            // "Your Projects" Section with "Add New Project" Button
+            // "Recently Used Projects" Section with "Add New Project" Button
             if (hasProjects) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Your Projects', style: AppTextStyles.titleLarge),
+                  Text(
+                    'Recently Used Projects',
+                    style: AppTextStyles.titleLarge,
+                  ),
                   AppButton.primary(
                     label: '+ Add New Project',
                     onPressed: () {
@@ -358,8 +377,9 @@ class DashboardScreen extends ConsumerWidget {
                     return SizedBox.shrink();
                   }
 
-                  // Take up to 3 projects for dashboard display
-                  final displayedProjects = projects.take(3).toList();
+                  final displayedProjects =
+                      recentProjectsAsync.whenData((p) => p).value ??
+                      projects.take(3).toList();
 
                   return LayoutBuilder(
                     builder: (context, constraints) {
@@ -403,7 +423,9 @@ class DashboardScreen extends ConsumerWidget {
                                           .map(
                                             (task) => RecentTask(
                                               name: task.taskName,
-                                              status: task.status,
+                                              status: TaskStatus.formatLabel(
+                                                task.status,
+                                              ),
                                             ),
                                           )
                                           .toList();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/colors.dart';
+import '../../../core/constants/task_status.dart';
 import '../../../core/theme/text_styles.dart';
 import '../../../core/widgets/app_card.dart';
 
@@ -219,18 +220,7 @@ class _TaskStatusBadge extends StatelessWidget {
   const _TaskStatusBadge({required this.status});
 
   Color _getStatusColor() {
-    switch (status.toLowerCase()) {
-      case 'to do':
-        return Colors.grey;
-      case 'in progress':
-        return Colors.blue;
-      case 'in review':
-        return Colors.amber;
-      case 'complete':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
+    return TaskStatus.fromValue(status).getColor();
   }
 
   @override
@@ -247,7 +237,7 @@ class _TaskStatusBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        status,
+        TaskStatus.formatLabel(status),
         style: AppTextStyles.labelSmall.copyWith(
           color: statusColor,
           fontSize: 11,

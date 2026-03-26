@@ -62,9 +62,28 @@ void main() {
         expect(active, isNotNull);
         expect(active!.taskId, taskId);
         expect(task!.isRunning, isTrue);
+        expect(task.status, 'inProgress');
         expect(task.lastSessionId, isNotEmpty);
       },
     );
+
+    test('startTimer does not change non-To Do statuses', () async {
+      final notifier = container.read(timerProvider.notifier);
+      final taskRepo = container.read(taskRepositoryProvider);
+
+      for (final status in ['complete', 'onHold']) {
+        await taskRepo.updateTaskStatus(taskId, status);
+
+        await notifier.startTimer(taskId, projectId);
+        final runningTask = await taskRepo.getTaskById(taskId);
+
+        expect(runningTask, isNotNull);
+        expect(runningTask!.status, status);
+        expect(runningTask.isRunning, isTrue);
+
+        await notifier.stopTimer();
+      }
+    });
 
     test(
       'pause then resume continues elapsed time and does not reset to zero',

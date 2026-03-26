@@ -7,8 +7,12 @@ import '../../core/widgets/custom_scaffold.dart';
 import '../../data/database/app_database.dart';
 import '../providers/project_provider.dart';
 import '../providers/todo_provider.dart';
+import '../providers/theme_provider.dart';
+import '../providers/timer_provider.dart';
+import '../providers/repository_provider.dart';
 import '../routes/app_router.dart';
 import '../widgets/dialogs/upsert_todo_dialog.dart';
+import '../widgets/dialogs/daily_goal_settings_dialog.dart';
 
 class TodoListScreen extends ConsumerStatefulWidget {
   const TodoListScreen({super.key});
@@ -48,9 +52,61 @@ class _TodoListScreenState extends ConsumerState<TodoListScreen> {
     final todosAsync = ref.watch(todoItemsProvider);
     final todoCountAsync = ref.watch(openTodoCountProvider);
     final completedCountAsync = ref.watch(completedTodoCountProvider);
+    final dailyGoalHoursAsync = ref.watch(dailyGoalProvider);
 
     return CustomScaffold(
       activeRoute: AppRouter.todoList,
+      trailing: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Tooltip(
+            message: 'Daily Goal Settings',
+            child: IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => DailyGoalSettingsDialog(
+                    currentGoalHours: dailyGoalHoursAsync.when(
+                      data: (hours) => hours.round(),
+                      loading: () => 8,
+                      error: (_, __) => 8,
+                    ),
+                    onSavePressed: (hours) async {
+                      await ref
+                          .read(dailyGoalRepositoryProvider)
+                          .setDailyGoal(hours * 60);
+
+                      ref.invalidate(dailyGoalProvider);
+                      ref.invalidate(dailyProgressProvider);
+
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Daily goal set to $hours hours'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+          SizedBox(height: AppConstants.spacing8),
+          Tooltip(
+            message: ref.watch(themeProvider) ? 'Light Mode' : 'Dark Mode',
+            child: IconButton(
+              icon: Icon(
+                ref.watch(themeProvider) ? Icons.light_mode : Icons.dark_mode,
+              ),
+              onPressed: () {
+                ref.read(themeProvider.notifier).toggle();
+              },
+            ),
+          ),
+        ],
+      ),
       child: Column(
         children: [
           _TopBar(

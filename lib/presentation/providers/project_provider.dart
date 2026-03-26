@@ -56,6 +56,47 @@ final projectWeekHoursProvider = FutureProvider.family<double, String>((
   return await repository.getProjectWeekHours(projectId);
 });
 
+/// Provider for projects ordered by most recent tracked work.
+///
+/// Projects with timer sessions are sorted by latest session start time (desc).
+/// Projects with no sessions are appended and sorted by creation date (desc).
+final recentWorkedProjectsProvider =
+    FutureProvider.family<List<ProjectEntity>, int>((ref, limit) async {
+      final projects = await ref.watch(projectsProvider.future);
+      if (projects.isEmpty) return const <ProjectEntity>[];
+
+      final timerRepository = ref.watch(timerSessionRepositoryProvider);
+      final latestWorkedAtByProject = <String, DateTime>{};
+
+      for (final project in projects) {
+        final sessions = await timerRepository.getSessionsByProject(project.id);
+        if (sessions.isEmpty) continue;
+
+        final latestStart = sessions
+            .map((s) => s.startTime)
+            .reduce((a, b) => a.isAfter(b) ? a : b);
+        latestWorkedAtByProject[project.id] = latestStart;
+      }
+
+      final workedProjects =
+          projects
+              .where((p) => latestWorkedAtByProject.containsKey(p.id))
+              .toList()
+            ..sort(
+              (a, b) => latestWorkedAtByProject[b.id]!.compareTo(
+                latestWorkedAtByProject[a.id]!,
+              ),
+            );
+
+      final unworkedProjects =
+          projects
+              .where((p) => !latestWorkedAtByProject.containsKey(p.id))
+              .toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      return [...workedProjects, ...unworkedProjects].take(limit).toList();
+    });
+
 /// Provider for creating a new project
 final createProjectProvider = FutureProvider.family<void, CreateProjectParams>((
   ref,

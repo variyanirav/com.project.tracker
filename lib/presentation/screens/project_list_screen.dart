@@ -5,14 +5,18 @@ import '../../core/constants/colors.dart';
 import '../../core/widgets/custom_scaffold.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/theme/text_styles.dart';
+import '../../core/constants/task_status.dart';
 import '../providers/theme_provider.dart';
 import '../providers/project_provider.dart';
 import '../providers/task_provider.dart';
+import '../providers/timer_provider.dart';
+import '../providers/repository_provider.dart';
 import '../routes/app_router.dart';
 import '../widgets/dashboard/project_card.dart' show ProjectCard, RecentTask;
 import '../widgets/dialogs/edit_project_dialog.dart';
 import '../widgets/dialogs/confirm_delete_dialog.dart';
 import '../widgets/dialogs/create_project_dialog.dart';
+import '../widgets/dialogs/daily_goal_settings_dialog.dart';
 
 /// Project List screen - Shows all projects
 class ProjectListScreen extends ConsumerWidget {
@@ -20,6 +24,8 @@ class ProjectListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final dailyGoalHoursAsync = ref.watch(dailyGoalProvider);
+
     return CustomScaffold(
       activeRoute: AppRouter.projectList,
       trailing: Column(
@@ -31,7 +37,32 @@ class ProjectListScreen extends ConsumerWidget {
             child: IconButton(
               icon: const Icon(Icons.settings),
               onPressed: () {
-                // TODO: Open settings dialog
+                showDialog(
+                  context: context,
+                  builder: (context) => DailyGoalSettingsDialog(
+                    currentGoalHours: dailyGoalHoursAsync.when(
+                      data: (hours) => hours.round(),
+                      loading: () => 8,
+                      error: (_, __) => 8,
+                    ),
+                    onSavePressed: (hours) async {
+                      await ref
+                          .read(dailyGoalRepositoryProvider)
+                          .setDailyGoal(hours * 60);
+
+                      ref.invalidate(dailyGoalProvider);
+                      ref.invalidate(dailyProgressProvider);
+
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Daily goal set to $hours hours'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                  ),
+                );
               },
             ),
           ),
@@ -194,7 +225,9 @@ class ProjectListScreen extends ConsumerWidget {
                                         .map(
                                           (task) => RecentTask(
                                             name: task.taskName,
-                                            status: task.status,
+                                            status: TaskStatus.formatLabel(
+                                              task.status,
+                                            ),
                                           ),
                                         )
                                         .toList();

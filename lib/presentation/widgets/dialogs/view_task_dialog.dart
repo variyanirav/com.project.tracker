@@ -13,10 +13,7 @@ class ViewTaskDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = TaskStatus.values.firstWhere(
-      (s) => s.label == task.status,
-      orElse: () => TaskStatus.todo,
-    );
+    final status = TaskStatus.fromValue(task.status);
 
     return AlertDialog(
       title: Text('Task Details', style: AppTextStyles.heading2),

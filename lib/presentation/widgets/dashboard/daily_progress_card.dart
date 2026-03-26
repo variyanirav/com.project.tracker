@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/theme/text_styles.dart';
+import '../../../core/utils/live_hours_overlay.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../providers/timer_provider.dart';
 
@@ -17,121 +18,126 @@ class DailyProgressCard extends ConsumerWidget {
     // Watch providers for real data
     final todayHoursAsync = ref.watch(todayTotalHoursProvider);
     final dailyGoalAsync = ref.watch(dailyGoalProvider);
-    final dailyProgressAsync = ref.watch(dailyProgressProvider);
+    final timerState = ref.watch(timerProvider);
 
     // Use .when() to handle loading/error states
     return todayHoursAsync.when(
       data: (todayHours) => dailyGoalAsync.when(
-        data: (dailyGoalHours) => dailyProgressAsync.when(
-          data: (progress) {
-            // Convert hours to hours and minutes
-            final todayHoursPart = todayHours.toInt();
-            final todayMinutesPart = ((todayHours - todayHoursPart) * 60)
-                .toInt();
+        data: (dailyGoalHours) {
+          final liveTodayHours = LiveHoursOverlay.withLiveOverlay(
+            persistedHours: todayHours,
+            isTimerRunning: timerState.isRunning,
+            elapsedSeconds: timerState.elapsedSeconds,
+            timerStartTime: timerState.startTime,
+            timerProjectId: timerState.projectId,
+            scope: LiveHoursScope.today,
+          );
+          final progress = dailyGoalHours == 0
+              ? 0.0
+              : (liveTodayHours / dailyGoalHours).clamp(0.0, 1.0);
 
-            final goalHoursPart = dailyGoalHours.toInt();
-            final goalMinutesPart = ((dailyGoalHours - goalHoursPart) * 60)
-                .toInt();
+          // Convert hours to hours and minutes
+          final todayHoursPart = liveTodayHours.toInt();
+          final todayMinutesPart = ((liveTodayHours - todayHoursPart) * 60)
+              .toInt();
 
-            // Calculate a friendly progress message
-            final progressMessage = progress >= 1.0
-                ? 'Great job! You\'ve completed your daily goal!'
-                : progress >= 0.75
-                ? 'Almost there! You\'re doing great.'
-                : progress >= 0.5
-                ? 'Halfway there! Keep going.'
-                : 'Get started! Log some time to track progress.';
+          final goalHoursPart = dailyGoalHours.toInt();
+          final goalMinutesPart = ((dailyGoalHours - goalHoursPart) * 60)
+              .toInt();
 
-            return AppCard(
-              padding: EdgeInsets.all(AppConstants.spacing24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Left side - Text content
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Daily Progress',
-                          style: AppTextStyles.titleMedium,
+          // Calculate a friendly progress message
+          final progressMessage = progress >= 1.0
+              ? 'Great job! You\'ve completed your daily goal!'
+              : progress >= 0.75
+              ? 'Almost there! You\'re doing great.'
+              : progress >= 0.5
+              ? 'Halfway there! Keep going.'
+              : 'Get started! Log some time to track progress.';
+
+          return AppCard(
+            padding: EdgeInsets.all(AppConstants.spacing24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Left side - Text content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Daily Progress', style: AppTextStyles.titleMedium),
+                      SizedBox(height: AppConstants.spacing8),
+                      Text(
+                        '${(progress * 100).toStringAsFixed(0)}% of your daily goal. $progressMessage',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
                         ),
-                        SizedBox(height: AppConstants.spacing8),
-                        Text(
-                          '${(progress * 100).toStringAsFixed(0)}% of your daily goal. $progressMessage',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: isDark
-                                ? AppColors.darkTextSecondary
-                                : AppColors.lightTextSecondary,
+                      ),
+                      SizedBox(height: AppConstants.spacing24),
+                      // Stats row
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Time Logged
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Time Logged',
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: isDark
+                                      ? AppColors.darkTextTertiary
+                                      : AppColors.lightTextTertiary,
+                                ),
+                              ),
+                              SizedBox(height: AppConstants.spacing4),
+                              Text(
+                                '${todayHoursPart}h ${todayMinutesPart}m',
+                                style: AppTextStyles.heading2.copyWith(
+                                  color: AppColors.brandPrimary,
+                                  fontSize: 28.0,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        SizedBox(height: AppConstants.spacing24),
-                        // Stats row
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Time Logged
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Time Logged',
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    color: isDark
-                                        ? AppColors.darkTextTertiary
-                                        : AppColors.lightTextTertiary,
-                                  ),
+                          SizedBox(width: AppConstants.spacing32),
+                          // Daily Goal
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Daily Goal',
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: isDark
+                                      ? AppColors.darkTextTertiary
+                                      : AppColors.lightTextTertiary,
                                 ),
-                                SizedBox(height: AppConstants.spacing4),
-                                Text(
-                                  '${todayHoursPart}h ${todayMinutesPart}m',
-                                  style: AppTextStyles.heading2.copyWith(
-                                    color: AppColors.brandPrimary,
-                                    fontSize: 28.0,
-                                  ),
+                              ),
+                              SizedBox(height: AppConstants.spacing4),
+                              Text(
+                                '${goalHoursPart}h ${goalMinutesPart.toString().padLeft(2, '0')}m',
+                                style: AppTextStyles.heading2.copyWith(
+                                  fontSize: 28.0,
                                 ),
-                              ],
-                            ),
-                            SizedBox(width: AppConstants.spacing32),
-                            // Daily Goal
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Daily Goal',
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    color: isDark
-                                        ? AppColors.darkTextTertiary
-                                        : AppColors.lightTextTertiary,
-                                  ),
-                                ),
-                                SizedBox(height: AppConstants.spacing4),
-                                Text(
-                                  '${goalHoursPart}h ${goalMinutesPart.toString().padLeft(2, '0')}m',
-                                  style: AppTextStyles.heading2.copyWith(
-                                    fontSize: 28.0,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
+                ),
 
-                  // Right side - Radial progress
-                  Padding(
-                    padding: EdgeInsets.only(left: AppConstants.spacing32),
-                    child: _buildRadialProgress(progress),
-                  ),
-                ],
-              ),
-            );
-          },
-          loading: () => _buildLoadingCard(isDark),
-          error: (error, stack) => _buildErrorCard(isDark, error.toString()),
-        ),
+                // Right side - Radial progress
+                Padding(
+                  padding: EdgeInsets.only(left: AppConstants.spacing32),
+                  child: _buildRadialProgress(progress),
+                ),
+              ],
+            ),
+          );
+        },
         loading: () => _buildLoadingCard(isDark),
         error: (error, stack) => _buildErrorCard(isDark, error.toString()),
       ),

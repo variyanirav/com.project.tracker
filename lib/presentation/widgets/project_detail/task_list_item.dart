@@ -107,10 +107,7 @@ class TaskListItem extends StatelessWidget {
 
   /// Build status badge
   Widget _buildStatusBadge() {
-    final taskStatus = TaskStatus.values.firstWhere(
-      (s) => s.label == task.status,
-      orElse: () => TaskStatus.todo,
-    );
+    final taskStatus = TaskStatus.fromValue(task.status);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -119,7 +116,7 @@ class TaskListItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        task.status,
+        TaskStatus.formatLabel(task.status),
         style: AppTextStyles.labelSmall.copyWith(
           color: taskStatus.getColor(),
           fontSize: 11,

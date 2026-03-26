@@ -21,7 +21,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   // Getters for DAOs (optional, for convenience)
   late final projectsDao = ProjectsDao(this);
@@ -38,7 +38,34 @@ class AppDatabase extends _$AppDatabase {
         if (from < 2) {
           await m.createTable(todoItems);
         }
+        if (from < 3) {
+          await normalizeLegacyTaskStatuses();
+        }
       },
+    );
+  }
+
+  /// Normalize legacy task status labels/casing to canonical stored codes.
+  ///
+  /// Stored canonical values are: todo, inProgress, inReview, onHold, complete.
+  Future<void> normalizeLegacyTaskStatuses() async {
+    const normalizedExpression =
+        "lower(replace(replace(replace(trim(status), '_', ''), '-', ''), ' ', ''))";
+
+    await customStatement(
+      "UPDATE tasks SET status = 'todo' WHERE $normalizedExpression = 'todo' AND status <> 'todo'",
+    );
+    await customStatement(
+      "UPDATE tasks SET status = 'inProgress' WHERE $normalizedExpression = 'inprogress' AND status <> 'inProgress'",
+    );
+    await customStatement(
+      "UPDATE tasks SET status = 'inReview' WHERE $normalizedExpression = 'inreview' AND status <> 'inReview'",
+    );
+    await customStatement(
+      "UPDATE tasks SET status = 'onHold' WHERE $normalizedExpression = 'onhold' AND status <> 'onHold'",
+    );
+    await customStatement(
+      "UPDATE tasks SET status = 'complete' WHERE $normalizedExpression = 'complete' AND status <> 'complete'",
     );
   }
 }

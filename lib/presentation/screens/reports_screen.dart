@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 import '../../core/theme/text_styles.dart';
+import '../../core/constants/app_constants.dart';
+import '../../core/utils/live_hours_overlay.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_avatar.dart';
 import '../../core/widgets/custom_scaffold.dart';
@@ -9,6 +14,10 @@ import '../routes/app_router.dart';
 import '../providers/project_provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/reports_provider.dart';
+import '../providers/theme_provider.dart';
+import '../providers/timer_provider.dart';
+import '../providers/repository_provider.dart';
+import '../widgets/dialogs/daily_goal_settings_dialog.dart';
 
 /// Reports & Export Screen
 /// Shows time tracking reports and CSV export functionality
@@ -23,13 +32,104 @@ class ReportsScreen extends ConsumerStatefulWidget {
 
 class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   String selectedPeriod = 'This Week';
+  String _selectedExportProjectId = 'all';
+  String? _lastExportedCsvPath;
+
+  ReportPeriod get _selectedReportPeriod {
+    switch (selectedPeriod) {
+      case 'Last Week':
+        return ReportPeriod.lastWeek;
+      case 'This Month':
+        return ReportPeriod.thisMonth;
+      case 'This Week':
+      default:
+        return ReportPeriod.thisWeek;
+    }
+  }
+
+  Future<void> _openExportFolder(BuildContext context) async {
+    final exportPath = _lastExportedCsvPath;
+    if (exportPath == null) return;
+
+    final folderPath = p.dirname(exportPath);
+    try {
+      if (Platform.isMacOS) {
+        await Process.run('open', [folderPath]);
+      } else if (Platform.isWindows) {
+        await Process.run('explorer', [folderPath]);
+      } else if (Platform.isLinux) {
+        await Process.run('xdg-open', [folderPath]);
+      } else {
+        throw UnsupportedError('Open folder is not supported on this platform');
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Unable to open folder: $e')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dailyGoalHoursAsync = ref.watch(dailyGoalProvider);
+    final timerState = ref.watch(timerProvider);
+    final todayHoursAsync = ref.watch(todayTotalHoursProvider);
 
     return CustomScaffold(
       activeRoute: AppRouter.reports,
+      trailing: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Tooltip(
+            message: 'Daily Goal Settings',
+            child: IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => DailyGoalSettingsDialog(
+                    currentGoalHours: dailyGoalHoursAsync.when(
+                      data: (hours) => hours.round(),
+                      loading: () => 8,
+                      error: (_, __) => 8,
+                    ),
+                    onSavePressed: (hours) async {
+                      await ref
+                          .read(dailyGoalRepositoryProvider)
+                          .setDailyGoal(hours * 60);
+
+                      ref.invalidate(dailyGoalProvider);
+                      ref.invalidate(dailyProgressProvider);
+
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Daily goal set to $hours hours'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+          SizedBox(height: AppConstants.spacing8),
+          Tooltip(
+            message: ref.watch(themeProvider) ? 'Light Mode' : 'Dark Mode',
+            child: IconButton(
+              icon: Icon(
+                ref.watch(themeProvider) ? Icons.light_mode : Icons.dark_mode,
+              ),
+              onPressed: () {
+                ref.read(themeProvider.notifier).toggle();
+              },
+            ),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -84,6 +184,27 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       0.0,
                       (sum, item) => sum + item.totalHours,
                     );
+                    final liveTotalHours = LiveHoursOverlay.withLiveOverlay(
+                      persistedHours: totalHours,
+                      isTimerRunning: timerState.isRunning,
+                      elapsedSeconds: timerState.elapsedSeconds,
+                      timerStartTime: timerState.startTime,
+                      timerProjectId: timerState.projectId,
+                      scope: LiveHoursScope.week,
+                    );
+
+                    final liveTodayHours = todayHoursAsync
+                        .whenData(
+                          (hours) => LiveHoursOverlay.withLiveOverlay(
+                            persistedHours: hours,
+                            isTimerRunning: timerState.isRunning,
+                            elapsedSeconds: timerState.elapsedSeconds,
+                            timerStartTime: timerState.startTime,
+                            timerProjectId: timerState.projectId,
+                            scope: LiveHoursScope.today,
+                          ),
+                        )
+                        .value;
 
                     return ref
                         .watch(projectsProvider)
@@ -94,7 +215,18 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                 Expanded(
                                   child: _StatCard(
                                     title: 'Total Hours',
-                                    value: '${totalHours.toStringAsFixed(1)}h',
+                                    value:
+                                        '${liveTotalHours.toStringAsFixed(1)}h',
+                                    isDark: isDark,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _StatCard(
+                                    title: 'Today Hours',
+                                    value: liveTodayHours != null
+                                        ? '${liveTodayHours.toStringAsFixed(1)}h'
+                                        : '-',
                                     isDark: isDark,
                                   ),
                                 ),
@@ -157,6 +289,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                               const SizedBox(width: 16),
                               Expanded(
                                 child: _StatCard(
+                                  title: 'Today Hours',
+                                  value: '-',
+                                  isDark: isDark,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _StatCard(
                                   title: 'Tasks Created',
                                   value: '-',
                                   isDark: isDark,
@@ -178,6 +318,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                 child: _StatCard(
                                   title: 'Active Projects',
                                   value: '0',
+                                  isDark: isDark,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _StatCard(
+                                  title: 'Today Hours',
+                                  value: '0h',
                                   isDark: isDark,
                                 ),
                               ),
@@ -213,6 +361,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: _StatCard(
+                          title: 'Today Hours',
+                          value: '-',
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _StatCard(
                           title: 'Tasks Created',
                           value: '-',
                           isDark: isDark,
@@ -234,6 +390,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         child: _StatCard(
                           title: 'Active Projects',
                           value: '0',
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _StatCard(
+                          title: 'Today Hours',
+                          value: '0h',
                           isDark: isDark,
                         ),
                       ),
@@ -341,18 +505,61 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           style: AppTextStyles.bodySmall,
                         ),
                         const SizedBox(height: 16),
+                        ref
+                            .watch(projectsProvider)
+                            .when(
+                              data: (projects) {
+                                return DropdownButtonFormField<String>(
+                                  initialValue: _selectedExportProjectId,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Export Scope',
+                                  ),
+                                  items: [
+                                    const DropdownMenuItem<String>(
+                                      value: 'all',
+                                      child: Text('All Projects'),
+                                    ),
+                                    ...projects.map(
+                                      (project) => DropdownMenuItem<String>(
+                                        value: project.id,
+                                        child: Text(project.name),
+                                      ),
+                                    ),
+                                  ],
+                                  onChanged: (value) {
+                                    if (value == null) return;
+                                    setState(() {
+                                      _selectedExportProjectId = value;
+                                    });
+                                  },
+                                );
+                              },
+                              loading: () => const SizedBox.shrink(),
+                              error: (_, __) => const SizedBox.shrink(),
+                            ),
+                        const SizedBox(height: 12),
                         AppButton.primary(
                           label: 'Download CSV',
                           onPressed: () async {
                             try {
-                              final csvData = await ref.read(
-                                weekCsvExportProvider.future,
+                              final savedPath = await ref.read(
+                                csvExportFileProvider(
+                                  CsvExportParams(
+                                    period: _selectedReportPeriod,
+                                    projectId: _selectedExportProjectId == 'all'
+                                        ? null
+                                        : _selectedExportProjectId,
+                                  ),
+                                ).future,
                               );
+                              setState(() {
+                                _lastExportedCsvPath = savedPath;
+                              });
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      'CSV exported! (${csvData.length} bytes)',
+                                      'CSV exported to: $savedPath',
                                     ),
                                     duration: Duration(seconds: 3),
                                   ),
@@ -369,6 +576,21 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                               }
                             }
                           },
+                        ),
+                        const SizedBox(height: 12),
+                        AppButton.secondary(
+                          label: 'Open Export Folder',
+                          isEnabled: _lastExportedCsvPath != null,
+                          onPressed: _lastExportedCsvPath == null
+                              ? null
+                              : () => _openExportFolder(context),
+                        ),
+                        const SizedBox(height: 12),
+                        SelectableText(
+                          _lastExportedCsvPath == null
+                              ? 'Last export location: Not exported yet'
+                              : 'Last export location: $_lastExportedCsvPath',
+                          style: AppTextStyles.bodySmall,
                         ),
                       ],
                     ),

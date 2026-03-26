@@ -126,6 +126,18 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
       lastSessionId: session.id,
     );
 
+    // Auto-transition task from "To Do" to "In Progress" when timer starts.
+    final currentStatus = task?.status.trim().toLowerCase().replaceAll(' ', '');
+    if (currentStatus == 'todo') {
+      await taskRepository.updateTaskStatus(taskId, 'inProgress');
+    }
+
+    // Refresh task providers so status/running state updates immediately in UI.
+    ref.invalidate(tasksProvider);
+    ref.invalidate(activeTaskProvider);
+    ref.invalidate(taskByIdProvider(taskId));
+    ref.invalidate(tasksByProjectProvider(projectId));
+
     _startTickTimer();
   }
 
