@@ -3,21 +3,20 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
-import '../../core/theme/text_styles.dart';
+
 import '../../core/constants/app_constants.dart';
-import '../../core/utils/live_hours_overlay.dart';
-import '../../core/widgets/app_button.dart';
+import '../../core/theme/text_styles.dart';
 import '../../core/widgets/app_avatar.dart';
-import '../../core/widgets/custom_scaffold.dart';
+import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_card.dart';
-import '../routes/app_router.dart';
-import '../providers/project_provider.dart';
-import '../providers/task_provider.dart';
-import '../providers/reports_provider.dart';
+import '../../core/widgets/custom_scaffold.dart';
 import '../providers/category_provider.dart';
+import '../providers/project_provider.dart';
+import '../providers/reports_provider.dart';
+import '../providers/repository_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/timer_provider.dart';
-import '../providers/repository_provider.dart';
+import '../routes/app_router.dart';
 import '../widgets/dialogs/daily_goal_settings_dialog.dart';
 
 /// Reports & Export Screen
@@ -32,21 +31,80 @@ class ReportsScreen extends ConsumerStatefulWidget {
 }
 
 class _ReportsScreenState extends ConsumerState<ReportsScreen> {
-  String selectedPeriod = 'This Week';
+  ReportPeriod _selectedPeriod = ReportPeriod.thisWeek;
+  bool _useCustomDateRange = false;
+  DateTimeRange? _customDateRange;
   String _selectedReportCategoryId = 'all';
-  String _selectedExportProjectId = 'all';
+  String _selectedReportProjectId = 'all';
   String? _lastExportedCsvPath;
 
-  ReportPeriod get _selectedReportPeriod {
-    switch (selectedPeriod) {
-      case 'Last Week':
-        return ReportPeriod.lastWeek;
-      case 'This Month':
-        return ReportPeriod.thisMonth;
-      case 'This Week':
-      default:
-        return ReportPeriod.thisWeek;
+  DateTime _toUtcDayStart(DateTime localDate) {
+    return DateTime.utc(localDate.year, localDate.month, localDate.day);
+  }
+
+  CsvExportParams get _activeReportParams {
+    if (_useCustomDateRange && _customDateRange != null) {
+      final startUtc = _toUtcDayStart(_customDateRange!.start);
+      final endUtcExclusive = _toUtcDayStart(
+        _customDateRange!.end,
+      ).add(const Duration(days: 1));
+      return CsvExportParams(
+        period: _selectedPeriod,
+        projectId: _selectedReportProjectId == 'all'
+            ? null
+            : _selectedReportProjectId,
+        categoryId: _selectedReportCategoryId == 'all'
+            ? null
+            : _selectedReportCategoryId,
+        customStartUtc: startUtc,
+        customEndUtcExclusive: endUtcExclusive,
+      );
     }
+
+    return CsvExportParams(
+      period: _selectedPeriod,
+      projectId: _selectedReportProjectId == 'all'
+          ? null
+          : _selectedReportProjectId,
+      categoryId: _selectedReportCategoryId == 'all'
+          ? null
+          : _selectedReportCategoryId,
+    );
+  }
+
+  String _periodLabel(ReportPeriod period) {
+    switch (period) {
+      case ReportPeriod.thisWeek:
+        return 'This Week';
+      case ReportPeriod.lastWeek:
+        return 'Last Week';
+      case ReportPeriod.thisMonth:
+        return 'This Month';
+    }
+  }
+
+  Future<void> _pickCustomDateRange(BuildContext context) async {
+    final now = DateTime.now();
+    final initial =
+        _customDateRange ??
+        DateTimeRange(start: now.subtract(const Duration(days: 6)), end: now);
+
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 5, 1, 1),
+      lastDate: DateTime(now.year + 1, 12, 31),
+      initialDateRange: initial,
+      helpText: 'Select Custom Report Range',
+    );
+
+    if (picked == null || !context.mounted) {
+      return;
+    }
+
+    setState(() {
+      _useCustomDateRange = true;
+      _customDateRange = picked;
+    });
   }
 
   Future<void> _openExportFolder(BuildContext context) async {
@@ -76,8 +134,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final dailyGoalHoursAsync = ref.watch(dailyGoalProvider);
-    final timerState = ref.watch(timerProvider);
-    final todayHoursAsync = ref.watch(todayTotalHoursProvider);
+    final reportParams = _activeReportParams;
 
     return CustomScaffold(
       activeRoute: AppRouter.reports,
@@ -109,7 +166,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Daily goal set to $hours hours'),
-                          duration: Duration(seconds: 2),
+                          duration: const Duration(seconds: 2),
                         ),
                       );
                     },
@@ -118,7 +175,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               },
             ),
           ),
-          SizedBox(height: AppConstants.spacing8),
+          const SizedBox(height: AppConstants.spacing8),
           Tooltip(
             message: ref.watch(themeProvider) ? 'Light Mode' : 'Dark Mode',
             child: IconButton(
@@ -146,7 +203,6 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -161,236 +217,228 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           ),
                         ],
                       ),
-                      AppAvatar(initials: 'TR'),
+                      const AppAvatar(initials: 'TR'),
                     ],
                   ),
-                  const SizedBox(height: 32),
-                  // Period Selector
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      ...['This Week', 'Last Week', 'This Month'].map((period) {
-                        return FilterChip(
-                          label: Text(period),
-                          selected: selectedPeriod == period,
-                          onSelected: (selected) {
-                            setState(() => selectedPeriod = period);
-                          },
-                        );
-                      }),
-                      SizedBox(
-                        width: 260,
-                        child: ref
-                            .watch(categoriesProvider)
-                            .when(
-                              data: (categories) =>
-                                  DropdownButtonFormField<String>(
-                                    initialValue: _selectedReportCategoryId,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Category Filter',
-                                    ),
-                                    items: [
-                                      const DropdownMenuItem<String>(
-                                        value: 'all',
-                                        child: Text('All Categories'),
-                                      ),
-                                      ...categories.map(
-                                        (category) => DropdownMenuItem<String>(
-                                          value: category.id,
-                                          child: Text(category.name),
+                  const SizedBox(height: 24),
+                  AppCard(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Report Filters', style: AppTextStyles.heading2),
+                        const SizedBox(height: 8),
+                        Text(
+                          'These filters apply to Overview, Category Breakdown, Project Breakdown, and CSV export.',
+                          style: AppTextStyles.bodySmall,
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            ...ReportPeriod.values.map((period) {
+                              return FilterChip(
+                                label: Text(_periodLabel(period)),
+                                selected:
+                                    !_useCustomDateRange &&
+                                    _selectedPeriod == period,
+                                onSelected: (selected) {
+                                  if (!selected) return;
+                                  setState(() {
+                                    _selectedPeriod = period;
+                                    _useCustomDateRange = false;
+                                  });
+                                },
+                              );
+                            }),
+                            FilterChip(
+                              label: const Text('Custom Date Range'),
+                              selected: _useCustomDateRange,
+                              onSelected: (selected) {
+                                if (!selected) {
+                                  setState(() {
+                                    _useCustomDateRange = false;
+                                  });
+                                  return;
+                                }
+                                _pickCustomDateRange(context);
+                              },
+                            ),
+                            if (_useCustomDateRange)
+                              AppButton.secondary(
+                                label: _customDateRange == null
+                                    ? 'Select Start & End Date'
+                                    : 'Change Date Range',
+                                onPressed: () => _pickCustomDateRange(context),
+                              ),
+                          ],
+                        ),
+                        if (_useCustomDateRange) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'Selected Range: ${formatReportDateRange(reportParams)}',
+                            style: AppTextStyles.bodySmall,
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 16,
+                          runSpacing: 12,
+                          children: [
+                            SizedBox(
+                              width: 280,
+                              child: ref
+                                  .watch(projectsProvider)
+                                  .when(
+                                    data: (projects) {
+                                      return DropdownButtonFormField<String>(
+                                        initialValue: _selectedReportProjectId,
+                                        decoration: const InputDecoration(
+                                          labelText: 'Project Scope',
                                         ),
-                                      ),
-                                    ],
-                                    onChanged: (value) {
-                                      if (value == null) return;
-                                      setState(
-                                        () => _selectedReportCategoryId = value,
+                                        items: [
+                                          const DropdownMenuItem<String>(
+                                            value: 'all',
+                                            child: Text('All Projects'),
+                                          ),
+                                          ...projects.map(
+                                            (project) =>
+                                                DropdownMenuItem<String>(
+                                                  value: project.id,
+                                                  child: Text(project.name),
+                                                ),
+                                          ),
+                                        ],
+                                        onChanged: (value) {
+                                          if (value == null) return;
+                                          setState(() {
+                                            _selectedReportProjectId = value;
+                                          });
+                                        },
                                       );
                                     },
+                                    loading: () =>
+                                        const LinearProgressIndicator(
+                                          minHeight: 2,
+                                        ),
+                                    error: (_, __) => const SizedBox.shrink(),
                                   ),
-                              loading: () =>
-                                  const LinearProgressIndicator(minHeight: 2),
-                              error: (_, __) => const SizedBox.shrink(),
                             ),
-                      ),
-                    ],
+                            SizedBox(
+                              width: 280,
+                              child: ref
+                                  .watch(categoriesProvider)
+                                  .when(
+                                    data: (categories) {
+                                      return DropdownButtonFormField<String>(
+                                        initialValue: _selectedReportCategoryId,
+                                        decoration: const InputDecoration(
+                                          labelText: 'Category Filter',
+                                        ),
+                                        items: [
+                                          const DropdownMenuItem<String>(
+                                            value: 'all',
+                                            child: Text('All Categories'),
+                                          ),
+                                          ...categories.map(
+                                            (category) =>
+                                                DropdownMenuItem<String>(
+                                                  value: category.id,
+                                                  child: Text(category.name),
+                                                ),
+                                          ),
+                                        ],
+                                        onChanged: (value) {
+                                          if (value == null) return;
+                                          setState(() {
+                                            _selectedReportCategoryId = value;
+                                          });
+                                        },
+                                      );
+                                    },
+                                    loading: () =>
+                                        const LinearProgressIndicator(
+                                          minHeight: 2,
+                                        ),
+                                    error: (_, __) => const SizedBox.shrink(),
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 32),
-                  // Statistics Row - Wired to real data
+                  const SizedBox(height: 24),
                   ref
-                      .watch(weekProjectSummaryProvider)
+                      .watch(projectSummaryProvider(reportParams))
                       .when(
                         data: (summary) {
                           final totalHours = summary.fold<double>(
                             0.0,
                             (sum, item) => sum + item.totalHours,
                           );
-                          final liveTotalHours =
-                              LiveHoursOverlay.withLiveOverlay(
-                                persistedHours: totalHours,
-                                isTimerRunning: timerState.isRunning,
-                                elapsedSeconds: timerState.elapsedSeconds,
-                                timerStartTime: timerState.startTime,
-                                timerProjectId: timerState.projectId,
-                                scope: LiveHoursScope.week,
-                              );
+                          final totalSessions = summary.fold<int>(
+                            0,
+                            (sum, item) => sum + item.sessionCount,
+                          );
+                          final activeProjects = summary
+                              .where((item) => item.sessionCount > 0)
+                              .length;
+                          final tasksInScope = summary.fold<int>(
+                            0,
+                            (sum, item) => sum + item.taskCount,
+                          );
 
-                          final liveTodayHours = todayHoursAsync
-                              .whenData(
-                                (hours) => LiveHoursOverlay.withLiveOverlay(
-                                  persistedHours: hours,
-                                  isTimerRunning: timerState.isRunning,
-                                  elapsedSeconds: timerState.elapsedSeconds,
-                                  timerStartTime: timerState.startTime,
-                                  timerProjectId: timerState.projectId,
-                                  scope: LiveHoursScope.today,
+                          return Row(
+                            children: [
+                              Expanded(
+                                child: _StatCard(
+                                  title: 'Total Hours',
+                                  value: '${totalHours.toStringAsFixed(1)}h',
+                                  isDark: isDark,
                                 ),
-                              )
-                              .value;
-
-                          return ref
-                              .watch(projectsProvider)
-                              .when(
-                                data: (projects) {
-                                  return Row(
-                                    children: [
-                                      Expanded(
-                                        child: _StatCard(
-                                          title: 'Total Hours',
-                                          value:
-                                              '${liveTotalHours.toStringAsFixed(1)}h',
-                                          isDark: isDark,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: _StatCard(
-                                          title: 'Today Hours',
-                                          value: liveTodayHours != null
-                                              ? '${liveTodayHours.toStringAsFixed(1)}h'
-                                              : '-',
-                                          isDark: isDark,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: _StatCard(
-                                          title: 'Active Projects',
-                                          value: '${projects.length}',
-                                          isDark: isDark,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: _StatCard(
-                                          title: 'Tasks Created',
-                                          value:
-                                              ref
-                                                  .watch(projectsProvider)
-                                                  .whenData((p) {
-                                                    int count = 0;
-                                                    for (var project in p) {
-                                                      ref
-                                                          .watch(
-                                                            tasksByProjectProvider(
-                                                              project.id,
-                                                            ),
-                                                          )
-                                                          .whenData((tasks) {
-                                                            count +=
-                                                                tasks.length;
-                                                          });
-                                                    }
-                                                    return count.toString();
-                                                  })
-                                                  .value
-                                                  ?.toString() ??
-                                              '-',
-                                          isDark: isDark,
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                },
-                                loading: () => Row(
-                                  children: [
-                                    Expanded(
-                                      child: _StatCard(
-                                        title: 'Total Hours',
-                                        value: '-',
-                                        isDark: isDark,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: _StatCard(
-                                        title: 'Active Projects',
-                                        value: '-',
-                                        isDark: isDark,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: _StatCard(
-                                        title: 'Today Hours',
-                                        value: '-',
-                                        isDark: isDark,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: _StatCard(
-                                        title: 'Tasks Created',
-                                        value: '-',
-                                        isDark: isDark,
-                                      ),
-                                    ),
-                                  ],
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _StatCard(
+                                  title: 'Sessions',
+                                  value: '$totalSessions',
+                                  isDark: isDark,
                                 ),
-                                error: (_, __) => Row(
-                                  children: [
-                                    Expanded(
-                                      child: _StatCard(
-                                        title: 'Total Hours',
-                                        value: '0h',
-                                        isDark: isDark,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: _StatCard(
-                                        title: 'Active Projects',
-                                        value: '0',
-                                        isDark: isDark,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: _StatCard(
-                                        title: 'Today Hours',
-                                        value: '0h',
-                                        isDark: isDark,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: _StatCard(
-                                        title: 'Tasks Created',
-                                        value: '0',
-                                        isDark: isDark,
-                                      ),
-                                    ),
-                                  ],
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _StatCard(
+                                  title: 'Active Projects',
+                                  value: '$activeProjects',
+                                  isDark: isDark,
                                 ),
-                              );
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _StatCard(
+                                  title: 'Tasks In Scope',
+                                  value: '$tasksInScope',
+                                  isDark: isDark,
+                                ),
+                              ),
+                            ],
+                          );
                         },
                         loading: () => Row(
                           children: [
                             Expanded(
                               child: _StatCard(
                                 title: 'Total Hours',
+                                value: '-',
+                                isDark: isDark,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _StatCard(
+                                title: 'Sessions',
                                 value: '-',
                                 isDark: isDark,
                               ),
@@ -406,15 +454,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: _StatCard(
-                                title: 'Today Hours',
-                                value: '-',
-                                isDark: isDark,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _StatCard(
-                                title: 'Tasks Created',
+                                title: 'Tasks In Scope',
                                 value: '-',
                                 isDark: isDark,
                               ),
@@ -433,6 +473,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: _StatCard(
+                                title: 'Sessions',
+                                value: '0',
+                                isDark: isDark,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _StatCard(
                                 title: 'Active Projects',
                                 value: '0',
                                 isDark: isDark,
@@ -441,15 +489,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: _StatCard(
-                                title: 'Today Hours',
-                                value: '0h',
-                                isDark: isDark,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _StatCard(
-                                title: 'Tasks Created',
+                                title: 'Tasks In Scope',
                                 value: '0',
                                 isDark: isDark,
                               ),
@@ -457,23 +497,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           ],
                         ),
                       ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
                   Text('Category Breakdown', style: AppTextStyles.heading2),
                   const SizedBox(height: 16),
                   ref
-                      .watch(
-                        categorySummaryProvider(
-                          CsvExportParams(
-                            period: _selectedReportPeriod,
-                            projectId: _selectedExportProjectId == 'all'
-                                ? null
-                                : _selectedExportProjectId,
-                            categoryId: _selectedReportCategoryId == 'all'
-                                ? null
-                                : _selectedReportCategoryId,
-                          ),
-                        ),
-                      )
+                      .watch(categorySummaryProvider(reportParams))
                       .when(
                         data: (summary) {
                           if (summary.isEmpty) {
@@ -528,21 +556,20 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         ),
                       ),
                   const SizedBox(height: 24),
-                  // Project Summary Table - Wired to real data
                   Text('Project Breakdown', style: AppTextStyles.heading2),
                   const SizedBox(height: 16),
                   SizedBox(
                     height: projectTableHeight,
                     child: ref
-                        .watch(projectsProvider)
+                        .watch(projectSummaryProvider(reportParams))
                         .when(
-                          data: (projects) {
-                            if (projects.isEmpty) {
+                          data: (summary) {
+                            if (summary.isEmpty) {
                               return AppCard(
                                 padding: const EdgeInsets.all(24),
                                 child: Center(
                                   child: Text(
-                                    'No projects yet',
+                                    'No projects for selected filters',
                                     style: AppTextStyles.bodyMedium,
                                   ),
                                 ),
@@ -555,38 +582,28 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                 child: DataTable(
                                   columns: const [
                                     DataColumn(label: Text('Project')),
-                                    DataColumn(label: Text('Tasks')),
+                                    DataColumn(label: Text('Tasks In Scope')),
+                                    DataColumn(label: Text('Sessions')),
                                     DataColumn(label: Text('Hours')),
-                                    DataColumn(label: Text('Status')),
                                   ],
-                                  rows: projects.map((project) {
-                                    final tasksAsync = ref.watch(
-                                      tasksByProjectProvider(project.id),
-                                    );
-                                    final hoursAsync = ref.watch(
-                                      projectTotalHoursProvider(project.id),
-                                    );
-
-                                    final taskCount =
-                                        tasksAsync
-                                            .whenData((tasks) => tasks.length)
-                                            .value ??
-                                        0;
-                                    final hours =
-                                        hoursAsync
-                                            .whenData(
-                                              (h) => h.toStringAsFixed(1),
-                                            )
-                                            .value ??
-                                        '-';
-
-                                    return _buildDataRow(
-                                      project.name,
-                                      '$taskCount',
-                                      '${hours}h',
-                                      'Active',
-                                    );
-                                  }).toList(),
+                                  rows: summary
+                                      .map(
+                                        (item) => DataRow(
+                                          cells: [
+                                            DataCell(Text(item.projectName)),
+                                            DataCell(Text('${item.taskCount}')),
+                                            DataCell(
+                                              Text('${item.sessionCount}'),
+                                            ),
+                                            DataCell(
+                                              Text(
+                                                '${item.totalHours.toStringAsFixed(1)}h',
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                      .toList(),
                                 ),
                               ),
                             );
@@ -601,7 +618,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                             padding: const EdgeInsets.all(24),
                             child: Center(
                               child: Text(
-                                'Error loading data',
+                                'Error loading project data',
                                 style: AppTextStyles.bodyMedium,
                               ),
                             ),
@@ -609,129 +626,107 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         ),
                   ),
                   const SizedBox(height: 24),
-                  // Export Section
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AppCard(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Export Data',
-                                style: AppTextStyles.heading2,
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'Download your time tracking data as CSV',
-                                style: AppTextStyles.bodySmall,
-                              ),
-                              const SizedBox(height: 16),
-                              ref
-                                  .watch(projectsProvider)
-                                  .when(
-                                    data: (projects) {
-                                      return DropdownButtonFormField<String>(
-                                        initialValue: _selectedExportProjectId,
-                                        decoration: const InputDecoration(
-                                          labelText: 'Export Scope',
-                                        ),
-                                        items: [
-                                          const DropdownMenuItem<String>(
-                                            value: 'all',
-                                            child: Text('All Projects'),
-                                          ),
-                                          ...projects.map(
-                                            (project) =>
-                                                DropdownMenuItem<String>(
-                                                  value: project.id,
-                                                  child: Text(project.name),
-                                                ),
-                                          ),
-                                        ],
-                                        onChanged: (value) {
-                                          if (value == null) return;
-                                          setState(() {
-                                            _selectedExportProjectId = value;
-                                          });
-                                        },
-                                      );
-                                    },
-                                    loading: () => const SizedBox.shrink(),
-                                    error: (_, __) => const SizedBox.shrink(),
-                                  ),
-                              const SizedBox(height: 12),
-                              AppButton.primary(
-                                label: 'Download CSV',
-                                onPressed: () async {
-                                  try {
-                                    final savedPath = await ref.read(
-                                      csvExportFileProvider(
-                                        CsvExportParams(
-                                          period: _selectedReportPeriod,
-                                          projectId:
-                                              _selectedExportProjectId == 'all'
-                                              ? null
-                                              : _selectedExportProjectId,
-                                          categoryId:
-                                              _selectedReportCategoryId == 'all'
-                                              ? null
-                                              : _selectedReportCategoryId,
-                                        ),
-                                      ).future,
-                                    );
-                                    setState(() {
-                                      _lastExportedCsvPath = savedPath;
-                                    });
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'CSV exported to: $savedPath',
-                                          ),
-                                          duration: Duration(seconds: 3),
-                                        ),
-                                      );
-                                    }
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Error: ${e.toString()}',
-                                          ),
-                                          duration: Duration(seconds: 3),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
-                              ),
-                              const SizedBox(height: 12),
-                              AppButton.secondary(
-                                label: 'Open Export Folder',
-                                isEnabled: _lastExportedCsvPath != null,
-                                onPressed: _lastExportedCsvPath == null
-                                    ? null
-                                    : () => _openExportFolder(context),
-                              ),
-                              const SizedBox(height: 12),
-                              SelectableText(
-                                _lastExportedCsvPath == null
-                                    ? 'Last export location: Not exported yet'
-                                    : 'Last export location: $_lastExportedCsvPath',
-                                style: AppTextStyles.bodySmall,
-                              ),
-                            ],
-                          ),
+                  AppCard(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Export Data', style: AppTextStyles.heading2),
+                        const SizedBox(height: 12),
+                        Text(
+                          'CSV uses the same report filters above.',
+                          style: AppTextStyles.bodySmall,
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        Text(
+                          'Applied Date Range: ${formatReportDateRange(reportParams)}',
+                          style: AppTextStyles.bodySmall,
+                        ),
+                        const SizedBox(height: 12),
+                        AppButton.primary(
+                          label: 'Download Summary CSV',
+                          onPressed: () async {
+                            try {
+                              final savedPath = await ref.read(
+                                csvExportFileProvider(reportParams).future,
+                              );
+                              setState(() {
+                                _lastExportedCsvPath = savedPath;
+                              });
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Summary CSV exported to: $savedPath',
+                                    ),
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error: ${e.toString()}'),
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        AppButton.secondary(
+                          label: 'Download Session Detail CSV',
+                          onPressed: () async {
+                            try {
+                              final savedPath = await ref.read(
+                                sessionDetailCsvExportFileProvider(
+                                  reportParams,
+                                ).future,
+                              );
+                              setState(() {
+                                _lastExportedCsvPath = savedPath;
+                              });
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Session detail CSV exported to: $savedPath',
+                                    ),
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error: ${e.toString()}'),
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        AppButton.secondary(
+                          label: 'Open Export Folder',
+                          isEnabled: _lastExportedCsvPath != null,
+                          onPressed: _lastExportedCsvPath == null
+                              ? null
+                              : () => _openExportFolder(context),
+                        ),
+                        const SizedBox(height: 12),
+                        SelectableText(
+                          _lastExportedCsvPath == null
+                              ? 'Last export location: Not exported yet'
+                              : 'Last export location: $_lastExportedCsvPath',
+                          style: AppTextStyles.bodySmall,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -741,25 +736,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       ),
     );
   }
-
-  DataRow _buildDataRow(
-    String project,
-    String tasks,
-    String hours,
-    String percentage,
-  ) {
-    return DataRow(
-      cells: [
-        DataCell(Text(project)),
-        DataCell(Text(tasks)),
-        DataCell(Text(hours)),
-        DataCell(Text(percentage)),
-      ],
-    );
-  }
 }
 
-/// Stat card widget for displaying metrics
 class _StatCard extends StatelessWidget {
   final String title;
   final String value;

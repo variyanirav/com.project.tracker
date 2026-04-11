@@ -19,7 +19,7 @@ class _FakeTimerNotifier extends TimerStateNotifier {
 
 void main() {
   testWidgets(
-    'task details shows session notes and supports edit/delete session actions',
+    'task details shows session start/stop notes and supports edit/delete session actions',
     (tester) async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(() async => db.close());
@@ -77,33 +77,50 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
-      await tester.tap(find.byTooltip('View task details').first);
+      final viewDetailsButton = find.byTooltip('View task details').first;
+      await tester.ensureVisible(viewDetailsButton);
+      await tester.tap(viewDetailsButton);
       await tester.pumpAndSettle();
 
       expect(find.text('Task Details'), findsOneWidget);
       expect(find.text('Session History'), findsOneWidget);
-      expect(find.textContaining('START: Initial planning'), findsOneWidget);
-      expect(
-        find.textContaining('STOP: Completed first draft'),
-        findsOneWidget,
-      );
+      expect(find.text('Initial planning'), findsOneWidget);
+      expect(find.text('Completed first draft'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Edit Session Notes').first);
+      final actionsButton = find.byTooltip('Actions').first;
+      await tester.ensureVisible(actionsButton);
+      await tester.tap(actionsButton);
       await tester.pumpAndSettle();
 
-      expect(find.text('Edit Session Notes'), findsOneWidget);
-      await tester.enterText(
-        find.byType(TextField).last,
-        'START: Updated plan\nSTOP: Updated outcome',
-      );
+      await tester.tap(find.text('Edit Start Note'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit Start Note'), findsOneWidget);
+      await tester.enterText(find.byType(TextField).last, 'Updated plan');
       await tester.tap(find.text('Save').last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.textContaining('START: Updated plan'), findsOneWidget);
-      expect(find.textContaining('STOP: Updated outcome'), findsOneWidget);
+      expect(find.text('Updated plan'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Delete Session').first);
+      await tester.tap(find.byTooltip('Actions').first);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Edit Stop Note'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit Stop Note'), findsOneWidget);
+      await tester.enterText(find.byType(TextField).last, 'Updated outcome');
+      await tester.tap(find.text('Save').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Updated outcome'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Actions').first);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Delete Session'));
       await tester.pumpAndSettle();
 
       expect(find.text('Delete Session'), findsOneWidget);

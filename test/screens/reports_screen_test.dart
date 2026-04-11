@@ -9,12 +9,6 @@ import 'package:project_tracker/presentation/providers/reports_provider.dart';
 import 'package:project_tracker/presentation/providers/timer_provider.dart';
 import 'package:project_tracker/presentation/screens/reports_screen.dart';
 
-class _FakeTimerNotifier extends TimerStateNotifier {
-  _FakeTimerNotifier(super.ref, TimerState initial) {
-    state = initial;
-  }
-}
-
 void main() {
   testWidgets('Open Export Folder is enabled only after CSV download', (
     tester,
@@ -22,14 +16,11 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1600, 1100));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    final idle = TimerState.idle();
-
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           projectsProvider.overrideWith((ref) async => []),
-          weekProjectSummaryProvider.overrideWith((ref) async => []),
-          todayTotalHoursProvider.overrideWith((ref) async => 0.0),
+          projectSummaryProvider.overrideWith((ref, params) async => []),
           dailyGoalProvider.overrideWith((ref) async => 8.0),
           categoriesProvider.overrideWith(
             (ref) async => [
@@ -42,7 +33,6 @@ void main() {
               ),
             ],
           ),
-          timerProvider.overrideWith((ref) => _FakeTimerNotifier(ref, idle)),
           csvExportFileProvider.overrideWith(
             (ref, params) async => '/tmp/test_export.csv',
           ),
@@ -62,8 +52,15 @@ void main() {
     expect(openButton.onPressed, isNull);
     expect(find.text('Last export location: Not exported yet'), findsOneWidget);
     expect(find.text('Category Filter'), findsOneWidget);
+    expect(
+      find.text('CSV uses the same report filters above.'),
+      findsOneWidget,
+    );
 
-    final downloadButtonFinder = find.text('Download CSV');
+    expect(find.text('Download Summary CSV'), findsOneWidget);
+    expect(find.text('Download Session Detail CSV'), findsOneWidget);
+
+    final downloadButtonFinder = find.text('Download Summary CSV');
     await tester.ensureVisible(downloadButtonFinder);
     await tester.tap(downloadButtonFinder);
     await tester.pump();

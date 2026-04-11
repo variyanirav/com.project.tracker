@@ -69,6 +69,7 @@ class _Messages {
   // Timer messages
   String get startTimerInstructions =>
       'Start a timer on any task below to begin tracking';
+  String get noRecordsFound => 'No records found';
   String get noTasksYet => 'No tasks yet';
   String get createFirstTaskInstructions => 'Create your first task above';
 

@@ -88,9 +88,15 @@ class AppConstants {
   static const int minProjectNameLength = 2;
   static const int maxProjectNameLength = 100;
   static const int minTaskNameLength = 2;
-  static const int maxTaskNameLength = 255;
+  static const int maxTaskNameLength = 120;
+  static const int maxTodoTitleLength = 120;
   static const int minDescriptionLength = 0;
   static const int maxDescriptionLength = 500;
+
+  // ============ UI STANDARDS ============
+  static const int maxTitleDisplayLines = 2;
+  static const double topBarActionButtonHeight = 44;
+  static const double topBarActionButtonMinWidth = 170;
 
   // ============ DISPLAY FORMATS ============
   static const int timerDisplayPrecision = 2; // decimal places for hours

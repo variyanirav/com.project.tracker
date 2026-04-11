@@ -299,12 +299,191 @@ reportsProvider               // Export/report data
 | `AppAvatar` | User/project avatar |
 | `CustomScaffold` | App structure with nav rail |
 | `ResponsiveLayout` | Mobile/tablet/desktop layouts |
+| `AppConfirmationDialog` | Reusable async-aware confirmation component |
+
+### **Archive Feature Components (NEW - v1.2.0)**
+
+#### AppConfirmationDialog
+**File:** `lib/core/widgets/app_confirmation_dialog.dart`
+
+A reusable dialog component for yes/no decisions with async callback support.
+
+**Properties:**
+```dart
+- title: String                           // Dialog title
+- message: String?                        // Optional description
+- confirmText: String = 'Confirm'         // Confirm button label
+- cancelText: String = 'Cancel'           // Cancel button label
+- confirmButtonColor: Color               // Confirm button color
+- onConfirm: FutureOr<void> Function()    // Async callback
+```
+
+**Usage:**
+```dart
+final shouldArchive = await showDialog<bool>(
+  context: context,
+  builder: (context) => AppConfirmationDialog(
+    title: 'Archive Task?',
+    message: 'This will move the task to archive.',
+    confirmText: 'Archive',
+    onConfirm: () async => await archiveTask(taskId),
+  ),
+) ?? false;
+```
+
+#### Archive-Related Enhancements
+
+**TaskStatus Enum Update** (`lib/core/constants/task_status.dart`)
+```dart
+enum TaskStatus {
+  toDo('toDo', 'To Do'),
+  inProgress('inProgress', 'In Progress'),
+  complete('complete', 'Complete'),
+  archived('archived', 'Archived'),  // NEW
+}
+
+// Color mapping
+getColor() {
+  switch (this) {
+    case TaskStatus.archived:
+      return Color(0xFF64748B);  // Gray
+    // ... other cases
+  }
+}
+```
+
+**TaskListView Enhancements** (`lib/presentation/widgets/project_detail/task_list_view.dart`)
+```dart
+// NEW parameters
+class TaskListView extends StatelessWidget {
+  final bool readOnly;                    // Hide edit/delete buttons
+  final bool showArchiveButton;           // Show archive for complete tasks
+  final Function(String)? onArchiveTask;  // Archive callback
+}
+
+// NEW conditional rendering
+if (!readOnly && task.status == TaskStatus.complete) {
+  // Show archive button
+}
+
+if (readOnly) {
+  // Hide start/stop/edit buttons
+}
+```
+
+**ViewTaskDialog Enhancements** (`lib/presentation/widgets/dialogs/view_task_dialog.dart`)
+```dart
+// NEW parameter
+class ViewTaskDialog extends ConsumerWidget {
+  final bool? readOnly;  // null = auto-detect from task status
+}
+
+// NEW auto-detection
+@override
+Widget build(context, ref) {
+  bool isReadOnly = readOnly ?? (task.status == TaskStatus.archived);
+  
+  // When read-only:
+  // - TextFields are disabled
+  // - Session Actions menu filtered (copy-only)
+  // - No edit/delete buttons visible
+}
+
+// NEW session action filtering
+if (isReadOnly) {
+  actions = [
+    SessionAction.copyStopNote,  // Only copy allowed
+  ];
+} else {
+  actions = [
+    SessionAction.editStartNote,
+    SessionAction.editStopNote,
+    SessionAction.copyStopNote,
+    SessionAction.deleteSession,
+  ];
+}
+```
+
+**ProjectDetailScreen Archive Tab** (`lib/presentation/screens/project_detail_screen.dart`)
+```dart
+// NEW state for tab toggle
+late TabController _taskTabController;  // 'Tasks' vs 'Archive' tabs
+
+@override
+Widget build(context, ref) {
+  return Column(
+    children: [
+      // Tab bar
+      TabBar(
+        controller: _taskTabController,
+        tabs: [
+          Tab(text: 'Tasks (${activeTasks.length})'),
+          Tab(text: 'Archive (${archivedTasks.length})'),
+        ],
+      ),
+      
+      // Tab content
+      Expanded(
+        child: TabBarView(
+          controller: _taskTabController,
+          children: [
+            // Active tasks view with archive actions
+            TaskListView(
+              tasks: activeTasks,
+              showArchiveButton: true,
+              onArchiveTask: _archiveTask,
+            ),
+            
+            // Archived tasks view (read-only + restore)
+            TaskListView(
+              tasks: archivedTasks,
+              readOnly: true,
+              showArchiveButton: false,
+              onRestoreTask: _restoreTask,  // Restore button instead
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+// NEW: Archive with confirmation
+Future<void> _archiveTask(String taskId) async {
+  bool confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AppConfirmationDialog(
+      title: 'Archive Task?',
+      confirmText: 'Archive',
+      onConfirm: () async {
+        await ref.read(archiveTaskProvider(taskId).future);
+      },
+    ),
+  ) ?? false;
+}
+
+// NEW: Restore with confirmation
+Future<void> _restoreTask(String taskId) async {
+  bool confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AppConfirmationDialog(
+      title: 'Restore Task?',
+      message: 'This will move the task back to active work.',
+      confirmText: 'Restore',
+      onConfirm: () async {
+        await ref.read(restoreTaskProvider(taskId).future);
+      },
+    ),
+  ) ?? false;
+}
+```
 
 ### **Design System**
 
 ```dart
 // Consistent across all components
 Color scheme: Dark blue navy (#0B111D), Slate (#1E293B), Brand blue (#007bff)
+Archive Color: Gray (#64748B) - indicates read-only/archived state
 Typography: Inter font, weights 300-700
 Border Radius: 12px (ROUND_TWELVE)
 Spacing: 4px, 8px, 12px, 16px, 24px, 32px (multiples of 4)
@@ -313,33 +492,53 @@ Shadows: Elevation 2, 4, 8, 16
 
 ---
 
-## ✨ MVP Features Scope
+## ✨ Features & Implementation Status
 
-### **Phase 1: MVP (Clickable Prototype)**
-- ✅ Dashboard with project cards
-- ✅ Create/edit projects
-- ✅ Project detail view with timer
-- ✅ Task creation and management
-- ✅ Daily progress tracking
-- ✅ Light/dark theme toggle
+### **Phase 1: Foundation (COMPLETE - March 19, 2026)** ✅
+- ✅ Clean Architecture setup
+- ✅ Folder structure organization
+- ✅ Theme system (dark/light modes)
+- ✅ Component library (7 reusable widgets)
+- ✅ Dashboard UI prototype
+- ✅ Documentation suite
 
-### **Phase 2: Timer & Logic**
-- ⏳ Start/pause/stop timer
-- ⏳ Background timer persistence
+### **Phase 2: Core Features (COMPLETE - March 20, 2026)** ✅
+- ✅ Project detail screen
+- ✅ Task management (CRUD)
+- ✅ Timer controls (start/pause/stop)
+- ✅ Session history tracking
+- ✅ Reports/export screen
+- ✅ Dialog system
+- ✅ Responsive layouts
+
+### **Phase 2.5: Archive Features (COMPLETE - April 11, 2026)** ✅
+- ✅ **Archive Completed Tasks**: One-click archive with confirmation
+- ✅ **Read-Only Protection**: Task-level and session-level enforcement
+- ✅ **Session History Lock**: Copy-only operations on archived sessions
+- ✅ **Restore Workflow**: Return tasks to active work
+- ✅ **Archive Tab**: Dedicated view with filtering
+- ✅ **AppConfirmationDialog**: Reusable async-aware component
+- ✅ **Comprehensive Tests**: 9/9 passing
+
+### **Phase 3: Database Integration (COMPLETE - March 20, 2026)** ✅
+- ✅ Drift ORM setup
+- ✅ 4 database tables
+- ✅ Repository layer (790 lines)
+- ✅ Riverpod providers (800+ lines, 50+)
+- ✅ UI wiring (3 screens)
+- ✅ Full CRUD operations
+
+### **Phase 4: Background Services (PLANNED)** 🔄
+- ⏳ Background timer
 - ⏳ System tray integration
-- ⏳ Database persistence
+- ⏳ Notifications
+- ⏳ Auto-save state
 
-### **Phase 3: Reporting & Export**
-- 📊 Weekly/daily reports
-- 📊 CSV export functionality
-- 📊 Task history view
-
-### **Backlog (Future)**
-- 🔔 Notifications
-- ⌨️ Keyboard shortcuts
-- 📱 Mobile sync
-- ☁️ Cloud backup
-- 👥 Team collaboration
+### **Phase 5: Production Polish (READY)** 🚀
+- 📊 Integration tests
+- 📊 Performance profiling
+- 📊 macOS code signing
+- 📊 Auto-update mechanism
 
 ---
 

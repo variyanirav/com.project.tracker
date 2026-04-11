@@ -119,6 +119,7 @@ class _UpsertTodoDialogState extends ConsumerState<UpsertTodoDialog> {
                 const SizedBox(height: AppConstants.spacing20),
                 TextFormField(
                   controller: _titleController,
+                  maxLength: AppConstants.maxTodoTitleLength,
                   decoration: const InputDecoration(labelText: 'Task title'),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -126,6 +127,9 @@ class _UpsertTodoDialogState extends ConsumerState<UpsertTodoDialog> {
                     }
                     if (value.trim().length < 2) {
                       return 'Title must be at least 2 characters';
+                    }
+                    if (value.trim().length > AppConstants.maxTodoTitleLength) {
+                      return 'Title must be ${AppConstants.maxTodoTitleLength} characters or less';
                     }
                     return null;
                   },

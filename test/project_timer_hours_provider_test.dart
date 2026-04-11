@@ -95,6 +95,38 @@ void main() {
     });
 
     test(
+      'projectMonthHoursProvider returns only current month sessions',
+      () async {
+        final timerRepo = container.read(timerSessionRepositoryProvider);
+        final now = TimezoneHelper.getCurrentUtc();
+        final baselineMonth = await container.read(
+          projectMonthHoursProvider(projectId).future,
+        );
+
+        final previousMonth = now.month == 1
+            ? DateTime.utc(now.year - 1, 12, 15)
+            : DateTime.utc(now.year, now.month - 1, 15);
+
+        final previousMonthSession = await timerRepo.createSession(
+          taskId: taskId,
+          projectId: projectId,
+          startTime: previousMonth,
+        );
+        await timerRepo.stopSession(
+          previousMonthSession.id,
+          endTime: previousMonth.add(const Duration(minutes: 30)),
+          totalSeconds: 1800,
+        );
+
+        final month = await container.read(
+          projectMonthHoursProvider(projectId).future,
+        );
+
+        expect(month, closeTo(baselineMonth, 0.0001));
+      },
+    );
+
+    test(
       'projectTodayHoursProvider includes midnight boundary session',
       () async {
         final timerRepo = container.read(timerSessionRepositoryProvider);

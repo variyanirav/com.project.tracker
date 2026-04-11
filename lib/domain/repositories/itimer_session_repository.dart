@@ -100,6 +100,12 @@ abstract class ITimerSessionRepository {
   /// Update session notes
   Future<void> updateSessionNotes(String sessionId, String? notes);
 
+  /// Update only the start note for a session.
+  Future<void> updateSessionStartNote(String sessionId, String? startNote);
+
+  /// Update only the stop note for a session.
+  Future<void> updateSessionStopNote(String sessionId, String? stopNote);
+
   /// Get sessions by task with pagination
   /// [taskId] - task to fetch sessions for
   /// [limit] - number of sessions per page

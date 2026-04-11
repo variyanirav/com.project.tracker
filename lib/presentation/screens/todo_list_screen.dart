@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/colors.dart';
 import '../../core/theme/text_styles.dart';
+import '../../core/widgets/app_button.dart';
 import '../../core/widgets/custom_scaffold.dart';
 import '../../data/database/app_database.dart';
 import '../providers/project_provider.dart';
@@ -386,10 +387,14 @@ class _TopBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppConstants.spacing16),
-          ElevatedButton.icon(
-            onPressed: onCreatePressed,
-            icon: const Icon(Icons.add),
-            label: const Text('Create To-Do'),
+          SizedBox(
+            height: AppConstants.topBarActionButtonHeight,
+            child: AppButton.primary(
+              label: 'Create To-Do',
+              icon: Icons.add,
+              minWidth: AppConstants.topBarActionButtonMinWidth,
+              onPressed: onCreatePressed,
+            ),
           ),
         ],
       ),
@@ -604,10 +609,16 @@ class _TodoListItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  todo.title,
-                  style: AppTextStyles.titleSmall.copyWith(
-                    decoration: isDone ? TextDecoration.lineThrough : null,
+                Tooltip(
+                  message: todo.title,
+                  waitDuration: const Duration(milliseconds: 350),
+                  child: Text(
+                    todo.title,
+                    maxLines: AppConstants.maxTitleDisplayLines,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.titleSmall.copyWith(
+                      decoration: isDone ? TextDecoration.lineThrough : null,
+                    ),
                   ),
                 ),
                 if (todo.description.isNotEmpty)

@@ -56,6 +56,15 @@ final projectWeekHoursProvider = FutureProvider.family<double, String>((
   return await repository.getProjectWeekHours(projectId);
 });
 
+/// Provider for project this month's hours
+final projectMonthHoursProvider = FutureProvider.family<double, String>((
+  ref,
+  projectId,
+) async {
+  final repository = ref.watch(projectRepositoryProvider);
+  return await repository.getProjectMonthHours(projectId);
+});
+
 /// Provider for projects ordered by most recent tracked work.
 ///
 /// Projects with timer sessions are sorted by latest session start time (desc).

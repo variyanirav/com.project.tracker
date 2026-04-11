@@ -6,7 +6,8 @@ enum TaskStatus {
   inProgress('inProgress', 'In Progress'),
   inReview('inReview', 'In Review'),
   onHold('onHold', 'On Hold'),
-  complete('complete', 'Complete');
+  complete('complete', 'Complete'),
+  archived('archived', 'Archived');
 
   final String code;
   final String label;
@@ -60,6 +61,8 @@ enum TaskStatus {
         return const Color(0xFFFB923C); // Orange
       case TaskStatus.complete:
         return const Color(0xFF10B981); // Green
+      case TaskStatus.archived:
+        return const Color(0xFF64748B); // Gray
     }
   }
 }

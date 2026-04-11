@@ -181,8 +181,10 @@ void main() {
         runningState.sessionId!,
       );
       expect(stoppedSession, isNotNull);
+      expect(stoppedSession!.startNote, 'Review clean architecture chapter');
+      expect(stoppedSession.stopNote, 'Summarized key points');
       expect(
-        stoppedSession!.notes,
+        stoppedSession.notes,
         contains('START: Review clean architecture chapter'),
       );
       expect(stoppedSession.notes, contains('STOP: Summarized key points'));

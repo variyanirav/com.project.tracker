@@ -17,6 +17,21 @@ final tasksByProjectProvider = FutureProvider.family<List<TaskEntity>, String>((
   return await repository.getTasksByProject(projectId);
 });
 
+/// Provider for active tasks filtered by project
+final activeTasksByProjectProvider =
+    FutureProvider.family<List<TaskEntity>, String>((ref, projectId) async {
+      final repository = ref.watch(taskRepositoryProvider);
+      final tasks = await repository.getTasksByProject(projectId);
+      return tasks.where((task) => task.status != 'archived').toList();
+    });
+
+/// Provider for archived tasks filtered by project
+final archivedTasksByProjectProvider =
+    FutureProvider.family<List<TaskEntity>, String>((ref, projectId) async {
+      final repository = ref.watch(taskRepositoryProvider);
+      return await repository.getArchivedTasksByProject(projectId);
+    });
+
 /// Provider for tasks filtered by status
 final tasksByStatusProvider = FutureProvider.family<List<TaskEntity>, String>((
   ref,
@@ -80,6 +95,8 @@ final createTaskProvider = FutureProvider.family<void, CreateTaskParams>((
   // Invalidate related providers
   ref.invalidate(tasksProvider);
   ref.invalidate(tasksByProjectProvider(params.projectId));
+  ref.invalidate(activeTasksByProjectProvider(params.projectId));
+  ref.invalidate(archivedTasksByProjectProvider(params.projectId));
 });
 
 /// Provider for updating a task
@@ -123,6 +140,36 @@ final deleteTaskProvider = FutureProvider.family<void, DeleteTaskParams>((
   // Invalidate related providers
   ref.invalidate(tasksProvider);
   ref.invalidate(tasksByProjectProvider(params.projectId));
+  ref.invalidate(taskByIdProvider(params.taskId));
+});
+
+/// Provider for archiving a task
+final archiveTaskProvider = FutureProvider.family<void, ArchiveTaskParams>((
+  ref,
+  params,
+) async {
+  final repository = ref.watch(taskRepositoryProvider);
+  await repository.archiveTask(params.taskId);
+
+  ref.invalidate(tasksProvider);
+  ref.invalidate(tasksByProjectProvider(params.projectId));
+  ref.invalidate(activeTasksByProjectProvider(params.projectId));
+  ref.invalidate(archivedTasksByProjectProvider(params.projectId));
+  ref.invalidate(taskByIdProvider(params.taskId));
+});
+
+/// Provider for restoring an archived task
+final unarchiveTaskProvider = FutureProvider.family<void, ArchiveTaskParams>((
+  ref,
+  params,
+) async {
+  final repository = ref.watch(taskRepositoryProvider);
+  await repository.unarchiveTask(params.taskId);
+
+  ref.invalidate(tasksProvider);
+  ref.invalidate(tasksByProjectProvider(params.projectId));
+  ref.invalidate(activeTasksByProjectProvider(params.projectId));
+  ref.invalidate(archivedTasksByProjectProvider(params.projectId));
   ref.invalidate(taskByIdProvider(params.taskId));
 });
 
@@ -225,6 +272,14 @@ class DeleteTaskParams {
   final String projectId;
 
   DeleteTaskParams({required this.taskId, required this.projectId});
+}
+
+/// Parameters for archive/restore operations
+class ArchiveTaskParams {
+  final String taskId;
+  final String projectId;
+
+  ArchiveTaskParams({required this.taskId, required this.projectId});
 }
 
 /// Parameters for updating task status

@@ -13,16 +13,15 @@ import '../providers/timer_provider.dart';
 import '../routes/app_router.dart';
 import '../widgets/dialogs/edit_task_dialog.dart';
 import '../widgets/dialogs/confirm_delete_dialog.dart';
-import '../widgets/dialogs/manage_categories_dialog.dart';
+import '../widgets/dialogs/create_task_dialog.dart';
+import '../../core/widgets/app_confirmation_dialog.dart';
 import '../widgets/dialogs/timer_session_note_dialog.dart';
 import '../widgets/dialogs/view_task_dialog.dart';
 import '../widgets/project_detail/active_timer_card.dart';
-import '../widgets/project_detail/create_task_form.dart';
 import '../widgets/project_detail/empty_timer_state.dart';
 import '../widgets/project_detail/project_header.dart';
 import '../widgets/project_detail/stats_card.dart';
 import '../widgets/project_detail/task_list_view.dart';
-import '../widgets/project_detail/today_tasks_sidebar.dart';
 
 /// Project Detail Screen
 /// Shows project information, active timer, and task history
@@ -37,6 +36,8 @@ class ProjectDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
+  String _taskView = 'active';
+
   @override
   void initState() {
     super.initState();
@@ -75,31 +76,46 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     }
 
     // Watch all required providers
-    final projectHours = ref.watch(
+    final projectTotalHours = ref.watch(
       projectTotalHoursProvider(selectedProject.id),
     );
-    final tasksAsync = ref.watch(tasksByProjectProvider(selectedProject.id));
+    final projectTodayHours = ref.watch(
+      projectTodayHoursProvider(selectedProject.id),
+    );
+    final projectWeekHours = ref.watch(
+      projectWeekHoursProvider(selectedProject.id),
+    );
+    final projectMonthHours = ref.watch(
+      projectMonthHoursProvider(selectedProject.id),
+    );
+    final activeTasksAsync = ref.watch(
+      activeTasksByProjectProvider(selectedProject.id),
+    );
+    final archivedTasksAsync = ref.watch(
+      archivedTasksByProjectProvider(selectedProject.id),
+    );
     final timerState = ref.watch(timerProvider);
     final timerTickAsync = ref.watch(timerTickProvider);
     final hasActiveTimer = timerState.isRunning;
 
     return CustomScaffold(
       activeRoute: AppRouter.projectDetail,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            ProjectHeader(projectName: selectedProject.name),
-            const SizedBox(height: 32),
-
-            // Statistics Section
-            Row(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            child: ProjectHeader(
+              projectName: selectedProject.name,
+              onCreatePressed: () =>
+                  _openCreateTaskDialog(context, ref, selectedProject.id),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
               children: [
-                // Total Hours
                 Expanded(
-                  child: projectHours.when(
+                  child: projectTotalHours.when(
                     data: (hours) {
                       final liveTotalHours = LiveHoursOverlay.withLiveOverlay(
                         persistedHours: hours,
@@ -133,341 +149,106 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                // Today's Hours
                 Expanded(
-                  child: FutureBuilder<double>(
-                    future: ref.watch(
-                      projectTodayHoursProvider(selectedProject.id).future,
+                  child: projectTodayHours.when(
+                    data: (hours) => StatsCard(
+                      title: AppStrings.labels.todayHours,
+                      value: DateTimeFormatter.formatHours(hours),
+                      icon: Icons.today,
+                      isDark: isDark,
                     ),
-                    builder: (context, snapshot) {
-                      final todayHours = snapshot.data ?? 0.0;
-                      return StatsCard(
-                        title: AppStrings.labels.todayHours,
-                        value:
-                            snapshot.connectionState == ConnectionState.waiting
-                            ? 'Loading...'
-                            : DateTimeFormatter.formatHours(todayHours),
-                        icon: Icons.today,
-                        isDark: isDark,
-                      );
-                    },
+                    loading: () => StatsCard(
+                      title: AppStrings.labels.todayHours,
+                      value: 'Loading...',
+                      icon: Icons.today,
+                      isDark: isDark,
+                    ),
+                    error: (err, stack) => StatsCard(
+                      title: AppStrings.labels.todayHours,
+                      value: 'Error',
+                      icon: Icons.today,
+                      isDark: isDark,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
-                // This Week Hours
                 Expanded(
-                  child: FutureBuilder<double>(
-                    future: ref.watch(
-                      projectWeekHoursProvider(selectedProject.id).future,
+                  child: projectWeekHours.when(
+                    data: (hours) => StatsCard(
+                      title: AppStrings.labels.thisWeek,
+                      value: DateTimeFormatter.formatHours(hours),
+                      icon: Icons.calendar_view_week,
+                      isDark: isDark,
                     ),
-                    builder: (context, snapshot) {
-                      final weekHours = snapshot.data ?? 0.0;
-                      return StatsCard(
-                        title: AppStrings.labels.thisWeek,
-                        value:
-                            snapshot.connectionState == ConnectionState.waiting
-                            ? 'Loading...'
-                            : DateTimeFormatter.formatHours(weekHours),
-                        icon: Icons.calendar_today,
-                        isDark: isDark,
-                      );
-                    },
+                    loading: () => StatsCard(
+                      title: AppStrings.labels.thisWeek,
+                      value: 'Loading...',
+                      icon: Icons.calendar_view_week,
+                      isDark: isDark,
+                    ),
+                    error: (err, stack) => StatsCard(
+                      title: AppStrings.labels.thisWeek,
+                      value: 'Error',
+                      icon: Icons.calendar_view_week,
+                      isDark: isDark,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: projectMonthHours.when(
+                    data: (hours) => StatsCard(
+                      title: 'This Month',
+                      value: DateTimeFormatter.formatHours(hours),
+                      icon: Icons.calendar_month,
+                      isDark: isDark,
+                    ),
+                    loading: () => StatsCard(
+                      title: 'This Month',
+                      value: 'Loading...',
+                      icon: Icons.calendar_month,
+                      isDark: isDark,
+                    ),
+                    error: (err, stack) => StatsCard(
+                      title: 'This Month',
+                      value: 'Error',
+                      icon: Icons.calendar_month,
+                      isDark: isDark,
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 32),
-
-            // Main Content: Two column layout
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left: Timer & Tasks
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Timer Card
-                      if (!hasActiveTimer)
-                        EmptyTimerState(isDark: isDark)
-                      else
-                        FutureBuilder<TaskEntity?>(
-                          future: ref.watch(activeTaskProvider.future),
-                          builder: (context, snapshot) {
-                            final activeTask = snapshot.data;
-                            return ActiveTimerCard(
-                              activeTask: activeTask,
-                              timerState: timerState,
-                              timerTickAsync: timerTickAsync,
-                              isDark: isDark,
-                              onPauseStartPressed: () async {
-                                try {
-                                  if (timerState.isPaused) {
-                                    await ref
-                                        .read(timerProvider.notifier)
-                                        .resumeTimer();
-                                  } else {
-                                    await ref
-                                        .read(timerProvider.notifier)
-                                        .pauseTimer();
-                                  }
-                                  debugPrint(
-                                    '[UI] Pause/Start button pressed successfully',
-                                  );
-                                } catch (e) {
-                                  debugPrint('[UI] Pause/Start error: $e');
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          AppStrings.messages
-                                              .timerOperationError('$e'),
-                                        ),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                              onStopPressed: () async {
-                                try {
-                                  final stopNote = await showTimerSessionNoteDialog(
-                                    context,
-                                    title: 'Session Outcome',
-                                    hintText:
-                                        'What did you complete in this session?',
-                                  );
-                                  await ref
-                                      .read(timerProvider.notifier)
-                                      .stopTimer(stopNote: stopNote);
-                                  await Future.delayed(
-                                    const Duration(milliseconds: 100),
-                                  );
-                                  ref.invalidate(
-                                    tasksByProjectProvider(selectedProject.id),
-                                  );
-                                  ref.invalidate(
-                                    projectTotalHoursProvider(
-                                      selectedProject.id,
-                                    ),
-                                  );
-                                  ref.invalidate(
-                                    projectTodayHoursProvider(
-                                      selectedProject.id,
-                                    ),
-                                  );
-                                  ref.invalidate(
-                                    projectWeekHoursProvider(
-                                      selectedProject.id,
-                                    ),
-                                  );
-                                  debugPrint(
-                                    '[UI] Stop button pressed successfully',
-                                  );
-                                } catch (e) {
-                                  debugPrint('[UI] Stop error: $e');
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          AppStrings.messages
-                                              .timerOperationError('$e'),
-                                        ),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                            );
-                          },
-                        ),
-                      const SizedBox(height: 32),
-
-                      // Create New Task Section
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            AppStrings.screenTitles.createNewTask,
-                            style: AppTextStyles.heading2,
-                          ),
-                          TextButton.icon(
-                            onPressed: () async {
-                              await showDialog<void>(
-                                context: context,
-                                builder: (_) => const ManageCategoriesDialog(),
-                              );
-
-                              ref.invalidate(
-                                tasksByProjectProvider(selectedProject.id),
-                              );
-                            },
-                            icon: const Icon(Icons.category_outlined),
-                            label: const Text('Manage Categories'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      CreateTaskForm(
-                        onCreateTask: (title, description, categoryId) async {
-                          try {
-                            await ref.read(
-                              createTaskProvider(
-                                CreateTaskParams(
-                                  projectId: selectedProject.id,
-                                  categoryId: categoryId,
-                                  taskName: title,
-                                  description: description,
-                                ),
-                              ).future,
-                            );
-
-                            ref.invalidate(
-                              tasksByProjectProvider(selectedProject.id),
-                            );
-
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    AppStrings.messages.taskCreatedSuccess(
-                                      title,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    AppStrings.messages.taskCreationError('$e'),
-                                  ),
-                                ),
-                              );
-                            }
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 32),
-
-                      // Project Tasks Section
-                      Text(
-                        AppStrings.screenTitles.projectTasks,
-                        style: AppTextStyles.heading2,
-                      ),
-                      const SizedBox(height: 16),
-                      tasksAsync.when(
-                        data: (tasks) => TaskListView(
-                          tasks: tasks,
-                          timerRunningTaskId: timerState.taskId,
-                          isTimerRunning: timerState.isRunning,
-                          currentRunningElapsedSeconds:
-                              timerState.elapsedSeconds,
-                          onViewPressed: (task) {
-                            showDialog(
-                              context: context,
-                              builder: (context) => ViewTaskDialog(task: task),
-                            );
-                          },
-                          onStartStopPressed: (task) async {
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (!hasActiveTimer)
+                    EmptyTimerState(isDark: isDark)
+                  else
+                    FutureBuilder<TaskEntity?>(
+                      future: ref.watch(activeTaskProvider.future),
+                      builder: (context, snapshot) {
+                        final activeTask = snapshot.data;
+                        return ActiveTimerCard(
+                          activeTask: activeTask,
+                          timerState: timerState,
+                          timerTickAsync: timerTickAsync,
+                          isDark: isDark,
+                          onPauseStartPressed: () async {
                             try {
-                              // Check if timer is already running for a different task
-                              if (!task.isRunning &&
-                                  timerState.isRunning &&
-                                  timerState.taskId != task.id) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        AppStrings
-                                            .messages
-                                            .stopCurrentTimerWarning,
-                                      ),
-                                      backgroundColor: Colors.orange,
-                                      duration: const Duration(seconds: 3),
-                                    ),
-                                  );
-                                }
-                                return;
-                              }
-
-                              // Use real-time timerState for accurate status
-                              if (timerState.isRunning &&
-                                  timerState.taskId == task.id) {
-                                // Stop timer
-                                debugPrint(
-                                  '[UI] Stop button clicked for task: ${task.id}',
-                                );
+                              if (timerState.isPaused) {
                                 await ref
                                     .read(timerProvider.notifier)
-                                    .stopTimer(
-                                      stopNote: await showTimerSessionNoteDialog(
-                                        context,
-                                        title: 'Session Outcome',
-                                        hintText:
-                                            'What did you complete in this session?',
-                                      ),
-                                    );
-                                await Future.delayed(
-                                  const Duration(milliseconds: 100),
-                                );
-                                ref.invalidate(
-                                  tasksByProjectProvider(selectedProject.id),
-                                );
-                                ref.invalidate(
-                                  projectTotalHoursProvider(selectedProject.id),
-                                );
-                                ref.invalidate(
-                                  projectTodayHoursProvider(selectedProject.id),
-                                );
-                                ref.invalidate(
-                                  projectWeekHoursProvider(selectedProject.id),
-                                );
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        AppStrings.messages.timerStoppedSuccess(
-                                          task.taskName,
-                                        ),
-                                      ),
-                                      duration: const Duration(seconds: 2),
-                                    ),
-                                  );
-                                }
+                                    .resumeTimer();
                               } else {
-                                // Start timer
-                                debugPrint(
-                                  '[UI] Start button clicked for task: ${task.id}',
-                                );
                                 await ref
                                     .read(timerProvider.notifier)
-                                    .startTimer(
-                                      task.id,
-                                      selectedProject.id,
-                                      startNote: await showTimerSessionNoteDialog(
-                                        context,
-                                        title: 'Session Plan',
-                                        hintText:
-                                            'What are you going to work on now?',
-                                      ),
-                                    );
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        AppStrings.messages.timerStartedSuccess(
-                                          task.taskName,
-                                        ),
-                                      ),
-                                      duration: const Duration(seconds: 2),
-                                    ),
-                                  );
-                                }
+                                    .pauseTimer();
                               }
                             } catch (e) {
                               if (context.mounted) {
@@ -484,185 +265,403 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                               }
                             }
                           },
-                          onEditPressed: (task) {
-                            showDialog(
-                              context: context,
-                              builder: (context) => EditTaskDialog(
-                                taskId: task.id,
-                                initialCategoryId: task.categoryId,
-                                initialTitle: task.taskName,
-                                initialDescription: task.description ?? '',
-                                initialStatus: TaskStatus.fromValue(
-                                  task.status,
-                                ),
-                                onSavePressed:
-                                    (
-                                      taskId,
-                                      categoryId,
-                                      title,
-                                      description,
-                                      status,
-                                    ) async {
-                                      try {
-                                        await ref.read(
-                                          updateTaskProvider(
-                                            UpdateTaskParams(
-                                              id: taskId,
-                                              projectId: selectedProject.id,
-                                              categoryId: categoryId,
-                                              taskName: title,
-                                              description: description,
-                                              status: status.code,
-                                              totalSeconds: task.totalSeconds,
-                                              isRunning: task.isRunning,
-                                              createdAt: task.createdAt,
-                                              lastStartedAt: task.lastStartedAt,
-                                              lastSessionId: task.lastSessionId,
-                                            ),
-                                          ).future,
-                                        );
-
-                                        ref.invalidate(
-                                          tasksByProjectProvider(
-                                            selectedProject.id,
-                                          ),
-                                        );
-
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                AppStrings.messages
-                                                    .taskUpdatedSuccess(title),
-                                              ),
-                                              duration: const Duration(
-                                                seconds: 2,
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      } catch (e) {
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                AppStrings.messages
-                                                    .taskUpdateError('$e'),
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      }
-                                    },
-                              ),
-                            );
-                          },
-                          onDeletePressed: (task) {
-                            showDialog(
-                              context: context,
-                              builder: (context) => ConfirmDeleteDialog(
-                                itemName: task.taskName,
-                                itemType: 'task',
-                                onConfirmPressed: () async {
-                                  try {
-                                    await ref.read(
-                                      deleteTaskProvider(
-                                        DeleteTaskParams(
-                                          taskId: task.id,
-                                          projectId: selectedProject.id,
-                                        ),
-                                      ).future,
-                                    );
-
-                                    ref.invalidate(
-                                      tasksByProjectProvider(
-                                        selectedProject.id,
+                          onStopPressed: () async {
+                            try {
+                              final stopNote = await showTimerSessionNoteDialog(
+                                context,
+                                title: 'Session Outcome',
+                                hintText:
+                                    'What did you complete in this session?',
+                              );
+                              await ref
+                                  .read(timerProvider.notifier)
+                                  .stopTimer(stopNote: stopNote);
+                              await Future.delayed(
+                                const Duration(milliseconds: 100),
+                              );
+                              ref.invalidate(
+                                tasksByProjectProvider(selectedProject.id),
+                              );
+                              ref.invalidate(
+                                projectTotalHoursProvider(selectedProject.id),
+                              );
+                              ref.invalidate(
+                                projectTodayHoursProvider(selectedProject.id),
+                              );
+                              ref.invalidate(
+                                projectWeekHoursProvider(selectedProject.id),
+                              );
+                              ref.invalidate(
+                                projectMonthHoursProvider(selectedProject.id),
+                              );
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      AppStrings.messages.timerOperationError(
+                                        '$e',
                                       ),
-                                    );
-
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            AppStrings
-                                                .messages
-                                                .taskDeletedSuccess,
-                                          ),
-                                          duration: const Duration(seconds: 2),
-                                        ),
-                                      );
-                                      Navigator.pop(context);
-                                    }
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            AppStrings.messages
-                                                .taskDeletionError('$e'),
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
-                              ),
-                            );
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
                           },
-                        ),
-                        loading: () =>
-                            const Center(child: CircularProgressIndicator()),
-                        error: (err, stack) => Center(
-                          child: Text(
-                            '${AppStrings.errors.loadingTasks}: $err',
-                            style: AppTextStyles.bodySmall,
-                          ),
-                        ),
+                        );
+                      },
+                    ),
+                  const SizedBox(height: 32),
+                  Row(
+                    children: [
+                      Text(
+                        _taskView == 'active'
+                            ? AppStrings.screenTitles.projectTasks
+                            : 'Archived Tasks',
+                        style: AppTextStyles.heading2,
+                      ),
+                      const Spacer(),
+                      ChoiceChip(
+                        label: const Text('Tasks'),
+                        selected: _taskView == 'active',
+                        onSelected: (_) => setState(() => _taskView = 'active'),
+                      ),
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: const Text('Archive'),
+                        selected: _taskView == 'archive',
+                        onSelected: (_) =>
+                            setState(() => _taskView = 'archive'),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(width: 24),
+                  const SizedBox(height: 16),
+                  if (_taskView == 'active')
+                    activeTasksAsync.when(
+                      data: (tasks) => TaskListView(
+                        tasks: tasks,
+                        timerRunningTaskId: timerState.taskId,
+                        isTimerRunning: timerState.isRunning,
+                        currentRunningElapsedSeconds: timerState.elapsedSeconds,
+                        onViewPressed: (task) => _openTaskDetails(task),
+                        onStartStopPressed: (task) async {
+                          try {
+                            if (!task.isRunning &&
+                                timerState.isRunning &&
+                                timerState.taskId != task.id) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      AppStrings
+                                          .messages
+                                          .stopCurrentTimerWarning,
+                                    ),
+                                    backgroundColor: Colors.orange,
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                              return;
+                            }
 
-                // Right: Today's Tasks Sidebar
-                Expanded(
-                  flex: 1,
-                  child: tasksAsync.when(
-                    data: (allTasks) {
-                      final today = DateTime.now();
-                      final todaysTasks = allTasks.where((task) {
-                        final taskDate = task.createdAt;
-                        return taskDate.year == today.year &&
-                            taskDate.month == today.month &&
-                            taskDate.day == today.day;
-                      }).toList();
-
-                      return TodayTasksSidebar(todaysTasks: todaysTasks);
-                    },
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (err, stack) => Center(
-                      child: Text(
-                        '${AppStrings.errors.loadingData}: $err',
-                        style: AppTextStyles.bodySmall,
+                            if (timerState.isRunning &&
+                                timerState.taskId == task.id) {
+                              await ref
+                                  .read(timerProvider.notifier)
+                                  .stopTimer(
+                                    stopNote: await showTimerSessionNoteDialog(
+                                      context,
+                                      title: 'Session Outcome',
+                                      hintText:
+                                          'What did you complete in this session?',
+                                    ),
+                                  );
+                              await Future.delayed(
+                                const Duration(milliseconds: 100),
+                              );
+                              ref.invalidate(
+                                activeTasksByProjectProvider(
+                                  selectedProject.id,
+                                ),
+                              );
+                              ref.invalidate(
+                                archivedTasksByProjectProvider(
+                                  selectedProject.id,
+                                ),
+                              );
+                              ref.invalidate(
+                                projectTotalHoursProvider(selectedProject.id),
+                              );
+                              ref.invalidate(
+                                projectTodayHoursProvider(selectedProject.id),
+                              );
+                              ref.invalidate(
+                                projectWeekHoursProvider(selectedProject.id),
+                              );
+                              ref.invalidate(
+                                projectMonthHoursProvider(selectedProject.id),
+                              );
+                            } else {
+                              await ref
+                                  .read(timerProvider.notifier)
+                                  .startTimer(
+                                    task.id,
+                                    selectedProject.id,
+                                    startNote: await showTimerSessionNoteDialog(
+                                      context,
+                                      title: 'Session Plan',
+                                      hintText:
+                                          'What are you going to work on now?',
+                                    ),
+                                  );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    AppStrings.messages.timerOperationError(
+                                      '$e',
+                                    ),
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        onEditPressed: (task) {
+                          showDialog(
+                            context: context,
+                            builder: (context) => EditTaskDialog(
+                              taskId: task.id,
+                              initialCategoryId: task.categoryId,
+                              initialTitle: task.taskName,
+                              initialDescription: task.description ?? '',
+                              initialStatus: TaskStatus.fromValue(task.status),
+                              onSavePressed:
+                                  (
+                                    taskId,
+                                    categoryId,
+                                    title,
+                                    description,
+                                    status,
+                                  ) async {
+                                    await ref.read(
+                                      updateTaskProvider(
+                                        UpdateTaskParams(
+                                          id: taskId,
+                                          projectId: selectedProject.id,
+                                          categoryId: categoryId,
+                                          taskName: title,
+                                          description: description,
+                                          status: status.code,
+                                          totalSeconds: task.totalSeconds,
+                                          isRunning: task.isRunning,
+                                          createdAt: task.createdAt,
+                                          lastStartedAt: task.lastStartedAt,
+                                          lastSessionId: task.lastSessionId,
+                                        ),
+                                      ).future,
+                                    );
+                                    ref.invalidate(
+                                      activeTasksByProjectProvider(
+                                        selectedProject.id,
+                                      ),
+                                    );
+                                  },
+                            ),
+                          );
+                        },
+                        onDeletePressed: (task) {
+                          showDialog(
+                            context: context,
+                            builder: (context) => ConfirmDeleteDialog(
+                              itemName: task.taskName,
+                              itemType: 'task',
+                              onConfirmPressed: () async {
+                                await ref.read(
+                                  deleteTaskProvider(
+                                    DeleteTaskParams(
+                                      taskId: task.id,
+                                      projectId: selectedProject.id,
+                                    ),
+                                  ).future,
+                                );
+                                ref.invalidate(
+                                  activeTasksByProjectProvider(
+                                    selectedProject.id,
+                                  ),
+                                );
+                                ref.invalidate(
+                                  archivedTasksByProjectProvider(
+                                    selectedProject.id,
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                        onArchivePressed: (task) => _archiveTask(
+                          context,
+                          ref,
+                          selectedProject.id,
+                          task,
+                        ),
+                      ),
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (err, stack) => Center(
+                        child: Text(
+                          '${AppStrings.errors.loadingTasks}: $err',
+                          style: AppTextStyles.bodySmall,
+                        ),
+                      ),
+                    )
+                  else
+                    archivedTasksAsync.when(
+                      data: (tasks) => TaskListView(
+                        tasks: tasks,
+                        timerRunningTaskId: null,
+                        isTimerRunning: false,
+                        currentRunningElapsedSeconds: 0,
+                        readOnly: true,
+                        showStatusFilters: false,
+                        emptyTitle: 'No archived tasks',
+                        emptyMessage:
+                            'Archive completed tasks to keep them out of the main list.',
+                        onViewPressed: (task) =>
+                            _openTaskDetails(task, readOnly: true),
+                        onStartStopPressed: (_) {},
+                        onEditPressed: (_) {},
+                        onDeletePressed: (_) {},
+                        onRestorePressed: (task) => _restoreTask(
+                          context,
+                          ref,
+                          selectedProject.id,
+                          task,
+                        ),
+                      ),
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (err, stack) => Center(
+                        child: Text(
+                          '${AppStrings.errors.loadingTasks}: $err',
+                          style: AppTextStyles.bodySmall,
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-            const SizedBox(height: 32),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _openCreateTaskDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String projectId,
+  ) async {
+    final created = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => CreateTaskDialog(
+        onCreatePressed: (title, description, categoryId) async {
+          await ref.read(
+            createTaskProvider(
+              CreateTaskParams(
+                projectId: projectId,
+                categoryId: categoryId,
+                taskName: title,
+                description: description,
+              ),
+            ).future,
+          );
+        },
+      ),
+    );
+
+    if (created == true) {
+      ref.invalidate(tasksByProjectProvider(projectId));
+      ref.invalidate(activeTasksByProjectProvider(projectId));
+      ref.invalidate(archivedTasksByProjectProvider(projectId));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Task created successfully')),
+        );
+      }
+    }
+  }
+
+  void _openTaskDetails(TaskEntity task, {bool readOnly = false}) {
+    showDialog(
+      context: context,
+      builder: (context) => ViewTaskDialog(task: task, readOnly: readOnly),
+    );
+  }
+
+  Future<void> _archiveTask(
+    BuildContext context,
+    WidgetRef ref,
+    String projectId,
+    TaskEntity task,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AppConfirmationDialog(
+        title: 'Archive Task',
+        message:
+            'Archive "${task.taskName}"? It will move to Archive and will not be editable or startable.',
+        confirmLabel: 'Yes',
+        cancelLabel: 'No',
+        icon: Icons.archive_outlined,
+        onConfirmPressed: () async {
+          await ref.read(
+            archiveTaskProvider(
+              ArchiveTaskParams(taskId: task.id, projectId: projectId),
+            ).future,
+          );
+        },
+      ),
+    );
+
+    if (confirmed == true) {
+      ref.invalidate(activeTasksByProjectProvider(projectId));
+      ref.invalidate(archivedTasksByProjectProvider(projectId));
+    }
+  }
+
+  Future<void> _restoreTask(
+    BuildContext context,
+    WidgetRef ref,
+    String projectId,
+    TaskEntity task,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AppConfirmationDialog(
+        title: 'Restore Task',
+        message: 'Restore "${task.taskName}" back to completed tasks?',
+        confirmLabel: 'Yes',
+        cancelLabel: 'No',
+        icon: Icons.unarchive_outlined,
+        onConfirmPressed: () async {
+          await ref.read(
+            unarchiveTaskProvider(
+              ArchiveTaskParams(taskId: task.id, projectId: projectId),
+            ).future,
+          );
+        },
+      ),
+    );
+
+    if (confirmed == true) {
+      ref.invalidate(activeTasksByProjectProvider(projectId));
+      ref.invalidate(archivedTasksByProjectProvider(projectId));
+    }
   }
 }

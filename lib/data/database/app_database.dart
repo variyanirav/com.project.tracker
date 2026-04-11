@@ -24,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   // Getters for DAOs (optional, for convenience)
   late final projectsDao = ProjectsDao(this);
@@ -55,6 +55,14 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             'CREATE INDEX IF NOT EXISTS idx_tasks_category_id ON tasks(category_id)',
           );
+        }
+        if (from < 5) {
+          if (!await _columnExists('timer_sessions', 'start_note')) {
+            await m.addColumn(timerSessions, timerSessions.startNote);
+          }
+          if (!await _columnExists('timer_sessions', 'stop_note')) {
+            await m.addColumn(timerSessions, timerSessions.stopNote);
+          }
         }
       },
     );
@@ -141,6 +149,11 @@ class AppDatabase extends _$AppDatabase {
     await customStatement(
       "UPDATE tasks SET status = 'complete' WHERE $normalizedExpression = 'complete' AND status <> 'complete'",
     );
+  }
+
+  Future<bool> _columnExists(String tableName, String columnName) async {
+    final rows = await customSelect('PRAGMA table_info($tableName)').get();
+    return rows.any((row) => row.data['name'] == columnName);
   }
 }
 
@@ -358,7 +371,17 @@ class TimerSessionsDao {
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'time_tracker.db'));
+    final file = File(p.join(dbFolder.path, _databaseFileName()));
     return NativeDatabase(file);
   });
+}
+
+String _databaseFileName() {
+  const override = String.fromEnvironment('APP_DB_FILENAME');
+  if (override.isNotEmpty) {
+    return override;
+  }
+
+  const isProduction = bool.fromEnvironment('dart.vm.product');
+  return isProduction ? 'time_tracker.db' : 'time_tracker_dev.db';
 }

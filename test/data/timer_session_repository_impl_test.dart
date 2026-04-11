@@ -266,10 +266,14 @@ void main() {
         );
         expect(paginated.length, 2);
 
-        await repository.updateSessionNotes(s2.id, 'deep focus');
+        await repository.updateSessionStartNote(s2.id, 'deep focus start');
+        await repository.updateSessionStopNote(s2.id, 'deep focus stop');
         final noted = await repository.getSessionById(s2.id);
         expect(noted, isNotNull);
-        expect(noted!.notes, 'deep focus');
+        expect(noted!.startNote, 'deep focus start');
+        expect(noted.stopNote, 'deep focus stop');
+        expect(noted.notes, contains('START: deep focus start'));
+        expect(noted.notes, contains('STOP: deep focus stop'));
 
         final monthHours = await repository.getMonthTotalHours(
           now.year,

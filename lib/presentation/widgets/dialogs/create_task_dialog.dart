@@ -1,34 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:project_tracker/data/database/app_database.dart';
+
 import '../../../core/constants/app_constants.dart';
-import '../../../core/constants/task_status.dart';
 import '../../../core/theme/text_styles.dart';
 import '../../../core/widgets/app_button.dart';
-import '../../../core/widgets/app_text_field.dart';
+import 'manage_categories_dialog.dart';
+import '../../providers/category_provider.dart';
 
-/// Create Task Dialog
-/// Opens as a modal dialog to create a new task for a project
-class CreateTaskDialog extends StatefulWidget {
-  final Function(String title, String description, TaskStatus status)
+/// Centered modal dialog for creating a task.
+class CreateTaskDialog extends ConsumerStatefulWidget {
+  final Future<void> Function(
+    String title,
+    String? description,
+    String categoryId,
+  )
   onCreatePressed;
 
   const CreateTaskDialog({super.key, required this.onCreatePressed});
 
   @override
-  State<CreateTaskDialog> createState() => _CreateTaskDialogState();
+  ConsumerState<CreateTaskDialog> createState() => _CreateTaskDialogState();
 }
 
-class _CreateTaskDialogState extends State<CreateTaskDialog> {
-  late TextEditingController _titleController;
-  late TextEditingController _descriptionController;
-  TaskStatus _selectedStatus = TaskStatus.todo;
-  String? _titleError;
+class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    _titleController = TextEditingController();
-    _descriptionController = TextEditingController();
-  }
+  String _selectedCategoryId = AppDatabase.uncategorizedCategoryId;
+  String? _titleError;
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -37,29 +38,47 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
     super.dispose();
   }
 
-  void _validateAndCreate() {
-    // Clear previous error
+  Future<void> _validateAndCreate() async {
     setState(() => _titleError = null);
 
-    // Validate title
-    if (_titleController.text.trim().isEmpty) {
-      setState(() => _titleError = 'Please enter task name');
+    final title = _titleController.text.trim();
+    final description = _descriptionController.text.trim();
+
+    if (title.isEmpty) {
+      setState(() => _titleError = 'Task title is required');
       return;
     }
 
-    if (_titleController.text.length < 3) {
-      setState(() => _titleError = 'Task name must be at least 3 characters');
+    if (title.length < AppConstants.minTaskNameLength) {
+      setState(
+        () => _titleError =
+            'Task title must be at least ${AppConstants.minTaskNameLength} characters',
+      );
       return;
     }
 
-    // Call callback and close dialog
-    widget.onCreatePressed(
-      _titleController.text.trim(),
-      _descriptionController.text.trim(),
-      _selectedStatus,
-    );
+    if (title.length > AppConstants.maxTaskNameLength) {
+      setState(
+        () => _titleError =
+            'Task title can be at most ${AppConstants.maxTaskNameLength} characters',
+      );
+      return;
+    }
 
-    Navigator.of(context).pop();
+    setState(() => _isSaving = true);
+    try {
+      await widget.onCreatePressed(
+        title,
+        description.isNotEmpty ? description : null,
+        _selectedCategoryId,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
   }
 
   @override
@@ -69,8 +88,8 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
-        width: 500,
-        constraints: const BoxConstraints(maxHeight: 700),
+        width: 560,
+        constraints: const BoxConstraints(maxHeight: 740),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           color: Theme.of(context).scaffoldBackgroundColor,
@@ -78,35 +97,50 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
             Padding(
               padding: const EdgeInsets.all(AppConstants.spacing24),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Create New Task', style: AppTextStyles.heading2),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('New Task', style: AppTextStyles.heading2),
+                        const SizedBox(height: AppConstants.spacing4),
+                        Text(
+                          'Create a task with clear scope and context.',
+                          style: AppTextStyles.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
                   IconButton(
+                    onPressed: _isSaving
+                        ? null
+                        : () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
             ),
-            Divider(height: 1),
-            // Content
+            Divider(
+              height: 1,
+              color: isDark ? Colors.grey[700] : Colors.grey[300],
+            ),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(AppConstants.spacing24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Task Title Field
-                    Text('Task Name', style: AppTextStyles.labelMedium),
-                    SizedBox(height: AppConstants.spacing8),
-                    AppTextField(
+                    TextField(
                       controller: _titleController,
-                      label: 'Enter task name',
-                      keyboardType: TextInputType.text,
+                      maxLength: AppConstants.maxTaskNameLength,
+                      enabled: !_isSaving,
+                      decoration: const InputDecoration(
+                        labelText: 'Task Title',
+                        hintText: 'Enter a clear task title',
+                      ),
                       onChanged: (_) {
                         if (_titleError != null) {
                           setState(() => _titleError = null);
@@ -114,7 +148,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
                       },
                     ),
                     if (_titleError != null) ...[
-                      SizedBox(height: AppConstants.spacing8),
+                      const SizedBox(height: AppConstants.spacing4),
                       Text(
                         _titleError!,
                         style: AppTextStyles.bodySmall.copyWith(
@@ -122,57 +156,106 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
                         ),
                       ),
                     ],
-                    SizedBox(height: AppConstants.spacing16),
+                    const SizedBox(height: AppConstants.spacing12),
+                    ref
+                        .watch(categoriesProvider)
+                        .when(
+                          data: (categories) {
+                            if (categories.isNotEmpty &&
+                                !categories.any(
+                                  (c) => c.id == _selectedCategoryId,
+                                )) {
+                              _selectedCategoryId = categories.first.id;
+                            }
 
-                    // Description Field
-                    Text('Description', style: AppTextStyles.labelMedium),
-                    SizedBox(height: AppConstants.spacing8),
-                    AppTextField(
-                      controller: _descriptionController,
-                      label: 'Enter task description (optional)',
-                      keyboardType: TextInputType.multiline,
-                      maxLines: 3,
-                    ),
-                    SizedBox(height: AppConstants.spacing16),
+                            final items = categories.isEmpty
+                                ? const [
+                                    DropdownMenuItem<String>(
+                                      value:
+                                          AppDatabase.uncategorizedCategoryId,
+                                      child: Text('Uncategorized'),
+                                    ),
+                                  ]
+                                : categories
+                                      .map(
+                                        (category) => DropdownMenuItem<String>(
+                                          value: category.id,
+                                          child: Text(category.name),
+                                        ),
+                                      )
+                                      .toList();
 
-                    // Status Dropdown
-                    Text('Status', style: AppTextStyles.labelMedium),
-                    SizedBox(height: AppConstants.spacing8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppConstants.spacing12,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: DropdownButton<TaskStatus>(
-                        value: _selectedStatus,
-                        isExpanded: true,
-                        underline: const SizedBox(),
-                        items: TaskStatus.values
-                            .map(
-                              (status) => DropdownMenuItem(
-                                value: status,
-                                child: Text(status.label),
+                            return DropdownButtonFormField<String>(
+                              initialValue: _selectedCategoryId,
+                              decoration: const InputDecoration(
+                                labelText: 'Category',
                               ),
-                            )
-                            .toList(),
-                        onChanged: (status) {
-                          if (status != null) {
-                            setState(() => _selectedStatus = status);
-                          }
-                        },
+                              items: items,
+                              onChanged: _isSaving
+                                  ? null
+                                  : (value) {
+                                      if (value != null) {
+                                        setState(
+                                          () => _selectedCategoryId = value,
+                                        );
+                                      }
+                                    },
+                            );
+                          },
+                          loading: () =>
+                              const LinearProgressIndicator(minHeight: 2),
+                          error: (_, __) => DropdownButtonFormField<String>(
+                            initialValue: AppDatabase.uncategorizedCategoryId,
+                            decoration: const InputDecoration(
+                              labelText: 'Category',
+                            ),
+                            items: const [
+                              DropdownMenuItem<String>(
+                                value: AppDatabase.uncategorizedCategoryId,
+                                child: Text('Uncategorized'),
+                              ),
+                            ],
+                            onChanged: _isSaving ? null : (_) {},
+                          ),
+                        ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: _isSaving
+                            ? null
+                            : () async {
+                                await showDialog<void>(
+                                  context: context,
+                                  builder: (_) =>
+                                      const ManageCategoriesDialog(),
+                                );
+                                ref.invalidate(categoriesProvider);
+                              },
+                        icon: const Icon(Icons.category_outlined),
+                        label: const Text('Manage Categories'),
+                      ),
+                    ),
+                    const SizedBox(height: AppConstants.spacing12),
+                    TextField(
+                      controller: _descriptionController,
+                      maxLines: 5,
+                      minLines: 3,
+                      maxLength: AppConstants.maxDescriptionLength,
+                      enabled: !_isSaving,
+                      decoration: const InputDecoration(
+                        labelText: 'Description',
+                        hintText:
+                            'Add optional details, acceptance notes, or context',
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            Divider(height: 1),
-            // Footer Buttons
+            Divider(
+              height: 1,
+              color: isDark ? Colors.grey[700] : Colors.grey[300],
+            ),
             Padding(
               padding: const EdgeInsets.all(AppConstants.spacing24),
               child: Row(
@@ -180,12 +263,14 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
                 children: [
                   AppButton.secondary(
                     label: 'Cancel',
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: _isSaving
+                        ? null
+                        : () => Navigator.of(context).pop(),
                   ),
-                  SizedBox(width: AppConstants.spacing12),
+                  const SizedBox(width: AppConstants.spacing12),
                   AppButton.primary(
-                    label: 'Create Task',
-                    onPressed: _validateAndCreate,
+                    label: _isSaving ? 'Creating...' : 'Create Task',
+                    onPressed: _isSaving ? null : _validateAndCreate,
                   ),
                 ],
               ),

@@ -1644,6 +1644,28 @@ class $TimerSessionsTable extends TimerSessions
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _startNoteMeta = const VerificationMeta(
+    'startNote',
+  );
+  @override
+  late final GeneratedColumn<String> startNote = GeneratedColumn<String>(
+    'start_note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stopNoteMeta = const VerificationMeta(
+    'stopNote',
+  );
+  @override
+  late final GeneratedColumn<String> stopNote = GeneratedColumn<String>(
+    'stop_note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
@@ -1673,6 +1695,8 @@ class $TimerSessionsTable extends TimerSessions
     endTime,
     elapsedSeconds,
     isPaused,
+    startNote,
+    stopNote,
     notes,
     createdAt,
   ];
@@ -1740,6 +1764,18 @@ class $TimerSessionsTable extends TimerSessions
         isPaused.isAcceptableOrUnknown(data['is_paused']!, _isPausedMeta),
       );
     }
+    if (data.containsKey('start_note')) {
+      context.handle(
+        _startNoteMeta,
+        startNote.isAcceptableOrUnknown(data['start_note']!, _startNoteMeta),
+      );
+    }
+    if (data.containsKey('stop_note')) {
+      context.handle(
+        _stopNoteMeta,
+        stopNote.isAcceptableOrUnknown(data['stop_note']!, _stopNoteMeta),
+      );
+    }
     if (data.containsKey('notes')) {
       context.handle(
         _notesMeta,
@@ -1791,6 +1827,14 @@ class $TimerSessionsTable extends TimerSessions
         DriftSqlType.bool,
         data['${effectivePrefix}is_paused'],
       )!,
+      startNote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}start_note'],
+      ),
+      stopNote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stop_note'],
+      ),
       notes: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
@@ -1817,6 +1861,8 @@ class TimerSessionData extends DataClass
   final DateTime? endTime;
   final int elapsedSeconds;
   final bool isPaused;
+  final String? startNote;
+  final String? stopNote;
   final String? notes;
   final DateTime createdAt;
   const TimerSessionData({
@@ -1827,6 +1873,8 @@ class TimerSessionData extends DataClass
     this.endTime,
     required this.elapsedSeconds,
     required this.isPaused,
+    this.startNote,
+    this.stopNote,
     this.notes,
     required this.createdAt,
   });
@@ -1842,6 +1890,12 @@ class TimerSessionData extends DataClass
     }
     map['elapsed_seconds'] = Variable<int>(elapsedSeconds);
     map['is_paused'] = Variable<bool>(isPaused);
+    if (!nullToAbsent || startNote != null) {
+      map['start_note'] = Variable<String>(startNote);
+    }
+    if (!nullToAbsent || stopNote != null) {
+      map['stop_note'] = Variable<String>(stopNote);
+    }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
@@ -1860,6 +1914,12 @@ class TimerSessionData extends DataClass
           : Value(endTime),
       elapsedSeconds: Value(elapsedSeconds),
       isPaused: Value(isPaused),
+      startNote: startNote == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startNote),
+      stopNote: stopNote == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stopNote),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
@@ -1880,6 +1940,8 @@ class TimerSessionData extends DataClass
       endTime: serializer.fromJson<DateTime?>(json['endTime']),
       elapsedSeconds: serializer.fromJson<int>(json['elapsedSeconds']),
       isPaused: serializer.fromJson<bool>(json['isPaused']),
+      startNote: serializer.fromJson<String?>(json['startNote']),
+      stopNote: serializer.fromJson<String?>(json['stopNote']),
       notes: serializer.fromJson<String?>(json['notes']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -1895,6 +1957,8 @@ class TimerSessionData extends DataClass
       'endTime': serializer.toJson<DateTime?>(endTime),
       'elapsedSeconds': serializer.toJson<int>(elapsedSeconds),
       'isPaused': serializer.toJson<bool>(isPaused),
+      'startNote': serializer.toJson<String?>(startNote),
+      'stopNote': serializer.toJson<String?>(stopNote),
       'notes': serializer.toJson<String?>(notes),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -1908,6 +1972,8 @@ class TimerSessionData extends DataClass
     Value<DateTime?> endTime = const Value.absent(),
     int? elapsedSeconds,
     bool? isPaused,
+    Value<String?> startNote = const Value.absent(),
+    Value<String?> stopNote = const Value.absent(),
     Value<String?> notes = const Value.absent(),
     DateTime? createdAt,
   }) => TimerSessionData(
@@ -1918,6 +1984,8 @@ class TimerSessionData extends DataClass
     endTime: endTime.present ? endTime.value : this.endTime,
     elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
     isPaused: isPaused ?? this.isPaused,
+    startNote: startNote.present ? startNote.value : this.startNote,
+    stopNote: stopNote.present ? stopNote.value : this.stopNote,
     notes: notes.present ? notes.value : this.notes,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -1932,6 +2000,8 @@ class TimerSessionData extends DataClass
           ? data.elapsedSeconds.value
           : this.elapsedSeconds,
       isPaused: data.isPaused.present ? data.isPaused.value : this.isPaused,
+      startNote: data.startNote.present ? data.startNote.value : this.startNote,
+      stopNote: data.stopNote.present ? data.stopNote.value : this.stopNote,
       notes: data.notes.present ? data.notes.value : this.notes,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -1947,6 +2017,8 @@ class TimerSessionData extends DataClass
           ..write('endTime: $endTime, ')
           ..write('elapsedSeconds: $elapsedSeconds, ')
           ..write('isPaused: $isPaused, ')
+          ..write('startNote: $startNote, ')
+          ..write('stopNote: $stopNote, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -1962,6 +2034,8 @@ class TimerSessionData extends DataClass
     endTime,
     elapsedSeconds,
     isPaused,
+    startNote,
+    stopNote,
     notes,
     createdAt,
   );
@@ -1976,6 +2050,8 @@ class TimerSessionData extends DataClass
           other.endTime == this.endTime &&
           other.elapsedSeconds == this.elapsedSeconds &&
           other.isPaused == this.isPaused &&
+          other.startNote == this.startNote &&
+          other.stopNote == this.stopNote &&
           other.notes == this.notes &&
           other.createdAt == this.createdAt);
 }
@@ -1988,6 +2064,8 @@ class TimerSessionsCompanion extends UpdateCompanion<TimerSessionData> {
   final Value<DateTime?> endTime;
   final Value<int> elapsedSeconds;
   final Value<bool> isPaused;
+  final Value<String?> startNote;
+  final Value<String?> stopNote;
   final Value<String?> notes;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
@@ -1999,6 +2077,8 @@ class TimerSessionsCompanion extends UpdateCompanion<TimerSessionData> {
     this.endTime = const Value.absent(),
     this.elapsedSeconds = const Value.absent(),
     this.isPaused = const Value.absent(),
+    this.startNote = const Value.absent(),
+    this.stopNote = const Value.absent(),
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2011,6 +2091,8 @@ class TimerSessionsCompanion extends UpdateCompanion<TimerSessionData> {
     this.endTime = const Value.absent(),
     required int elapsedSeconds,
     this.isPaused = const Value.absent(),
+    this.startNote = const Value.absent(),
+    this.stopNote = const Value.absent(),
     this.notes = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
@@ -2028,6 +2110,8 @@ class TimerSessionsCompanion extends UpdateCompanion<TimerSessionData> {
     Expression<DateTime>? endTime,
     Expression<int>? elapsedSeconds,
     Expression<bool>? isPaused,
+    Expression<String>? startNote,
+    Expression<String>? stopNote,
     Expression<String>? notes,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
@@ -2040,6 +2124,8 @@ class TimerSessionsCompanion extends UpdateCompanion<TimerSessionData> {
       if (endTime != null) 'end_time': endTime,
       if (elapsedSeconds != null) 'elapsed_seconds': elapsedSeconds,
       if (isPaused != null) 'is_paused': isPaused,
+      if (startNote != null) 'start_note': startNote,
+      if (stopNote != null) 'stop_note': stopNote,
       if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
@@ -2054,6 +2140,8 @@ class TimerSessionsCompanion extends UpdateCompanion<TimerSessionData> {
     Value<DateTime?>? endTime,
     Value<int>? elapsedSeconds,
     Value<bool>? isPaused,
+    Value<String?>? startNote,
+    Value<String?>? stopNote,
     Value<String?>? notes,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
@@ -2066,6 +2154,8 @@ class TimerSessionsCompanion extends UpdateCompanion<TimerSessionData> {
       endTime: endTime ?? this.endTime,
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
       isPaused: isPaused ?? this.isPaused,
+      startNote: startNote ?? this.startNote,
+      stopNote: stopNote ?? this.stopNote,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
@@ -2096,6 +2186,12 @@ class TimerSessionsCompanion extends UpdateCompanion<TimerSessionData> {
     if (isPaused.present) {
       map['is_paused'] = Variable<bool>(isPaused.value);
     }
+    if (startNote.present) {
+      map['start_note'] = Variable<String>(startNote.value);
+    }
+    if (stopNote.present) {
+      map['stop_note'] = Variable<String>(stopNote.value);
+    }
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
@@ -2118,6 +2214,8 @@ class TimerSessionsCompanion extends UpdateCompanion<TimerSessionData> {
           ..write('endTime: $endTime, ')
           ..write('elapsedSeconds: $elapsedSeconds, ')
           ..write('isPaused: $isPaused, ')
+          ..write('startNote: $startNote, ')
+          ..write('stopNote: $stopNote, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
@@ -3867,6 +3965,8 @@ typedef $$TimerSessionsTableCreateCompanionBuilder =
       Value<DateTime?> endTime,
       required int elapsedSeconds,
       Value<bool> isPaused,
+      Value<String?> startNote,
+      Value<String?> stopNote,
       Value<String?> notes,
       required DateTime createdAt,
       Value<int> rowid,
@@ -3880,6 +3980,8 @@ typedef $$TimerSessionsTableUpdateCompanionBuilder =
       Value<DateTime?> endTime,
       Value<int> elapsedSeconds,
       Value<bool> isPaused,
+      Value<String?> startNote,
+      Value<String?> stopNote,
       Value<String?> notes,
       Value<DateTime> createdAt,
       Value<int> rowid,
@@ -3926,6 +4028,16 @@ class $$TimerSessionsTableFilterComposer
 
   ColumnFilters<bool> get isPaused => $composableBuilder(
     column: $table.isPaused,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get startNote => $composableBuilder(
+    column: $table.startNote,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stopNote => $composableBuilder(
+    column: $table.stopNote,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3984,6 +4096,16 @@ class $$TimerSessionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get startNote => $composableBuilder(
+    column: $table.startNote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stopNote => $composableBuilder(
+    column: $table.stopNote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get notes => $composableBuilder(
     column: $table.notes,
     builder: (column) => ColumnOrderings(column),
@@ -4026,6 +4148,12 @@ class $$TimerSessionsTableAnnotationComposer
 
   GeneratedColumn<bool> get isPaused =>
       $composableBuilder(column: $table.isPaused, builder: (column) => column);
+
+  GeneratedColumn<String> get startNote =>
+      $composableBuilder(column: $table.startNote, builder: (column) => column);
+
+  GeneratedColumn<String> get stopNote =>
+      $composableBuilder(column: $table.stopNote, builder: (column) => column);
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
@@ -4076,6 +4204,8 @@ class $$TimerSessionsTableTableManager
                 Value<DateTime?> endTime = const Value.absent(),
                 Value<int> elapsedSeconds = const Value.absent(),
                 Value<bool> isPaused = const Value.absent(),
+                Value<String?> startNote = const Value.absent(),
+                Value<String?> stopNote = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -4087,6 +4217,8 @@ class $$TimerSessionsTableTableManager
                 endTime: endTime,
                 elapsedSeconds: elapsedSeconds,
                 isPaused: isPaused,
+                startNote: startNote,
+                stopNote: stopNote,
                 notes: notes,
                 createdAt: createdAt,
                 rowid: rowid,
@@ -4100,6 +4232,8 @@ class $$TimerSessionsTableTableManager
                 Value<DateTime?> endTime = const Value.absent(),
                 required int elapsedSeconds,
                 Value<bool> isPaused = const Value.absent(),
+                Value<String?> startNote = const Value.absent(),
+                Value<String?> stopNote = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
@@ -4111,6 +4245,8 @@ class $$TimerSessionsTableTableManager
                 endTime: endTime,
                 elapsedSeconds: elapsedSeconds,
                 isPaused: isPaused,
+                startNote: startNote,
+                stopNote: stopNote,
                 notes: notes,
                 createdAt: createdAt,
                 rowid: rowid,

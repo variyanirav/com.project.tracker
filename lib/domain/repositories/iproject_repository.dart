@@ -52,6 +52,9 @@ abstract class IProjectRepository {
   /// Get this week's total hours for a project
   Future<double> getProjectWeekHours(String projectId);
 
+  /// Get this month's total hours for a project
+  Future<double> getProjectMonthHours(String projectId);
+
   /// Get all active projects (status = 'active')
   Future<List<ProjectEntity>> getActiveProjects();
 

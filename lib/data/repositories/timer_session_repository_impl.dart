@@ -29,6 +29,8 @@ class TimerSessionRepositoryImpl implements ITimerSessionRepository {
       endTime: null,
       elapsedSeconds: 0,
       isPaused: false,
+      startNote: null,
+      stopNote: null,
       notes: null,
       createdAt: now,
     );
@@ -251,7 +253,62 @@ class TimerSessionRepositoryImpl implements ITimerSessionRepository {
       endTime: session.endTime,
       elapsedSeconds: session.totalSeconds,
       isPaused: session.isPaused,
+      startNote: session.startNote,
+      stopNote: session.stopNote,
       notes: notes,
+      createdAt: session.createdAt,
+    );
+
+    await (db.update(
+      db.timerSessions,
+    )..where((t) => t.id.equals(sessionId))).write(updated);
+  }
+
+  @override
+  Future<void> updateSessionStartNote(
+    String sessionId,
+    String? startNote,
+  ) async {
+    final session = await getSessionById(sessionId);
+    if (session == null) return;
+
+    final legacyNotes = _combineLegacyNotes(startNote, session.stopNote);
+    final updated = TimerSessionData(
+      id: session.id,
+      taskId: session.taskId,
+      projectId: session.projectId,
+      startTime: session.startTime,
+      endTime: session.endTime,
+      elapsedSeconds: session.totalSeconds,
+      isPaused: session.isPaused,
+      startNote: startNote,
+      stopNote: session.stopNote,
+      notes: legacyNotes,
+      createdAt: session.createdAt,
+    );
+
+    await (db.update(
+      db.timerSessions,
+    )..where((t) => t.id.equals(sessionId))).write(updated);
+  }
+
+  @override
+  Future<void> updateSessionStopNote(String sessionId, String? stopNote) async {
+    final session = await getSessionById(sessionId);
+    if (session == null) return;
+
+    final legacyNotes = _combineLegacyNotes(session.startNote, stopNote);
+    final updated = TimerSessionData(
+      id: session.id,
+      taskId: session.taskId,
+      projectId: session.projectId,
+      startTime: session.startTime,
+      endTime: session.endTime,
+      elapsedSeconds: session.totalSeconds,
+      isPaused: session.isPaused,
+      startNote: session.startNote,
+      stopNote: stopNote,
+      notes: legacyNotes,
       createdAt: session.createdAt,
     );
 
@@ -311,6 +368,8 @@ class TimerSessionRepositoryImpl implements ITimerSessionRepository {
 
   /// Helper: Convert database TimerSessionData to domain TimerSessionEntity
   TimerSessionEntity _toEntity(TimerSessionData data) {
+    final legacyNotes = data.notes?.trim();
+    final parsedLegacyNotes = _parseLegacyNotes(legacyNotes);
     return TimerSessionEntity(
       id: data.id,
       taskId: data.taskId,
@@ -323,7 +382,9 @@ class TimerSessionRepositoryImpl implements ITimerSessionRepository {
       isCompleted: data.endTime != null,
       sessionDate:
           '${data.startTime.year}-${data.startTime.month.toString().padLeft(2, '0')}-${data.startTime.day.toString().padLeft(2, '0')}',
-      notes: data.notes,
+      startNote: data.startNote ?? parsedLegacyNotes.$1,
+      stopNote: data.stopNote ?? parsedLegacyNotes.$2,
+      notes: legacyNotes,
       createdAt: data.createdAt,
     );
   }
@@ -338,8 +399,51 @@ class TimerSessionRepositoryImpl implements ITimerSessionRepository {
       endTime: entity.endTime,
       elapsedSeconds: entity.totalSeconds,
       isPaused: false,
+      startNote: entity.startNote,
+      stopNote: entity.stopNote,
       notes: null,
       createdAt: entity.createdAt,
     );
+  }
+
+  (String?, String?) _parseLegacyNotes(String? notes) {
+    if (notes == null || notes.trim().isEmpty) {
+      return (null, null);
+    }
+
+    String? startNote;
+    String? stopNote;
+    for (final rawLine in notes.split('\n')) {
+      final line = rawLine.trim();
+      if (line.startsWith('START: ')) {
+        startNote = line.substring('START: '.length).trim();
+      } else if (line.startsWith('STOP: ')) {
+        stopNote = line.substring('STOP: '.length).trim();
+      }
+    }
+
+    return (
+      startNote?.isEmpty == true ? null : startNote,
+      stopNote?.isEmpty == true ? null : stopNote,
+    );
+  }
+
+  String? _combineLegacyNotes(String? startNote, String? stopNote) {
+    final parts = <String>[];
+    final trimmedStart = startNote?.trim();
+    final trimmedStop = stopNote?.trim();
+
+    if (trimmedStart != null && trimmedStart.isNotEmpty) {
+      parts.add('START: $trimmedStart');
+    }
+    if (trimmedStop != null && trimmedStop.isNotEmpty) {
+      parts.add('STOP: $trimmedStop');
+    }
+
+    if (parts.isEmpty) {
+      return null;
+    }
+
+    return parts.join('\n');
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/task_status.dart';
 import '../../../core/theme/text_styles.dart';
@@ -30,52 +31,110 @@ class ActiveTimerCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final taskTitle = (activeTask?.taskName ?? 'Task').trim();
+    final taskDescription = (activeTask?.description ?? '').trim();
+    final showDescription = taskDescription.isNotEmpty;
+    final status = TaskStatus.fromValue(
+      activeTask?.status ?? TaskStatus.inProgress.code,
+    );
+    final statusColor = status.getColor();
+
     return AppCard(
       padding: const EdgeInsets.all(24),
       backgroundColor: isDark ? Colors.grey[900] : Colors.grey[50],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            AppStrings.labels.currentlyTracking,
-            style: AppTextStyles.labelMedium,
+          Row(
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  AppStrings.labels.currentlyTracking,
+                  style: AppTextStyles.labelMedium,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: statusColor.withValues(alpha: 0.45),
+                  ),
+                ),
+                child: Text(
+                  TaskStatus.formatLabel(status.code),
+                  style: AppTextStyles.labelSmall.copyWith(color: statusColor),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           // Active task details
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Tooltip(
+                message: taskTitle,
+                waitDuration: const Duration(milliseconds: 350),
+                child: Text(
+                  taskTitle,
+                  style: AppTextStyles.heading2,
+                  maxLines: AppConstants.maxTitleDisplayLines,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(height: 14),
               Text(
-                activeTask?.taskName ?? 'Task',
-                style: AppTextStyles.heading2,
+                'Task Details',
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: isDark ? Colors.white70 : Colors.black54,
+                ),
               ),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Text(
-                    activeTask?.description ?? AppStrings.labels.inProgress,
-                    style: AppTextStyles.bodySmall,
+              Container(
+                width: double.infinity,
+                constraints: const BoxConstraints(maxHeight: 300),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.black.withValues(alpha: 0.03),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.12)
+                        : Colors.black.withValues(alpha: 0.10),
                   ),
-                  const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: TaskStatus.inProgress.getColor().withValues(
-                        alpha: 0.2,
+                ),
+                child: showDescription
+                    ? SingleChildScrollView(
+                        child: SelectableText(
+                          taskDescription,
+                          style: AppTextStyles.bodySmall,
+                        ),
+                      )
+                    : Text(
+                        'No task description provided yet.',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark ? Colors.white60 : Colors.black54,
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      AppStrings.labels.inProgress,
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: TaskStatus.inProgress.getColor(),
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ],
           ),

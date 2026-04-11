@@ -12,6 +12,8 @@ class TimerSessionEntity {
   final int totalSeconds;
   final bool isCompleted;
   final String sessionDate;
+  final String? startNote;
+  final String? stopNote;
   final String? notes;
   final DateTime createdAt;
 
@@ -26,6 +28,8 @@ class TimerSessionEntity {
     required this.totalSeconds,
     required this.isCompleted,
     required this.sessionDate,
+    this.startNote,
+    this.stopNote,
     this.notes,
     required this.createdAt,
   });
@@ -41,6 +45,8 @@ class TimerSessionEntity {
     int? totalSeconds,
     bool? isCompleted,
     String? sessionDate,
+    String? startNote,
+    String? stopNote,
     String? notes,
     DateTime? createdAt,
   }) {
@@ -55,6 +61,8 @@ class TimerSessionEntity {
       totalSeconds: totalSeconds ?? this.totalSeconds,
       isCompleted: isCompleted ?? this.isCompleted,
       sessionDate: sessionDate ?? this.sessionDate,
+      startNote: startNote ?? this.startNote,
+      stopNote: stopNote ?? this.stopNote,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
     );

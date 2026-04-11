@@ -152,7 +152,7 @@ void main() {
   });
 
   testWidgets(
-    'Project detail shows total, today and week hours from providers',
+    'Project detail shows total, today, week and month hours from providers',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(1600, 1100));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -168,6 +168,7 @@ void main() {
             projectTotalHoursProvider.overrideWith((ref, id) async => 2.5),
             projectTodayHoursProvider.overrideWith((ref, id) async => 1.0),
             projectWeekHoursProvider.overrideWith((ref, id) async => 1.75),
+            projectMonthHoursProvider.overrideWith((ref, id) async => 4.25),
             timerProvider.overrideWith(
               (ref) => _FakeTimerNotifier(ref, idleState),
             ),
@@ -184,10 +185,12 @@ void main() {
       expect(find.text('Total Hours'), findsOneWidget);
       expect(find.text("Today's Hours"), findsOneWidget);
       expect(find.text('This Week'), findsOneWidget);
+      expect(find.text('This Month'), findsOneWidget);
 
       expect(find.text('2h 30m'), findsOneWidget);
       expect(find.text('1h'), findsOneWidget);
       expect(find.text('1h 45m'), findsOneWidget);
+      expect(find.text('4h 15m'), findsOneWidget);
     },
   );
 
@@ -217,6 +220,7 @@ void main() {
           projectTotalHoursProvider.overrideWith((ref, id) async => 2.5),
           projectTodayHoursProvider.overrideWith((ref, id) async => 1.0),
           projectWeekHoursProvider.overrideWith((ref, id) async => 1.75),
+          projectMonthHoursProvider.overrideWith((ref, id) async => 4.25),
           timerProvider.overrideWith(
             (ref) => _FakeTimerNotifier(ref, pausedState),
           ),

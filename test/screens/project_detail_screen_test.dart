@@ -154,7 +154,7 @@ void main() {
       expect(find.text('This Week'), findsOneWidget);
 
       // Total = 5400 + 7200 = 12600 sec = 3h 30m.
-      expect(find.text('3h 30m'), findsOneWidget);
+      expect(find.text('3h 30m'), findsAtLeastNWidgets(1));
       // Today and week should include today's 5400 sec => 1h 30m.
       expect(find.text('1h 30m'), findsAtLeastNWidgets(2));
     });
@@ -165,18 +165,109 @@ void main() {
         await pumpScreen(tester);
 
         expect(find.text('Project Tasks'), findsOneWidget);
-        expect(find.text('Today Task'), findsAtLeastNWidgets(2));
+        expect(find.text('Today Task'), findsAtLeastNWidgets(1));
         expect(find.text('Old Task'), findsOneWidget);
 
-        final todayMeta =
-            '${_formatSeconds(5400)} · ${_formatDate(todayCreated)}';
-        final oldMeta = '${_formatSeconds(1800)} · ${_formatDate(oldCreated)}';
+        // Duration values are rendered in dedicated table cells.
+        expect(find.text(_formatSeconds(5400)), findsAtLeastNWidgets(1));
+        expect(find.text(_formatSeconds(1800)), findsAtLeastNWidgets(1));
 
-        expect(find.text(todayMeta), findsOneWidget);
-        expect(find.text(oldMeta), findsOneWidget);
+        // Running task row should expose timer stop control.
+        expect(find.byTooltip('Stop'), findsAtLeastNWidgets(1));
+      },
+    );
 
-        // Running task row should expose Stop action.
-        expect(find.text('Stop'), findsAtLeastNWidgets(1));
+    testWidgets(
+      '3) Completed task can be archived and restored from Archive tab',
+      (tester) async {
+        final completedTask = await taskRepo.createTask(
+          projectId: projectId,
+          taskName: 'Archive Me',
+          description: 'Task ready for archive',
+        );
+
+        final completedTaskEntity = (await taskRepo.getTaskById(
+          completedTask.id,
+        ))!;
+        await taskRepo.updateTask(
+          completedTaskEntity.copyWith(
+            status: 'complete',
+            totalSeconds: 3600,
+            isRunning: false,
+            createdAt: DateTime.now().toUtc(),
+          ),
+        );
+
+        final archiveSession = await timerRepo.createSession(
+          taskId: completedTask.id,
+          projectId: projectId,
+          startTime: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
+        );
+        await timerRepo.stopSession(
+          archiveSession.id,
+          endTime: DateTime.now().toUtc(),
+          totalSeconds: 3600,
+        );
+        await timerRepo.updateSessionNotes(
+          archiveSession.id,
+          'START: Archive setup\nSTOP: Ready to archive',
+        );
+
+        await pumpScreen(tester, timerState: TimerState.idle());
+
+        expect(find.text('Archive Me'), findsAtLeastNWidgets(1));
+        final archiveButton = find.byTooltip('Archive Task').first;
+        await tester.ensureVisible(archiveButton);
+        await tester.tap(archiveButton);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Archive Task'), findsOneWidget);
+        await tester.tap(find.text('Yes'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Archive Me'), findsNothing);
+
+        await tester.tap(find.text('Archive'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Archive Me'), findsOneWidget);
+        expect(find.byTooltip('Edit task'), findsNothing);
+        expect(find.byTooltip('Start'), findsNothing);
+        expect(find.byTooltip('Stop'), findsNothing);
+
+        final archivedViewButton = find.byTooltip('View task details').first;
+        await tester.ensureVisible(archivedViewButton);
+        await tester.tap(archivedViewButton);
+        await tester.pumpAndSettle();
+
+        final sessionActionsButton = find.byTooltip('Actions').first;
+        await tester.ensureVisible(sessionActionsButton);
+        await tester.tap(sessionActionsButton);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Copy Stop Note'), findsOneWidget);
+        expect(find.text('Edit Start Note'), findsNothing);
+        expect(find.text('Edit Stop Note'), findsNothing);
+        expect(find.text('Delete Session'), findsNothing);
+
+        await tester.tapAt(const Offset(20, 20));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byTooltip('Close').last);
+        await tester.pumpAndSettle();
+
+        final restoreButton = find.byTooltip('Restore Task').first;
+        await tester.ensureVisible(restoreButton);
+        await tester.tap(restoreButton);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Restore Task'), findsOneWidget);
+        await tester.tap(find.text('Yes'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Tasks'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Archive Me'), findsAtLeastNWidgets(1));
       },
     );
 
@@ -190,18 +281,30 @@ void main() {
         await tester.tap(viewDetailsButton);
         await tester.pumpAndSettle();
 
-        expect(find.text('Task Details'), findsOneWidget);
+        expect(find.text('Task Details'), findsAtLeastNWidgets(1));
         expect(find.text('Title'), findsOneWidget);
-        final detailsDialog = find.byType(AlertDialog);
+        final detailsDialog = find.byType(Dialog);
         expect(
           find.descendant(of: detailsDialog, matching: find.text('Today Task')),
           findsOneWidget,
         );
         expect(find.text('Progress Status'), findsOneWidget);
-        expect(find.text('In Progress'), findsOneWidget);
+        expect(
+          find.descendant(
+            of: detailsDialog,
+            matching: find.text('In Progress'),
+          ),
+          findsAtLeastNWidgets(1),
+        );
         expect(find.text('Timer Status'), findsOneWidget);
         expect(find.text('⏱️ Currently Tracking'), findsOneWidget);
-        expect(find.text('Description'), findsOneWidget);
+        expect(
+          find.descendant(
+            of: detailsDialog,
+            matching: find.text('Description'),
+          ),
+          findsAtLeastNWidgets(1),
+        );
         expect(
           find.descendant(
             of: detailsDialog,
@@ -258,14 +361,14 @@ void main() {
         await tester.pumpAndSettle();
 
         // Screen should remain open and show updated task row.
-        expect(find.text('Edited Task Title'), findsAtLeastNWidgets(2));
+        expect(find.text('Edited Task Title'), findsAtLeastNWidgets(1));
         expect(find.text('Complete'), findsAtLeastNWidgets(1));
 
         // Verify info dialog values were updated.
         await tester.tap(find.byTooltip('View task details').first);
         await tester.pumpAndSettle();
 
-        final detailsDialog = find.byType(AlertDialog);
+        final detailsDialog = find.byType(Dialog);
         expect(
           find.descendant(
             of: detailsDialog,
@@ -287,20 +390,44 @@ void main() {
       },
     );
 
-    testWidgets('5) Today tasks section shows only today tasks with basic info', (
+    testWidgets('5) Tasks table replaces today tasks section', (tester) async {
+      await pumpScreen(tester);
+
+      expect(find.text("Today's Tasks"), findsNothing);
+
+      // Table headers should be visible.
+      expect(find.text('Task ID'), findsAtLeastNWidgets(1));
+      expect(find.text('Name'), findsAtLeastNWidgets(1));
+      expect(find.text('Timer'), findsAtLeastNWidgets(1));
+      expect(find.text('Actions'), findsAtLeastNWidgets(1));
+
+      // Both tasks should appear in the project tasks table.
+      expect(find.text('Today Task'), findsAtLeastNWidgets(1));
+      expect(find.text('Old Task'), findsOneWidget);
+    });
+
+    testWidgets('6) Filter with no matching records shows no-records message', (
       tester,
     ) async {
       await pumpScreen(tester);
 
-      expect(find.text("Today's Tasks"), findsOneWidget);
+      await tester.tap(find.text('Complete').first);
+      await tester.pumpAndSettle();
 
-      // Today task appears in main list + today's list, old task only in main list.
-      expect(find.text('Today Task'), findsAtLeastNWidgets(2));
-      expect(find.text('Old Task'), findsOneWidget);
+      expect(find.text('No records found'), findsOneWidget);
+      expect(find.text('Task ID'), findsNothing);
+    });
 
-      // Basic info in today's card: duration + status.
-      expect(find.text(_formatSeconds(5400)), findsWidgets);
-      expect(find.text('inProgress'), findsAtLeastNWidgets(1));
+    testWidgets('7) Empty task dataset shows no-records message', (
+      tester,
+    ) async {
+      await taskRepo.deleteTask(todayTaskId);
+      await taskRepo.deleteTask(oldTaskId);
+
+      await pumpScreen(tester);
+
+      expect(find.text('No records found'), findsOneWidget);
+      expect(find.text('Create your first task above'), findsOneWidget);
     });
   });
 }

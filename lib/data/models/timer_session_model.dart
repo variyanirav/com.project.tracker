@@ -12,6 +12,8 @@ class TimerSessionModel {
   final DateTime? endTime; // UTC, null while running
   final int elapsedSeconds;
   final bool isPaused;
+  final String? startNote;
+  final String? stopNote;
   final String? notes;
   final DateTime createdAt; // UTC
 
@@ -23,6 +25,8 @@ class TimerSessionModel {
     this.endTime,
     required this.elapsedSeconds,
     required this.isPaused,
+    this.startNote,
+    this.stopNote,
     this.notes,
     required this.createdAt,
   });
@@ -37,6 +41,8 @@ class TimerSessionModel {
       endTime: data.endTime,
       elapsedSeconds: data.elapsedSeconds,
       isPaused: data.isPaused,
+      startNote: data.startNote,
+      stopNote: data.stopNote,
       notes: data.notes,
       createdAt: data.createdAt,
     );
@@ -52,6 +58,8 @@ class TimerSessionModel {
       endTime: endTime,
       elapsedSeconds: elapsedSeconds,
       isPaused: isPaused,
+      startNote: startNote,
+      stopNote: stopNote,
       notes: notes,
       createdAt: createdAt,
     );

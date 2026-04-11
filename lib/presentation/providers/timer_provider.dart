@@ -29,14 +29,10 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
         final elapsed =
             _baselineElapsedSeconds +
             DateTime.now().difference(state.startTime).inSeconds;
-        debugPrint(
-          '[TIMER] 🔄 Tick - Elapsed: ${elapsed}s (${(elapsed ~/ 3600)}h ${((elapsed % 3600) ~/ 60)}m ${(elapsed % 60)}s)',
-        );
+
         state = state.copyWith(elapsedSeconds: elapsed);
       }
     });
-
-    debugPrint('[TIMER] ⏱️  Tick timer started');
   }
 
   int _currentElapsedSeconds() {
@@ -54,7 +50,6 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
     String? startNote,
   }) async {
     if (state.isRunning) {
-      debugPrint('[TIMER] Timer already running for task: ${state.taskId}');
       return;
     }
 
@@ -76,13 +71,8 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
           (s) => s.id == task.lastSessionId && s.isPaused && s.endTime == null,
         );
         previousElapsedSeconds = pausedSessionEntity.totalSeconds;
-
-        debugPrint(
-          '[TIMER] 📋 Resuming paused session - SessionID: ${pausedSessionEntity.id}, Previous elapsed: ${previousElapsedSeconds}s',
-        );
       } catch (e) {
         // No paused session found, will create new one
-        debugPrint('[TIMER] ℹ️  No paused session found, creating new one');
       }
     }
 
@@ -95,27 +85,20 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
           startTime: TimezoneHelper.getCurrentUtc(),
         );
 
-    debugPrint(
-      '[TIMER] ✅ Timer started - SessionID: ${session.id}, TaskID: $taskId, ProjectID: $projectId, Previous elapsed: ${previousElapsedSeconds}s',
-    );
-
     // If resuming, mark the session as not paused
     if (pausedSessionEntity != null) {
       await timerRepository.resumeSession(
         session.id,
         TimezoneHelper.getCurrentUtc(),
       );
-      debugPrint(
-        '[TIMER] ▶️  Resumed paused session - SessionID: ${session.id}',
-      );
     }
 
     final trimmedStartNote = startNote?.trim();
     if (trimmedStartNote != null && trimmedStartNote.isNotEmpty) {
       try {
-        await timerRepository.updateSessionNotes(
+        await timerRepository.updateSessionStartNote(
           session.id,
-          'START: $trimmedStartNote',
+          trimmedStartNote,
         );
       } catch (e) {
         debugPrint('[TIMER] Failed to save start note: $e');
@@ -160,9 +143,6 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
   /// Pause the current timer
   Future<void> pauseTimer() async {
     if (!state.isRunning || state.isPaused || state.sessionId == null) {
-      debugPrint(
-        '[TIMER] ⚠️  Cannot pause: isRunning=${state.isRunning}, isPaused=${state.isPaused}',
-      );
       return;
     }
 
@@ -171,7 +151,6 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
 
     // Stop the tick timer when pausing
     _tickTimer?.cancel();
-    debugPrint('[TIMER] ⏱️  Tick timer cancelled for pause');
 
     final timerRepository = ref.read(timerSessionRepositoryProvider);
     await timerRepository.pauseSession(
@@ -179,16 +158,12 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
       TimezoneHelper.getCurrentUtc(),
     );
 
-    debugPrint('[TIMER] ⏸️  Timer paused - Elapsed: ${elapsedAtPause}s');
     state = state.copyWith(isPaused: true, elapsedSeconds: elapsedAtPause);
   }
 
   /// Resume a paused timer
   Future<void> resumeTimer() async {
     if (!state.isRunning || !state.isPaused || state.sessionId == null) {
-      debugPrint(
-        '[TIMER] ⚠️  Cannot resume: isRunning=${state.isRunning}, isPaused=${state.isPaused}',
-      );
       return;
     }
 
@@ -198,9 +173,6 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
       TimezoneHelper.getCurrentUtc(),
     );
 
-    debugPrint(
-      '[TIMER] ▶️  Timer resumed - Continuing from ${state.elapsedSeconds}s',
-    );
     _baselineElapsedSeconds = state.elapsedSeconds;
     state = state.copyWith(isPaused: false, startTime: DateTime.now());
     _startTickTimer();
@@ -209,7 +181,6 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
   /// Stop the current timer
   Future<void> stopTimer({String? stopNote}) async {
     if (state.sessionId == null) {
-      debugPrint('[TIMER] ⚠️  No active session to stop');
       return;
     }
 
@@ -218,14 +189,10 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
 
     // Cancel tick timer
     _tickTimer?.cancel();
-    debugPrint('[TIMER] ⏱️  Tick timer cancelled');
 
     final timerRepository = ref.read(timerSessionRepositoryProvider);
     final endTime = TimezoneHelper.getCurrentUtc();
     final duration = _currentElapsedSeconds();
-    debugPrint(
-      '[TIMER] 🛑 Timer stopped - SessionID: ${state.sessionId}, Final elapsed: ${duration}s (${(duration ~/ 3600)}h ${((duration % 3600) ~/ 60)}m ${(duration % 60)}s)',
-    );
 
     await timerRepository.stopSession(
       state.sessionId!,
@@ -236,13 +203,10 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
     final trimmedStopNote = stopNote?.trim();
     if (trimmedStopNote != null && trimmedStopNote.isNotEmpty) {
       try {
-        final session = await timerRepository.getSessionById(state.sessionId!);
-        final previousNotes = session?.notes?.trim();
-        final newLine = 'STOP: $trimmedStopNote';
-        final mergedNotes = previousNotes == null || previousNotes.isEmpty
-            ? newLine
-            : '$previousNotes\n$newLine';
-        await timerRepository.updateSessionNotes(state.sessionId!, mergedNotes);
+        await timerRepository.updateSessionStopNote(
+          state.sessionId!,
+          trimmedStopNote,
+        );
       } catch (e) {
         debugPrint('[TIMER] Failed to save stop note: $e');
       }
@@ -259,9 +223,6 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
         totalTaskSeconds,
       );
       await taskRepository.updateTaskRunningState(currentTaskId, false);
-      debugPrint(
-        '[TIMER] ✅ Updated task $currentTaskId totalSeconds=$totalTaskSeconds and set isRunning=false',
-      );
     }
 
     // Refresh dependent UI providers so project/task stats update immediately.
@@ -275,6 +236,7 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
       ref.invalidate(projectTotalHoursProvider(currentProjectId));
       ref.invalidate(projectTodayHoursProvider(currentProjectId));
       ref.invalidate(projectWeekHoursProvider(currentProjectId));
+      ref.invalidate(projectMonthHoursProvider(currentProjectId));
     }
 
     // Dashboard aggregates
@@ -284,7 +246,6 @@ class TimerStateNotifier extends StateNotifier<TimerState> {
 
     state = TimerState.idle();
     _baselineElapsedSeconds = 0;
-    debugPrint('[TIMER] 🔄 Timer state reset to idle');
   }
 
   /// Update elapsed time for UI display (called by tick mechanism)
@@ -305,9 +266,6 @@ final timerTickProvider = StreamProvider<TimerState>((ref) {
     return Stream.value(timerState);
   }
 
-  // Running: emit state every 100ms for smooth UI updates
-  debugPrint('[TIMER_TICK] Stream started for active timer');
-
   // Create a stream that emits the current state periodically
   final controller = StreamController<TimerState>();
 
@@ -317,14 +275,12 @@ final timerTickProvider = StreamProvider<TimerState>((ref) {
   // Then emit every 100ms
   final timer = Timer.periodic(const Duration(milliseconds: 100), (_) {
     final currentState = ref.read(timerProvider);
-    debugPrint('[TIMER_TICK] Emitting tick: ${currentState.elapsedSeconds}s');
     controller.add(currentState);
   });
 
   // Cancel timer when stream is closed
   controller.onCancel = () {
     timer.cancel();
-    debugPrint('[TIMER_TICK] Stream cancelled');
   };
 
   return controller.stream;
@@ -531,3 +487,51 @@ class TimerState {
     );
   }
 }
+
+/// Params for updating a timer session start note.
+class UpdateTimerSessionStartNoteParams {
+  final String sessionId;
+  final String? startNote;
+
+  const UpdateTimerSessionStartNoteParams({
+    required this.sessionId,
+    this.startNote,
+  });
+}
+
+/// Provider for updating the start note on a timer session.
+final updateTimerSessionStartNoteProvider =
+    FutureProvider.family<void, UpdateTimerSessionStartNoteParams>((
+      ref,
+      params,
+    ) async {
+      final timerRepository = ref.watch(timerSessionRepositoryProvider);
+      await timerRepository.updateSessionStartNote(
+        params.sessionId,
+        params.startNote,
+      );
+    });
+
+/// Params for updating a timer session stop note.
+class UpdateTimerSessionStopNoteParams {
+  final String sessionId;
+  final String? stopNote;
+
+  const UpdateTimerSessionStopNoteParams({
+    required this.sessionId,
+    this.stopNote,
+  });
+}
+
+/// Provider for updating the stop note on a timer session.
+final updateTimerSessionStopNoteProvider =
+    FutureProvider.family<void, UpdateTimerSessionStopNoteParams>((
+      ref,
+      params,
+    ) async {
+      final timerRepository = ref.watch(timerSessionRepositoryProvider);
+      await timerRepository.updateSessionStopNote(
+        params.sessionId,
+        params.stopNote,
+      );
+    });

@@ -204,7 +204,7 @@ class TaskRepositoryImpl implements ITaskRepository {
 
   @override
   Future<void> unarchiveTask(String id) async {
-    await updateTaskStatus(id, 'todo');
+    await updateTaskStatus(id, 'complete');
   }
 
   @override

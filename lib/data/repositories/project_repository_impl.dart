@@ -135,6 +135,23 @@ class ProjectRepositoryImpl implements IProjectRepository {
   }
 
   @override
+  Future<double> getProjectMonthHours(String projectId) async {
+    final sessions = await db.timerSessionsDao.getSessionsByProject(projectId);
+    final now = TimezoneHelper.getCurrentUtc();
+    final monthStart = DateTime.utc(now.year, now.month, 1);
+    final monthEndExclusive = now.month == 12
+        ? DateTime.utc(now.year + 1, 1, 1)
+        : DateTime.utc(now.year, now.month + 1, 1);
+
+    final monthSessions = sessions.where((session) {
+      return !session.startTime.isBefore(monthStart) &&
+          session.startTime.isBefore(monthEndExclusive);
+    }).toList();
+
+    return TimeAggregator.sumSessionHours(monthSessions);
+  }
+
+  @override
   Future<List<ProjectEntity>> getActiveProjects() async {
     return getProjects(status: 'active');
   }

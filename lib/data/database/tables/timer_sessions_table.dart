@@ -13,6 +13,8 @@ class TimerSessions extends Table {
       .nullable()(); // UTC timestamp when timer stopped (null if still running)
   IntColumn get elapsedSeconds => integer()(); // Total seconds for this session
   BoolColumn get isPaused => boolean().withDefault(const Constant(false))();
+  TextColumn get startNote => text().nullable()();
+  TextColumn get stopNote => text().nullable()();
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt =>
       dateTime()(); // When this session record was created

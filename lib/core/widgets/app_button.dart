@@ -138,9 +138,12 @@ class AppButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SizedBox(
-      width: isFullWidth ? double.infinity : null,
-      child: _buildButton(isDark),
+    return ConstrainedBox(
+      constraints: BoxConstraints(minWidth: minWidth ?? 0),
+      child: SizedBox(
+        width: isFullWidth ? double.infinity : null,
+        child: _buildButton(isDark),
+      ),
     );
   }
 

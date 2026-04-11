@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_tracker/data/database/app_database.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
@@ -51,6 +52,7 @@ class _CreateTaskFormState extends ConsumerState<CreateTaskForm> {
           // Task title field
           TextField(
             controller: _titleController,
+            maxLength: AppConstants.maxTaskNameLength,
             decoration: InputDecoration(
               labelText: AppStrings.labels.taskTitle,
               hintText: AppStrings.labels.taskTitleHint,
@@ -61,6 +63,7 @@ class _CreateTaskFormState extends ConsumerState<CreateTaskForm> {
                 horizontal: 12,
                 vertical: 12,
               ),
+              counterText: 'Max ${AppConstants.maxTaskNameLength} characters',
             ),
           ),
           const SizedBox(height: 12),
@@ -128,6 +131,7 @@ class _CreateTaskFormState extends ConsumerState<CreateTaskForm> {
           TextField(
             controller: _descriptionController,
             maxLines: 3,
+            maxLength: AppConstants.maxDescriptionLength,
             decoration: InputDecoration(
               labelText: AppStrings.labels.description,
               hintText: AppStrings.labels.descriptionHint,
@@ -154,6 +158,28 @@ class _CreateTaskFormState extends ConsumerState<CreateTaskForm> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(AppStrings.validation.taskTitleEmpty),
+                    ),
+                  );
+                  return;
+                }
+
+                if (title.length < AppConstants.minTaskNameLength) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Task title must be at least ${AppConstants.minTaskNameLength} characters.',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+
+                if (title.length > AppConstants.maxTaskNameLength) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Task title can be up to ${AppConstants.maxTaskNameLength} characters.',
+                      ),
                     ),
                   );
                   return;
