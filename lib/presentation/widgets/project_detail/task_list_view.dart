@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_tracker/data/database/app_database.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_strings.dart';
-import '../../../core/theme/text_styles.dart';
-import '../../../core/widgets/app_button.dart';
-import '../../../presentation/providers/category_provider.dart';
+import '../../../core/constants/colors.dart';
 import '../../../core/constants/task_status.dart';
+import '../../../core/theme/text_styles.dart';
 import '../../../core/utils/date_time_formatter.dart';
+import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../domain/entities/task_entity.dart';
+import '../../../presentation/providers/category_provider.dart';
 import 'empty_tasks_state.dart';
 
-/// Displays project tasks in a filterable, paginated table layout.
+/// Displays project tasks in a card layout inspired by the todo list screen.
 class TaskListView extends ConsumerStatefulWidget {
   final List<TaskEntity> tasks;
   final String? timerRunningTaskId;
@@ -27,7 +29,6 @@ class TaskListView extends ConsumerStatefulWidget {
   final bool showStatusFilters;
   final String emptyTitle;
   final String emptyMessage;
-
   final int tasksPerPage;
 
   const TaskListView({
@@ -57,12 +58,11 @@ class _TaskListViewState extends ConsumerState<TaskListView> {
   int _currentPage = 0;
   String _statusFilter = 'all';
   int _pageSize = 10;
-  final ScrollController _tableHorizontalScrollController = ScrollController();
 
   @override
-  void dispose() {
-    _tableHorizontalScrollController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _pageSize = widget.tasksPerPage;
   }
 
   List<TaskEntity> get _filteredTasks {
@@ -97,7 +97,7 @@ class _TaskListViewState extends ConsumerState<TaskListView> {
 
     final categoriesAsync = ref.watch(categoriesProvider);
     final filteredTasks = _filteredTasks;
-    final paginatedTasks = _paginatedTasks;
+    final visibleTasks = _paginatedTasks;
 
     final pageSize = _pageSize == -1 ? filteredTasks.length : _pageSize;
     final safePageSize = pageSize == 0 ? 1 : pageSize;
@@ -109,13 +109,11 @@ class _TaskListViewState extends ConsumerState<TaskListView> {
     final canGoNext =
         _pageSize != -1 &&
         (_currentPage + 1) * safePageSize < filteredTasks.length;
-    final showFilters = widget.showStatusFilters;
-    final isReadOnly = widget.readOnly;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (showFilters) ...[
+        if (widget.showStatusFilters) ...[
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -187,186 +185,34 @@ class _TaskListViewState extends ConsumerState<TaskListView> {
                 for (final category in categories) category.id: category.name,
                 AppDatabase.uncategorizedCategoryId: 'Uncategorized',
               };
-              final compact = constraints.maxWidth < 1300;
-              final columns = <DataColumn>[
-                const DataColumn(label: Text('Task ID')),
-                const DataColumn(label: Text('Name')),
-                if (!compact) const DataColumn(label: Text('Description')),
-                if (!isReadOnly) const DataColumn(label: Text('Running')),
-                const DataColumn(label: Text('Status')),
-                const DataColumn(label: Text('Category')),
-                const DataColumn(label: Text('Duration')),
-                if (!compact) const DataColumn(label: Text('Created')),
-                if (!isReadOnly) const DataColumn(label: Text('Timer')),
-                const DataColumn(label: Text('Actions')),
-              ];
+              final compact = constraints.maxWidth < 900;
 
-              return Scrollbar(
-                controller: _tableHorizontalScrollController,
-                thumbVisibility: true,
-                trackVisibility: true,
-                child: SingleChildScrollView(
-                  controller: _tableHorizontalScrollController,
-                  scrollDirection: Axis.horizontal,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                    child: DataTable(
-                      headingRowHeight: 46,
-                      dataRowMinHeight: 52,
-                      dataRowMaxHeight: 72,
-                      columns: columns,
-                      rows: paginatedTasks.map((task) {
-                        final isRunning = widget.timerRunningTaskId == task.id;
-                        final runningLabel = isRunning ? 'Running' : 'Idle';
-                        final status = TaskStatus.fromValue(task.status);
-                        final durationSeconds = isRunning
-                            ? (widget.currentRunningElapsedSeconds >
-                                      task.totalSeconds
-                                  ? widget.currentRunningElapsedSeconds
-                                  : task.totalSeconds)
-                            : task.totalSeconds;
-
-                        return DataRow(
-                          cells: [
-                            DataCell(
-                              Text(
-                                task.id.length > 8
-                                    ? task.id.substring(0, 8)
-                                    : task.id,
-                              ),
-                            ),
-                            DataCell(
-                              SizedBox(
-                                width: compact ? 180 : 220,
-                                child: Tooltip(
-                                  message: task.taskName,
-                                  child: Text(
-                                    task.taskName,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            if (!compact)
-                              DataCell(
-                                SizedBox(
-                                  width: 220,
-                                  child: Tooltip(
-                                    message: task.description ?? '-',
-                                    child: Text(
-                                      (task.description?.trim().isNotEmpty ??
-                                              false)
-                                          ? task.description!
-                                          : '-',
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            if (!isReadOnly)
-                              DataCell(_runningBadge(runningLabel)),
-                            DataCell(_statusBadge(status)),
-                            DataCell(
-                              Text(
-                                categoryMap[task.categoryId] ?? 'Uncategorized',
-                              ),
-                            ),
-                            DataCell(
-                              Text(
-                                DateTimeFormatter.formatSeconds(
-                                  durationSeconds,
-                                ),
-                              ),
-                            ),
-                            if (!compact)
-                              DataCell(
-                                Text(
-                                  DateTimeFormatter.formatDate(task.createdAt),
-                                ),
-                              ),
-                            if (!isReadOnly)
-                              DataCell(
-                                IconButton(
-                                  tooltip: isRunning
-                                      ? AppStrings.buttons.stop
-                                      : AppStrings.buttons.start,
-                                  onPressed: () =>
-                                      widget.onStartStopPressed(task),
-                                  icon: Icon(
-                                    isRunning
-                                        ? Icons.stop_circle
-                                        : Icons.play_circle,
-                                    color: isRunning
-                                        ? Colors.red
-                                        : Colors.green,
-                                  ),
-                                ),
-                              ),
-                            DataCell(
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: isReadOnly
-                                    ? [
-                                        IconButton(
-                                          tooltip:
-                                              AppStrings.hints.viewTaskDetails,
-                                          onPressed: () =>
-                                              widget.onViewPressed(task),
-                                          icon: const Icon(Icons.info_outline),
-                                        ),
-                                        if (widget.onRestorePressed != null)
-                                          IconButton(
-                                            tooltip: 'Restore Task',
-                                            onPressed: () =>
-                                                widget.onRestorePressed!(task),
-                                            icon: const Icon(
-                                              Icons.unarchive_outlined,
-                                            ),
-                                          ),
-                                      ]
-                                    : [
-                                        IconButton(
-                                          tooltip:
-                                              AppStrings.hints.viewTaskDetails,
-                                          onPressed: () =>
-                                              widget.onViewPressed(task),
-                                          icon: const Icon(Icons.info_outline),
-                                        ),
-                                        IconButton(
-                                          tooltip: AppStrings.hints.editTask,
-                                          onPressed: () =>
-                                              widget.onEditPressed(task),
-                                          icon: const Icon(Icons.edit),
-                                        ),
-                                        IconButton(
-                                          tooltip: AppStrings.hints.deleteTask,
-                                          onPressed: () =>
-                                              widget.onDeletePressed(task),
-                                          icon: const Icon(
-                                            Icons.delete_outline,
-                                          ),
-                                        ),
-                                        if (status == TaskStatus.complete &&
-                                            widget.onArchivePressed != null)
-                                          IconButton(
-                                            tooltip: 'Archive Task',
-                                            onPressed: () =>
-                                                widget.onArchivePressed!(task),
-                                            icon: const Icon(
-                                              Icons.archive_outlined,
-                                            ),
-                                          ),
-                                      ],
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
+              return Column(
+                children: [
+                  ...visibleTasks.map(
+                    (task) => Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: AppConstants.spacing12,
+                      ),
+                      child: _TaskListItem(
+                        task: task,
+                        categoryName:
+                            categoryMap[task.categoryId] ?? 'Uncategorized',
+                        isRunning: widget.timerRunningTaskId == task.id,
+                        currentRunningElapsedSeconds:
+                            widget.currentRunningElapsedSeconds,
+                        onStartStopPressed: widget.onStartStopPressed,
+                        onViewPressed: widget.onViewPressed,
+                        onEditPressed: widget.onEditPressed,
+                        onDeletePressed: widget.onDeletePressed,
+                        onArchivePressed: widget.onArchivePressed,
+                        onRestorePressed: widget.onRestorePressed,
+                        readOnly: widget.readOnly,
+                        compact: compact,
+                      ),
                     ),
                   ),
-                ),
+                ],
               );
             },
           ),
@@ -409,33 +255,213 @@ class _TaskListViewState extends ConsumerState<TaskListView> {
       },
     );
   }
+}
 
-  Widget _runningBadge(String text) {
-    final isRunning = text == 'Running';
-    final color = isRunning ? Colors.green : Colors.grey;
+class _TaskListItem extends StatelessWidget {
+  final TaskEntity task;
+  final String categoryName;
+  final bool isRunning;
+  final int currentRunningElapsedSeconds;
+  final Function(TaskEntity task) onStartStopPressed;
+  final Function(TaskEntity task) onViewPressed;
+  final Function(TaskEntity task) onEditPressed;
+  final Function(TaskEntity task) onDeletePressed;
+  final Function(TaskEntity task)? onArchivePressed;
+  final Function(TaskEntity task)? onRestorePressed;
+  final bool readOnly;
+  final bool compact;
+
+  const _TaskListItem({
+    required this.task,
+    required this.categoryName,
+    required this.isRunning,
+    required this.currentRunningElapsedSeconds,
+    required this.onStartStopPressed,
+    required this.onViewPressed,
+    required this.onEditPressed,
+    required this.onDeletePressed,
+    required this.readOnly,
+    required this.compact,
+    this.onArchivePressed,
+    this.onRestorePressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final status = TaskStatus.fromValue(task.status);
+    final durationSeconds = isRunning
+        ? (currentRunningElapsedSeconds > task.totalSeconds
+              ? currentRunningElapsedSeconds
+              : task.totalSeconds)
+        : task.totalSeconds;
+    final description = task.description?.trim();
+    final hasDescription = description != null && description.isNotEmpty;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(999),
+        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+        borderRadius: BorderRadius.circular(AppConstants.roundRadius),
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+        ),
       ),
-      child: Text(text, style: AppTextStyles.labelSmall.copyWith(color: color)),
+      padding: const EdgeInsets.all(AppConstants.spacing16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!readOnly)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: SizedBox(
+                width: 54,
+                child: Center(
+                  child: IconButton.filledTonal(
+                    visualDensity: VisualDensity.compact,
+                    tooltip: isRunning
+                        ? AppStrings.buttons.stop
+                        : AppStrings.buttons.start,
+                    onPressed: () => onStartStopPressed(task),
+                    icon: Icon(
+                      isRunning ? Icons.stop : Icons.play_arrow,
+                      color: isRunning ? Colors.red : Colors.green,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (!readOnly) const SizedBox(width: AppConstants.spacing8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Tooltip(
+                        message: task.taskName,
+                        waitDuration: const Duration(milliseconds: 350),
+                        child: Text(
+                          task.taskName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.titleSmall.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      tooltip: 'More actions',
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'view':
+                            onViewPressed(task);
+                            break;
+                          case 'edit':
+                            onEditPressed(task);
+                            break;
+                          case 'delete':
+                            onDeletePressed(task);
+                            break;
+                          case 'archive':
+                            onArchivePressed?.call(task);
+                            break;
+                          case 'restore':
+                            onRestorePressed?.call(task);
+                            break;
+                        }
+                      },
+                      itemBuilder: (context) {
+                        final items = <PopupMenuEntry<String>>[
+                          const PopupMenuItem(
+                            value: 'view',
+                            child: Text('View'),
+                          ),
+                        ];
+
+                        if (readOnly) {
+                          if (onRestorePressed != null) {
+                            items.add(
+                              const PopupMenuItem(
+                                value: 'restore',
+                                child: Text('Restore'),
+                              ),
+                            );
+                          }
+                        } else {
+                          items.addAll([
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Text('Edit'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Text('Delete'),
+                            ),
+                            if (status == TaskStatus.complete &&
+                                onArchivePressed != null)
+                              const PopupMenuItem(
+                                value: 'archive',
+                                child: Text('Archive'),
+                              ),
+                          ]);
+                        }
+
+                        return items;
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppConstants.spacing4),
+                Text(
+                  hasDescription ? description : 'No details provided',
+                  maxLines: compact ? 2 : 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spacing8),
+                Wrap(
+                  spacing: AppConstants.spacing8,
+                  runSpacing: AppConstants.spacing8,
+                  children: [
+                    _Tag(text: categoryName, color: AppColors.brandPrimary),
+                    _Tag(
+                      text: DateTimeFormatter.formatSeconds(durationSeconds),
+                      color: AppColors.warning,
+                    ),
+                    _Tag(text: status.label, color: status.getColor()),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
 
-  Widget _statusBadge(TaskStatus status) {
-    final color = status.getColor();
+class _Tag extends StatelessWidget {
+  final String text;
+  final Color color;
+
+  const _Tag({required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(
-        status.label,
-        style: AppTextStyles.labelSmall.copyWith(color: color),
-      ),
+      child: Text(text, style: AppTextStyles.caption.copyWith(color: color)),
     );
   }
 }
