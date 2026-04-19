@@ -5,6 +5,7 @@ import 'package:project_tracker/domain/repositories/iproject_repository.dart';
 import 'package:project_tracker/domain/repositories/itask_repository.dart';
 import 'package:project_tracker/domain/repositories/itimer_session_repository.dart';
 import 'package:project_tracker/domain/repositories/idaily_goal_repository.dart';
+import 'package:project_tracker/domain/repositories/ifocus_timer_repository.dart';
 import 'database_provider.dart';
 
 /// Provides the project repository implementation
@@ -34,4 +35,10 @@ final timerSessionRepositoryProvider = Provider<ITimerSessionRepository>((ref) {
 /// Provides the daily goal repository implementation
 final dailyGoalRepositoryProvider = Provider<IDailyGoalRepository>((ref) {
   return DailyGoalRepositoryImpl();
+});
+
+/// Provides the focus timer repository implementation
+final focusTimerRepositoryProvider = Provider<IFocusTimerRepository>((ref) {
+  final db = ref.watch(databaseProvider);
+  return FocusTimerRepositoryImpl(db);
 });

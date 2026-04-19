@@ -9,6 +9,7 @@ import 'presentation/screens/project_detail_screen.dart';
 import 'presentation/screens/categories_screen.dart';
 import 'presentation/screens/reports_screen.dart';
 import 'presentation/screens/todo_list_screen.dart';
+import 'presentation/screens/focus_timer_screen.dart';
 import 'presentation/routes/app_router.dart';
 
 /// Main application widget
@@ -45,6 +46,8 @@ class TimeTrackerApp extends ConsumerWidget {
         return const ReportsScreen();
       case AppRouter.todoList:
         return const TodoListScreen();
+      case AppRouter.focusTimer:
+        return const FocusTimerScreen();
       default:
         return const DashboardScreen();
     }

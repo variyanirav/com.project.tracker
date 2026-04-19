@@ -24,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   // Getters for DAOs (optional, for convenience)
   late final projectsDao = ProjectsDao(this);
@@ -37,6 +37,7 @@ class AppDatabase extends _$AppDatabase {
     return MigrationStrategy(
       onCreate: (Migrator m) async {
         await m.createAll();
+        await _createFocusRunsTableIfNeeded();
         await _seedDefaultCategories();
         await _backfillTaskCategories();
       },
@@ -69,7 +70,33 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(tasks, tasks.isBillable);
           }
         }
+        if (from < 7) {
+          await _createFocusRunsTableIfNeeded();
+        }
       },
+    );
+  }
+
+  Future<void> _createFocusRunsTableIfNeeded() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS focus_runs (
+        id TEXT PRIMARY KEY,
+        started_at INTEGER NOT NULL,
+        ended_at INTEGER,
+        target_focus_minutes INTEGER NOT NULL,
+        actual_focus_seconds INTEGER NOT NULL,
+        actual_break_seconds INTEGER NOT NULL,
+        focus_minutes INTEGER NOT NULL,
+        short_break_minutes INTEGER NOT NULL,
+        long_break_minutes INTEGER NOT NULL,
+        long_break_every_n_cycles INTEGER NOT NULL,
+        completed INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL
+      )
+    ''');
+
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_focus_runs_started_at ON focus_runs(started_at)',
     );
   }
 

@@ -48,6 +48,7 @@ void main() {
                 lastSessionId: null,
                 createdAt: now,
                 updatedAt: now,
+                isBillable: true,
               ),
             );
       }

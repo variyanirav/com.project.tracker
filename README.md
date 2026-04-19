@@ -77,6 +77,8 @@ flutter run -d macos --release
 - **[ROADMAP.md](ROADMAP.md)** - Project roadmap and phase planning
 - **[AI_README.md](AI_README.md)** - AI-ready feature addition patterns
 - **[UI_STANDARDS.md](UI_STANDARDS.md)** - UI/UX guidelines and constraints
+- **[FOCUS_TIMER_README.md](FOCUS_TIMER_README.md)** - Standalone focus timer requirements, phased plan, and test checklist
+- **[FOCUS_TIMER_PHASE_TRACKER.md](FOCUS_TIMER_PHASE_TRACKER.md)** - Execution tracker with per-phase tests and analyze gates
 
 ## 🚀 Recent Updates (v1.2.0)
 

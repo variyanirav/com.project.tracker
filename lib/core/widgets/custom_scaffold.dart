@@ -24,19 +24,36 @@ class CustomScaffold extends ConsumerWidget {
 
     // Navigation items
     final navItems = [
-      _NavItem(icon: Icons.dashboard, label: 'Dashboard', route: 'dashboard'),
-      _NavItem(icon: Icons.list_alt, label: 'Projects', route: 'project_list'),
+      _NavItem(
+        icon: Icons.dashboard,
+        label: 'Dashboard',
+        route: AppRouter.dashboard,
+      ),
+      _NavItem(
+        icon: Icons.list_alt,
+        label: 'Projects',
+        route: AppRouter.projectList,
+      ),
       _NavItem(
         icon: Icons.category_outlined,
         label: 'Categories',
-        route: 'categories',
+        route: AppRouter.categories,
       ),
       _NavItem(
         icon: Icons.check_circle_outline,
         label: 'To-Do',
-        route: 'todo_list',
+        route: AppRouter.todoList,
       ),
-      _NavItem(icon: Icons.bar_chart, label: 'Reports', route: 'reports'),
+      _NavItem(
+        icon: Icons.bar_chart,
+        label: 'Reports',
+        route: AppRouter.reports,
+      ),
+      _NavItem(
+        icon: Icons.self_improvement,
+        label: 'Focus Timer',
+        route: AppRouter.focusTimer,
+      ),
     ];
 
     return Scaffold(

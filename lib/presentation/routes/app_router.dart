@@ -9,6 +9,7 @@ class AppRouter {
   static const String categories = 'categories';
   static const String reports = 'reports';
   static const String todoList = 'todo_list';
+  static const String focusTimer = 'focus_timer';
   static const String settings = 'settings';
 }
 
