@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:project_tracker/core/constants/app_strings.dart';
 import 'package:project_tracker/domain/entities/project_entity.dart';
 import 'package:project_tracker/domain/entities/task_entity.dart';
 import 'package:project_tracker/presentation/providers/project_provider.dart';
@@ -22,6 +23,16 @@ void main() {
     name: 'Client Work',
     description: 'Main project',
     color: 'C',
+    status: 'active',
+    createdAt: DateTime.utc(2026, 3, 21),
+    updatedAt: DateTime.utc(2026, 3, 21),
+  );
+
+  final otherProject = ProjectEntity(
+    id: 'project-2',
+    name: 'Internal Ops',
+    description: 'Secondary project',
+    color: 'I',
     status: 'active',
     createdAt: DateTime.utc(2026, 3, 21),
     updatedAt: DateTime.utc(2026, 3, 21),
@@ -151,6 +162,48 @@ void main() {
     expect(find.text('Start'), findsOneWidget);
   });
 
+  testWidgets('Dashboard stop asks for session outcome note', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1400, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final timerState = TimerState(
+      sessionId: 'session-1',
+      taskId: task.id,
+      projectId: project.id,
+      elapsedSeconds: 75,
+      isRunning: true,
+      isPaused: false,
+      startTime: DateTime.now().subtract(const Duration(seconds: 75)),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          projectsProvider.overrideWith((ref) async => []),
+          tasksProvider.overrideWith((ref) async => []),
+          timerProvider.overrideWith(
+            (ref) => _FakeTimerNotifier(ref, timerState),
+          ),
+          timerTickProvider.overrideWith((ref) => Stream.value(timerState)),
+          todayTotalHoursProvider.overrideWith((ref) async => 1.25),
+          dailyGoalProvider.overrideWith((ref) async => 8.0),
+          dailyProgressProvider.overrideWith((ref) async => 0.15625),
+        ],
+        child: const MaterialApp(home: DashboardScreen()),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.text('Stop').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Session Outcome'), findsOneWidget);
+    expect(find.text('Save'), findsOneWidget);
+    expect(find.text('Skip'), findsOneWidget);
+  });
+
   testWidgets(
     'Project detail shows total, today, week and month hours from providers',
     (tester) async {
@@ -236,4 +289,52 @@ void main() {
     expect(find.text('Currently Tracking'), findsOneWidget);
     expect(find.text('Start'), findsOneWidget);
   });
+
+  testWidgets(
+    'Project detail hides active timer card when timer belongs to another project',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1600, 1100));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final runningOtherProjectTimerState = TimerState(
+        sessionId: 'session-1',
+        taskId: task.id,
+        projectId: project.id,
+        elapsedSeconds: 75,
+        isRunning: true,
+        isPaused: false,
+        startTime: DateTime.now().subtract(const Duration(seconds: 75)),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            selectedProjectIdProvider.overrideWith((ref) => otherProject.id),
+            projectsProvider.overrideWith(
+              (ref) async => [project, otherProject],
+            ),
+            tasksByProjectProvider.overrideWith((ref, id) async => []),
+            activeTaskProvider.overrideWith((ref) async => task),
+            projectTotalHoursProvider.overrideWith((ref, id) async => 2.5),
+            projectTodayHoursProvider.overrideWith((ref, id) async => 1.0),
+            projectWeekHoursProvider.overrideWith((ref, id) async => 1.75),
+            projectMonthHoursProvider.overrideWith((ref, id) async => 4.25),
+            timerProvider.overrideWith(
+              (ref) => _FakeTimerNotifier(ref, runningOtherProjectTimerState),
+            ),
+            timerTickProvider.overrideWith(
+              (ref) => Stream.value(runningOtherProjectTimerState),
+            ),
+          ],
+          child: const MaterialApp(home: ProjectDetailScreen()),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Currently Tracking'), findsNothing);
+      expect(find.text(AppStrings.labels.noActiveTimer), findsOneWidget);
+    },
+  );
 }

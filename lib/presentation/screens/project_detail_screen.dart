@@ -11,6 +11,7 @@ import '../providers/project_provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/timer_provider.dart';
 import '../routes/app_router.dart';
+import '../utils/timer_session_actions.dart';
 import '../widgets/dialogs/edit_task_dialog.dart';
 import '../widgets/dialogs/confirm_delete_dialog.dart';
 import '../widgets/dialogs/create_task_dialog.dart';
@@ -96,7 +97,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     );
     final timerState = ref.watch(timerProvider);
     final timerTickAsync = ref.watch(timerTickProvider);
-    final hasActiveTimer = timerState.isRunning;
+    final hasActiveTimerForSelectedProject =
+        timerState.isRunning && timerState.projectId == selectedProject.id;
 
     return CustomScaffold(
       activeRoute: AppRouter.projectDetail,
@@ -227,7 +229,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (!hasActiveTimer)
+                  if (!hasActiveTimerForSelectedProject)
                     EmptyTimerState(isDark: isDark)
                   else
                     FutureBuilder<TaskEntity?>(
@@ -267,15 +269,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                           },
                           onStopPressed: () async {
                             try {
-                              final stopNote = await showTimerSessionNoteDialog(
-                                context,
-                                title: 'Session Outcome',
-                                hintText:
-                                    'What did you complete in this session?',
-                              );
-                              await ref
-                                  .read(timerProvider.notifier)
-                                  .stopTimer(stopNote: stopNote);
+                              await stopTimerWithOutcomeNote(context, ref);
                               await Future.delayed(
                                 const Duration(milliseconds: 100),
                               );
@@ -368,16 +362,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
                             if (timerState.isRunning &&
                                 timerState.taskId == task.id) {
-                              await ref
-                                  .read(timerProvider.notifier)
-                                  .stopTimer(
-                                    stopNote: await showTimerSessionNoteDialog(
-                                      context,
-                                      title: 'Session Outcome',
-                                      hintText:
-                                          'What did you complete in this session?',
-                                    ),
-                                  );
+                              await stopTimerWithOutcomeNote(context, ref);
                               await Future.delayed(
                                 const Duration(milliseconds: 100),
                               );

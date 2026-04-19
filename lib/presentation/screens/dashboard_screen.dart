@@ -12,6 +12,7 @@ import '../providers/timer_provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/repository_provider.dart';
 import '../routes/app_router.dart';
+import '../utils/timer_session_actions.dart';
 import '../widgets/dashboard/daily_progress_card.dart';
 import '../widgets/dashboard/project_card.dart' show ProjectCard, RecentTask;
 import '../widgets/dashboard/running_timer_card.dart';
@@ -190,9 +191,7 @@ class DashboardScreen extends ConsumerWidget {
                               }
                             },
                             onStopPressed: () async {
-                              await ref
-                                  .read(timerProvider.notifier)
-                                  .stopTimer();
+                              await stopTimerWithOutcomeNote(context, ref);
                               // Timer state change will automatically hide the card
                               // because isTimerRunning will become false
                             },
@@ -213,7 +212,7 @@ class DashboardScreen extends ConsumerWidget {
                             }
                           },
                           onStopPressed: () async {
-                            await ref.read(timerProvider.notifier).stopTimer();
+                            await stopTimerWithOutcomeNote(context, ref);
                           },
                         ),
                         error: (err, stack) => RunningTimerCard(
@@ -231,7 +230,7 @@ class DashboardScreen extends ConsumerWidget {
                             }
                           },
                           onStopPressed: () async {
-                            await ref.read(timerProvider.notifier).stopTimer();
+                            await stopTimerWithOutcomeNote(context, ref);
                           },
                         ),
                       );
