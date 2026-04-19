@@ -1,7 +1,7 @@
 name: project_tracker
-description: "A professional time tracking and task management application for macOS. Track billable hours on projects and tasks with archive functionality, real-time reporting, and CSV export for billing."
+description: "A professional time tracking, focus, and task management application for macOS. Track billable hours on projects and tasks with archive functionality, real-time reporting, a standalone Focus Timer, and CSV export for billing."
 publish_to: "none"
-version: 1.2.0+3
+version: 1.3.0+4
 
 environment:
   sdk: ^3.9.2

@@ -5,8 +5,9 @@ set -euo pipefail
 # What it does:
 # 1) Backs up SQLite DB (time_tracker.db) if found
 # 2) Runs focused regression tests
-# 3) Builds macOS release app
-# 4) Replaces Desktop app with rollback backup
+# 3) Runs flutter analyze for release safety
+# 4) Builds macOS release app
+# 5) Replaces Desktop app with rollback backup
 
 WORKSPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
@@ -39,11 +40,23 @@ else
   done
 fi
 
-echo "[2/4] Running focused tests..."
+echo "[2/5] Running focused tests..."
 cd "$WORKSPACE_DIR"
-flutter test test/providers/reports_provider_test.dart test/screens/reports_screen_test.dart
+flutter test \
+  test/data/focus_timer_repository_impl_test.dart \
+  test/domain/focus_timer_usecases_test.dart \
+  test/integration/focus_timer_integration_test.dart \
+  test/providers/focus_timer_provider_test.dart \
+  test/providers/timer_provider_additional_test.dart \
+  test/screens/focus_timer_navigation_test.dart \
+  test/screens/focus_timer_screen_test.dart \
+  test/screens/global_scaffold_actions_test.dart \
+  test/timer_provider_test.dart
 
-echo "[3/4] Building macOS release..."
+echo "[3/5] Running flutter analyze..."
+flutter analyze --no-fatal-infos
+
+echo "[4/5] Building macOS release..."
 flutter clean
 flutter pub get
 flutter build macos --release
@@ -62,7 +75,7 @@ fi
 
 BUILT_APP_PATH="${BUILT_APPS[0]}"
 
-echo "[4/4] Replacing Desktop app safely..."
+echo "[5/5] Replacing Desktop app safely..."
 if [[ -d "$TARGET_APP_PATH" ]]; then
   mv "$TARGET_APP_PATH" "$APP_BACKUP_DIR/project_tracker_${TIMESTAMP}.app"
   echo "Existing Desktop app moved to backup: $APP_BACKUP_DIR/project_tracker_${TIMESTAMP}.app"

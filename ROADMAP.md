@@ -1,7 +1,7 @@
 # TimeTracker Development Roadmap
 
-**Status:** Phase 2.5 Complete - Advanced Task Features (April 11, 2026)  
-**Current Version:** 1.2.0  
+**Status:** Phase 2.6 Complete - Standalone Focus Timer Release (April 19, 2026)  
+**Current Version:** 1.3.0  
 **Next Milestone:** Phase 4 - Background Services & Advanced Features
 
 ---
@@ -31,6 +31,12 @@ Phase 2.5: Archive & Advanced Task Features ✅ [COMPLETE - April 11, 2026]
    ├── Session History Lock ✅
    ├── Restore Workflow ✅
    └── Comprehensive Tests (9/9 passing) ✅
+
+Phase 2.6: Standalone Focus Timer ✅ [COMPLETE - April 19, 2026]
+  ├── Focus timer domain, data, and provider layers ✅
+  ├── Focus screen, settings dialog, and navigation ✅
+  ├── Local persistence with restart restore ✅
+  └── Integration and regression test coverage ✅
 
 Phase 3: Database & Data Integration ✅ [COMPLETE - March 20, 2026]
    ├── Drift ORM Setup ✅

@@ -7,6 +7,7 @@ A professional macOS desktop application for tracking billable hours on projects
 **Project Tracker** enables freelancers, developers, and teams to:
 - ✅ Create and manage multiple projects with custom avatars
 - ✅ Track time on individual tasks with start/pause/stop controls
+- ✅ Use the standalone Focus Timer for healthy work/break sessions
 - ✅ Archive and restore completed tasks with read-only protection
 - ✅ View daily progress and aggregate statistics
 - ✅ Export weekly CSV reports for billing and analysis
@@ -29,6 +30,13 @@ A professional macOS desktop application for tracking billable hours on projects
 - **Session History Lock**: Session notes are copy-only (no edit/delete) for archived tasks
 - **Restore Workflow**: Restore button returns tasks to completed status with confirmation
 - **Full Test Coverage**: 9 comprehensive widget tests validate archive flow and permissions
+
+### Focus Timer Release (Latest - v1.3.0)
+- **Standalone Focus Mode**: Dedicated timer for healthy work/break cycles, separate from task tracking
+- **Local Persistence**: Active focus state restores after restart without cloud sync
+- **Phase Tracking**: Tracks each focus phase with history and summary cards
+- **Theme Parity**: Matches the current light/dark themes, dialog widths, and typography
+- **Production Validation**: Focus timer domain, data, provider, screen, navigation, and integration tests pass
 
 ## 🏗️ Architecture
 
@@ -139,6 +147,13 @@ flutter build macos --release
 
 ## 📝 Changelog
 
+### Version 1.3.0 - Focus Timer Release
+- Added a standalone Focus Timer for healthy work/break sessions
+- Implemented local persistence and restart restore for active focus runs
+- Added focus history, settings, navigation, and notification support
+- Added domain, data, provider, UI, and integration tests for the new feature
+- Kept the focus timer independent from the existing task timer
+
 ### Version 1.2.0 - Archive Feature Release
 - Added archive functionality for completed tasks
 - Implemented read-only mode with session history protection
@@ -175,6 +190,6 @@ For issues, feature requests, or questions about architecture, refer to:
 
 ---
 
-**Last Updated**: April 11, 2026  
+**Last Updated**: April 19, 2026  
 **Status**: Active Development  
-**Current Version**: 1.2.0
+**Current Version**: 1.3.0

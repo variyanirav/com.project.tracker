@@ -65,7 +65,9 @@ void main() {
       ),
     );
 
-    await tester.pumpAndSettle();
+    // Reports screen can have ongoing animations, so use bounded pumps.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
   }
 
   testWidgets('project list settings opens daily goal dialog', (tester) async {
@@ -105,15 +107,18 @@ void main() {
 
     await tester.ensureVisible(find.byTooltip('Daily Goal Settings'));
     await tester.tap(find.byTooltip('Daily Goal Settings'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Daily Goal Settings'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.close));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     await tester.ensureVisible(find.byTooltip('Light Mode'));
     await tester.tap(find.byTooltip('Light Mode'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.byTooltip('Dark Mode'), findsOneWidget);
   });
 }
