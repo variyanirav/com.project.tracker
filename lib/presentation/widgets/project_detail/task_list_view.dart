@@ -432,6 +432,10 @@ class _TaskListItem extends StatelessWidget {
                   children: [
                     _Tag(text: categoryName, color: AppColors.brandPrimary),
                     _Tag(
+                      text: task.isBillable ? 'Billable' : 'Non-billable',
+                      color: AppColors.info,
+                    ),
+                    _Tag(
                       text: DateTimeFormatter.formatSeconds(durationSeconds),
                       color: AppColors.warning,
                     ),

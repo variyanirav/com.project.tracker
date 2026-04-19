@@ -6,6 +6,7 @@ class TaskEntity {
   final String taskName;
   final String? description;
   final String status;
+  final bool isBillable;
   final int totalSeconds;
   final bool isRunning;
   final DateTime? lastStartedAt;
@@ -20,6 +21,7 @@ class TaskEntity {
     required this.taskName,
     this.description,
     required this.status,
+    this.isBillable = true,
     required this.totalSeconds,
     required this.isRunning,
     this.lastStartedAt,
@@ -35,6 +37,7 @@ class TaskEntity {
     String? taskName,
     String? description,
     String? status,
+    bool? isBillable,
     int? totalSeconds,
     bool? isRunning,
     DateTime? lastStartedAt,
@@ -49,6 +52,7 @@ class TaskEntity {
       taskName: taskName ?? this.taskName,
       description: description ?? this.description,
       status: status ?? this.status,
+      isBillable: isBillable ?? this.isBillable,
       totalSeconds: totalSeconds ?? this.totalSeconds,
       isRunning: isRunning ?? this.isRunning,
       lastStartedAt: lastStartedAt ?? this.lastStartedAt,
@@ -60,6 +64,6 @@ class TaskEntity {
 
   @override
   String toString() {
-    return 'TaskEntity(id: $id, projectId: $projectId, taskName: $taskName, status: $status)';
+    return 'TaskEntity(id: $id, projectId: $projectId, taskName: $taskName, status: $status, isBillable: $isBillable)';
   }
 }

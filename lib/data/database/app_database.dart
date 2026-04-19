@@ -24,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   // Getters for DAOs (optional, for convenience)
   late final projectsDao = ProjectsDao(this);
@@ -62,6 +62,11 @@ class AppDatabase extends _$AppDatabase {
           }
           if (!await _columnExists('timer_sessions', 'stop_note')) {
             await m.addColumn(timerSessions, timerSessions.stopNote);
+          }
+        }
+        if (from < 6) {
+          if (!await _columnExists('tasks', 'is_billable')) {
+            await m.addColumn(tasks, tasks.isBillable);
           }
         }
       },

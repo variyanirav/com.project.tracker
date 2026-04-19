@@ -90,6 +90,7 @@ final createTaskProvider = FutureProvider.family<void, CreateTaskParams>((
     categoryId: params.categoryId,
     taskName: params.taskName,
     description: params.description,
+    isBillable: params.isBillable,
   );
 
   // Invalidate related providers
@@ -113,6 +114,7 @@ final updateTaskProvider = FutureProvider.family<void, UpdateTaskParams>((
     taskName: params.taskName,
     description: params.description,
     status: params.status,
+    isBillable: params.isBillable,
     totalSeconds: params.totalSeconds,
     isRunning: params.isRunning,
     lastStartedAt: params.lastStartedAt,
@@ -228,12 +230,14 @@ class CreateTaskParams {
   final String? categoryId;
   final String taskName;
   final String? description;
+  final bool isBillable;
 
   CreateTaskParams({
     required this.projectId,
     this.categoryId,
     required this.taskName,
     this.description,
+    this.isBillable = true,
   });
 }
 
@@ -245,6 +249,7 @@ class UpdateTaskParams {
   final String taskName;
   final String? description;
   final String status;
+  final bool isBillable;
   final int totalSeconds;
   final bool isRunning;
   final DateTime? lastStartedAt;
@@ -258,6 +263,7 @@ class UpdateTaskParams {
     required this.taskName,
     this.description,
     required this.status,
+    required this.isBillable,
     required this.totalSeconds,
     required this.isRunning,
     this.lastStartedAt,

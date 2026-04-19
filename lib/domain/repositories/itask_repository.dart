@@ -26,6 +26,7 @@ abstract class ITaskRepository {
     String? categoryId,
     required String taskName,
     required String? description,
+    bool isBillable = true,
   });
 
   /// Update existing task

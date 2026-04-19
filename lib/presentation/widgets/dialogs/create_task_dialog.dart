@@ -14,6 +14,7 @@ class CreateTaskDialog extends ConsumerStatefulWidget {
     String title,
     String? description,
     String categoryId,
+    bool isBillable,
   )
   onCreatePressed;
 
@@ -28,6 +29,7 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
   final _descriptionController = TextEditingController();
 
   String _selectedCategoryId = AppDatabase.uncategorizedCategoryId;
+  bool _isBillable = true;
   String? _titleError;
   bool _isSaving = false;
 
@@ -71,6 +73,7 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
         title,
         description.isNotEmpty ? description : null,
         _selectedCategoryId,
+        _isBillable,
       );
       if (!mounted) return;
       Navigator.of(context).pop(true);
@@ -234,6 +237,30 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
                         icon: const Icon(Icons.category_outlined),
                         label: const Text('Manage Categories'),
                       ),
+                    ),
+                    const SizedBox(height: AppConstants.spacing12),
+                    DropdownButtonFormField<bool>(
+                      initialValue: _isBillable,
+                      decoration: const InputDecoration(
+                        labelText: 'Billing Type',
+                      ),
+                      items: const [
+                        DropdownMenuItem<bool>(
+                          value: true,
+                          child: Text('Billable'),
+                        ),
+                        DropdownMenuItem<bool>(
+                          value: false,
+                          child: Text('Non-billable'),
+                        ),
+                      ],
+                      onChanged: _isSaving
+                          ? null
+                          : (value) {
+                              if (value != null) {
+                                setState(() => _isBillable = value);
+                              }
+                            },
                     ),
                     const SizedBox(height: AppConstants.spacing12),
                     TextField(

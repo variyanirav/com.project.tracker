@@ -55,6 +55,7 @@ class TaskRepositoryImpl implements ITaskRepository {
     String? categoryId,
     required String taskName,
     required String? description,
+    bool isBillable = true,
   }) async {
     final id = const Uuid().v4();
     final now = TimezoneHelper.getCurrentUtc();
@@ -66,6 +67,7 @@ class TaskRepositoryImpl implements ITaskRepository {
       taskName: taskName,
       description: description ?? '',
       status: 'todo',
+      isBillable: isBillable,
       totalSeconds: 0,
       isRunning: false,
       lastStartedAt: null,
@@ -87,6 +89,7 @@ class TaskRepositoryImpl implements ITaskRepository {
       taskName: task.taskName,
       description: task.description ?? '',
       status: task.status,
+      isBillable: task.isBillable,
       totalSeconds: task.totalSeconds,
       isRunning: task.isRunning,
       lastStartedAt: task.lastStartedAt,
@@ -224,6 +227,7 @@ class TaskRepositoryImpl implements ITaskRepository {
           ? data.description
           : null,
       status: data.status,
+      isBillable: data.isBillable,
       totalSeconds: data.totalSeconds,
       isRunning: data.isRunning,
       lastStartedAt: data.lastStartedAt,

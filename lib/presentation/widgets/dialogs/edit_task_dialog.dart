@@ -12,6 +12,7 @@ class EditTaskDialog extends ConsumerStatefulWidget {
   final String? initialCategoryId;
   final String initialTitle;
   final String initialDescription;
+  final bool initialIsBillable;
   final TaskStatus initialStatus;
   final Function(
     String taskId,
@@ -19,6 +20,7 @@ class EditTaskDialog extends ConsumerStatefulWidget {
     String title,
     String description,
     TaskStatus status,
+    bool isBillable,
   )
   onSavePressed;
 
@@ -28,6 +30,7 @@ class EditTaskDialog extends ConsumerStatefulWidget {
     this.initialCategoryId,
     required this.initialTitle,
     required this.initialDescription,
+    this.initialIsBillable = true,
     required this.initialStatus,
     required this.onSavePressed,
   });
@@ -41,6 +44,7 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
   late TextEditingController _descriptionController;
   late TaskStatus _selectedStatus;
   late String _selectedCategoryId;
+  late bool _isBillable;
   String? _titleError;
 
   @override
@@ -53,6 +57,7 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
     _selectedStatus = widget.initialStatus;
     _selectedCategoryId =
         widget.initialCategoryId ?? AppDatabase.uncategorizedCategoryId;
+    _isBillable = widget.initialIsBillable;
   }
 
   @override
@@ -81,6 +86,7 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
       _titleController.text.trim(),
       _descriptionController.text.trim(),
       _selectedStatus,
+      _isBillable,
     );
 
     Navigator.of(context).pop();
@@ -228,6 +234,39 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
                       ),
                     ),
                   ),
+              const SizedBox(height: 16),
+
+              Text('Billing Type', style: AppTextStyles.labelMedium),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: DropdownButton<bool>(
+                  value: _isBillable,
+                  isExpanded: true,
+                  underline: const SizedBox(),
+                  items: const [
+                    DropdownMenuItem<bool>(
+                      value: true,
+                      child: Text('Billable'),
+                    ),
+                    DropdownMenuItem<bool>(
+                      value: false,
+                      child: Text('Non-billable'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _isBillable = value);
+                    }
+                  },
+                ),
+              ),
               const SizedBox(height: 16),
 
               // Status Dropdown

@@ -900,6 +900,21 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskData> {
     requiredDuringInsert: false,
     defaultValue: const Constant('todo'),
   );
+  static const VerificationMeta _isBillableMeta = const VerificationMeta(
+    'isBillable',
+  );
+  @override
+  late final GeneratedColumn<bool> isBillable = GeneratedColumn<bool>(
+    'is_billable',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_billable" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   static const VerificationMeta _totalSecondsMeta = const VerificationMeta(
     'totalSeconds',
   );
@@ -980,6 +995,7 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskData> {
     taskName,
     description,
     status,
+    isBillable,
     totalSeconds,
     isRunning,
     lastStartedAt,
@@ -1039,6 +1055,12 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskData> {
       context.handle(
         _statusMeta,
         status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('is_billable')) {
+      context.handle(
+        _isBillableMeta,
+        isBillable.isAcceptableOrUnknown(data['is_billable']!, _isBillableMeta),
       );
     }
     if (data.containsKey('total_seconds')) {
@@ -1123,6 +1145,10 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskData> {
         DriftSqlType.string,
         data['${effectivePrefix}status'],
       )!,
+      isBillable: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_billable'],
+      )!,
       totalSeconds: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}total_seconds'],
@@ -1163,6 +1189,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
   final String taskName;
   final String? description;
   final String status;
+  final bool isBillable;
   final int totalSeconds;
   final bool isRunning;
   final DateTime? lastStartedAt;
@@ -1176,6 +1203,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
     required this.taskName,
     this.description,
     required this.status,
+    required this.isBillable,
     required this.totalSeconds,
     required this.isRunning,
     this.lastStartedAt,
@@ -1196,6 +1224,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
       map['description'] = Variable<String>(description);
     }
     map['status'] = Variable<String>(status);
+    map['is_billable'] = Variable<bool>(isBillable);
     map['total_seconds'] = Variable<int>(totalSeconds);
     map['is_running'] = Variable<bool>(isRunning);
     if (!nullToAbsent || lastStartedAt != null) {
@@ -1221,6 +1250,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
           ? const Value.absent()
           : Value(description),
       status: Value(status),
+      isBillable: Value(isBillable),
       totalSeconds: Value(totalSeconds),
       isRunning: Value(isRunning),
       lastStartedAt: lastStartedAt == null && nullToAbsent
@@ -1246,6 +1276,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
       taskName: serializer.fromJson<String>(json['taskName']),
       description: serializer.fromJson<String?>(json['description']),
       status: serializer.fromJson<String>(json['status']),
+      isBillable: serializer.fromJson<bool>(json['isBillable']),
       totalSeconds: serializer.fromJson<int>(json['totalSeconds']),
       isRunning: serializer.fromJson<bool>(json['isRunning']),
       lastStartedAt: serializer.fromJson<DateTime?>(json['lastStartedAt']),
@@ -1264,6 +1295,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
       'taskName': serializer.toJson<String>(taskName),
       'description': serializer.toJson<String?>(description),
       'status': serializer.toJson<String>(status),
+      'isBillable': serializer.toJson<bool>(isBillable),
       'totalSeconds': serializer.toJson<int>(totalSeconds),
       'isRunning': serializer.toJson<bool>(isRunning),
       'lastStartedAt': serializer.toJson<DateTime?>(lastStartedAt),
@@ -1280,6 +1312,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
     String? taskName,
     Value<String?> description = const Value.absent(),
     String? status,
+    bool? isBillable,
     int? totalSeconds,
     bool? isRunning,
     Value<DateTime?> lastStartedAt = const Value.absent(),
@@ -1293,6 +1326,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
     taskName: taskName ?? this.taskName,
     description: description.present ? description.value : this.description,
     status: status ?? this.status,
+    isBillable: isBillable ?? this.isBillable,
     totalSeconds: totalSeconds ?? this.totalSeconds,
     isRunning: isRunning ?? this.isRunning,
     lastStartedAt: lastStartedAt.present
@@ -1316,6 +1350,9 @@ class TaskData extends DataClass implements Insertable<TaskData> {
           ? data.description.value
           : this.description,
       status: data.status.present ? data.status.value : this.status,
+      isBillable: data.isBillable.present
+          ? data.isBillable.value
+          : this.isBillable,
       totalSeconds: data.totalSeconds.present
           ? data.totalSeconds.value
           : this.totalSeconds,
@@ -1340,6 +1377,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
           ..write('taskName: $taskName, ')
           ..write('description: $description, ')
           ..write('status: $status, ')
+          ..write('isBillable: $isBillable, ')
           ..write('totalSeconds: $totalSeconds, ')
           ..write('isRunning: $isRunning, ')
           ..write('lastStartedAt: $lastStartedAt, ')
@@ -1358,6 +1396,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
     taskName,
     description,
     status,
+    isBillable,
     totalSeconds,
     isRunning,
     lastStartedAt,
@@ -1375,6 +1414,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
           other.taskName == this.taskName &&
           other.description == this.description &&
           other.status == this.status &&
+          other.isBillable == this.isBillable &&
           other.totalSeconds == this.totalSeconds &&
           other.isRunning == this.isRunning &&
           other.lastStartedAt == this.lastStartedAt &&
@@ -1390,6 +1430,7 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
   final Value<String> taskName;
   final Value<String?> description;
   final Value<String> status;
+  final Value<bool> isBillable;
   final Value<int> totalSeconds;
   final Value<bool> isRunning;
   final Value<DateTime?> lastStartedAt;
@@ -1404,6 +1445,7 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
     this.taskName = const Value.absent(),
     this.description = const Value.absent(),
     this.status = const Value.absent(),
+    this.isBillable = const Value.absent(),
     this.totalSeconds = const Value.absent(),
     this.isRunning = const Value.absent(),
     this.lastStartedAt = const Value.absent(),
@@ -1419,6 +1461,7 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
     required String taskName,
     this.description = const Value.absent(),
     this.status = const Value.absent(),
+    this.isBillable = const Value.absent(),
     this.totalSeconds = const Value.absent(),
     this.isRunning = const Value.absent(),
     this.lastStartedAt = const Value.absent(),
@@ -1438,6 +1481,7 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
     Expression<String>? taskName,
     Expression<String>? description,
     Expression<String>? status,
+    Expression<bool>? isBillable,
     Expression<int>? totalSeconds,
     Expression<bool>? isRunning,
     Expression<DateTime>? lastStartedAt,
@@ -1453,6 +1497,7 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
       if (taskName != null) 'task_name': taskName,
       if (description != null) 'description': description,
       if (status != null) 'status': status,
+      if (isBillable != null) 'is_billable': isBillable,
       if (totalSeconds != null) 'total_seconds': totalSeconds,
       if (isRunning != null) 'is_running': isRunning,
       if (lastStartedAt != null) 'last_started_at': lastStartedAt,
@@ -1470,6 +1515,7 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
     Value<String>? taskName,
     Value<String?>? description,
     Value<String>? status,
+    Value<bool>? isBillable,
     Value<int>? totalSeconds,
     Value<bool>? isRunning,
     Value<DateTime?>? lastStartedAt,
@@ -1485,6 +1531,7 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
       taskName: taskName ?? this.taskName,
       description: description ?? this.description,
       status: status ?? this.status,
+      isBillable: isBillable ?? this.isBillable,
       totalSeconds: totalSeconds ?? this.totalSeconds,
       isRunning: isRunning ?? this.isRunning,
       lastStartedAt: lastStartedAt ?? this.lastStartedAt,
@@ -1515,6 +1562,9 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
     }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
+    }
+    if (isBillable.present) {
+      map['is_billable'] = Variable<bool>(isBillable.value);
     }
     if (totalSeconds.present) {
       map['total_seconds'] = Variable<int>(totalSeconds.value);
@@ -1549,6 +1599,7 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
           ..write('taskName: $taskName, ')
           ..write('description: $description, ')
           ..write('status: $status, ')
+          ..write('isBillable: $isBillable, ')
           ..write('totalSeconds: $totalSeconds, ')
           ..write('isRunning: $isRunning, ')
           ..write('lastStartedAt: $lastStartedAt, ')
@@ -3628,6 +3679,7 @@ typedef $$TasksTableCreateCompanionBuilder =
       required String taskName,
       Value<String?> description,
       Value<String> status,
+      Value<bool> isBillable,
       Value<int> totalSeconds,
       Value<bool> isRunning,
       Value<DateTime?> lastStartedAt,
@@ -3644,6 +3696,7 @@ typedef $$TasksTableUpdateCompanionBuilder =
       Value<String> taskName,
       Value<String?> description,
       Value<String> status,
+      Value<bool> isBillable,
       Value<int> totalSeconds,
       Value<bool> isRunning,
       Value<DateTime?> lastStartedAt,
@@ -3688,6 +3741,11 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
 
   ColumnFilters<String> get status => $composableBuilder(
     column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isBillable => $composableBuilder(
+    column: $table.isBillable,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3761,6 +3819,11 @@ class $$TasksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isBillable => $composableBuilder(
+    column: $table.isBillable,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get totalSeconds => $composableBuilder(
     column: $table.totalSeconds,
     builder: (column) => ColumnOrderings(column),
@@ -3823,6 +3886,11 @@ class $$TasksTableAnnotationComposer
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
 
+  GeneratedColumn<bool> get isBillable => $composableBuilder(
+    column: $table.isBillable,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get totalSeconds => $composableBuilder(
     column: $table.totalSeconds,
     builder: (column) => column,
@@ -3882,6 +3950,7 @@ class $$TasksTableTableManager
                 Value<String> taskName = const Value.absent(),
                 Value<String?> description = const Value.absent(),
                 Value<String> status = const Value.absent(),
+                Value<bool> isBillable = const Value.absent(),
                 Value<int> totalSeconds = const Value.absent(),
                 Value<bool> isRunning = const Value.absent(),
                 Value<DateTime?> lastStartedAt = const Value.absent(),
@@ -3896,6 +3965,7 @@ class $$TasksTableTableManager
                 taskName: taskName,
                 description: description,
                 status: status,
+                isBillable: isBillable,
                 totalSeconds: totalSeconds,
                 isRunning: isRunning,
                 lastStartedAt: lastStartedAt,
@@ -3912,6 +3982,7 @@ class $$TasksTableTableManager
                 required String taskName,
                 Value<String?> description = const Value.absent(),
                 Value<String> status = const Value.absent(),
+                Value<bool> isBillable = const Value.absent(),
                 Value<int> totalSeconds = const Value.absent(),
                 Value<bool> isRunning = const Value.absent(),
                 Value<DateTime?> lastStartedAt = const Value.absent(),
@@ -3926,6 +3997,7 @@ class $$TasksTableTableManager
                 taskName: taskName,
                 description: description,
                 status: status,
+                isBillable: isBillable,
                 totalSeconds: totalSeconds,
                 isRunning: isRunning,
                 lastStartedAt: lastStartedAt,

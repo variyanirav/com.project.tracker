@@ -12,6 +12,7 @@ class Tasks extends Table {
   TextColumn get status => text().withDefault(
     const Constant('todo'),
   )(); // todo, inProgress, inReview, onHold, complete
+  BoolColumn get isBillable => boolean().withDefault(const Constant(true))();
   IntColumn get totalSeconds => integer().withDefault(
     const Constant(0),
   )(); // Cumulative seconds for this task

@@ -440,6 +440,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                               initialCategoryId: task.categoryId,
                               initialTitle: task.taskName,
                               initialDescription: task.description ?? '',
+                              initialIsBillable: task.isBillable,
                               initialStatus: TaskStatus.fromValue(task.status),
                               onSavePressed:
                                   (
@@ -448,6 +449,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                     title,
                                     description,
                                     status,
+                                    isBillable,
                                   ) async {
                                     await ref.read(
                                       updateTaskProvider(
@@ -458,6 +460,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                           taskName: title,
                                           description: description,
                                           status: status.code,
+                                          isBillable: isBillable,
                                           totalSeconds: task.totalSeconds,
                                           isRunning: task.isRunning,
                                           createdAt: task.createdAt,
@@ -570,7 +573,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     final created = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => CreateTaskDialog(
-        onCreatePressed: (title, description, categoryId) async {
+        onCreatePressed: (title, description, categoryId, isBillable) async {
           await ref.read(
             createTaskProvider(
               CreateTaskParams(
@@ -578,6 +581,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                 categoryId: categoryId,
                 taskName: title,
                 description: description,
+                isBillable: isBillable,
               ),
             ).future,
           );

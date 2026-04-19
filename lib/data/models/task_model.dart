@@ -11,6 +11,7 @@ class TaskModel {
   final String taskName;
   final String description;
   final String status;
+  final bool isBillable;
   final int totalSeconds;
   final bool isRunning;
   final DateTime? lastStartedAt;
@@ -25,6 +26,7 @@ class TaskModel {
     required this.taskName,
     required this.description,
     required this.status,
+    required this.isBillable,
     required this.totalSeconds,
     required this.isRunning,
     this.lastStartedAt,
@@ -42,6 +44,7 @@ class TaskModel {
       taskName: data.taskName,
       description: data.description ?? '',
       status: data.status,
+      isBillable: data.isBillable,
       totalSeconds: data.totalSeconds,
       isRunning: data.isRunning,
       lastStartedAt: data.lastStartedAt,
@@ -60,6 +63,7 @@ class TaskModel {
       taskName: taskName,
       description: description,
       status: status,
+      isBillable: isBillable,
       totalSeconds: totalSeconds,
       isRunning: isRunning,
       lastStartedAt: lastStartedAt,

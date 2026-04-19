@@ -440,6 +440,17 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
             const SizedBox(height: 12),
             _metaLabelValue(
               brightness: brightness,
+              label: 'Billing Type',
+              valueWidget: Text(
+                widget.task.isBillable ? 'Billable' : 'Non-billable',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _metaLabelValue(
+              brightness: brightness,
               label: 'Timer Status',
               valueWidget: Text(
                 timerStatus,
