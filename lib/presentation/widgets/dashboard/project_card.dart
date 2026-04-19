@@ -41,6 +41,7 @@ class ProjectCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
     final projectColor = color ?? AppColors.brandPrimary;
 
     return AppCard(
@@ -116,7 +117,7 @@ class ProjectCard extends StatelessWidget {
                           SizedBox(width: AppConstants.spacing4),
                           Text(
                             'View',
-                            style: AppTextStyles.labelSmall.copyWith(
+                            style: AppTypography.actionLabel.copyWith(
                               color: projectColor,
                               fontWeight: FontWeight.w600,
                             ),
@@ -135,17 +136,17 @@ class ProjectCard extends StatelessWidget {
           // Project Name and Description
           Text(
             title,
-            style: AppTextStyles.titleMedium,
+            style: AppTypography.sectionTitle.copyWith(
+              color: surface.textPrimary,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           SizedBox(height: AppConstants.spacing4),
           Text(
             description,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: isDark
-                  ? AppColors.darkTextSecondary
-                  : AppColors.lightTextSecondary,
+            style: AppTypography.bodySmall.copyWith(
+              color: surface.textSecondary,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -156,24 +157,20 @@ class ProjectCard extends StatelessWidget {
           // Total Hours
           Text(
             'Total Hours',
-            style: AppTextStyles.labelSmall.copyWith(
-              color: isDark
-                  ? AppColors.darkTextTertiary
-                  : AppColors.lightTextTertiary,
-            ),
+            style: AppTypography.label.copyWith(color: surface.textMuted),
           ),
           Text(
             hours,
-            style: AppTextStyles.titleMedium.copyWith(color: projectColor),
+            style: AppTypography.metricValue.copyWith(
+              color: projectColor,
+              fontSize: AppConstants.fontSizeLarge,
+            ),
           ),
 
           SizedBox(height: AppConstants.spacing12),
 
           // Divider
-          Divider(
-            height: 1,
-            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-          ),
+          Divider(height: 1, color: surface.border),
 
           SizedBox(height: AppConstants.spacing12),
 
@@ -181,8 +178,9 @@ class ProjectCard extends StatelessWidget {
           if (recentTasks != null && recentTasks!.isNotEmpty) ...[
             Text(
               'Recent Tasks',
-              style: AppTextStyles.labelSmall.copyWith(
+              style: AppTypography.actionLabel.copyWith(
                 fontWeight: FontWeight.w600,
+                color: surface.textPrimary,
               ),
             ),
             SizedBox(height: AppConstants.spacing8),
@@ -195,7 +193,9 @@ class ProjectCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         task.name,
-                        style: AppTextStyles.bodySmall,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: surface.textPrimary,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -238,7 +238,7 @@ class _TaskStatusBadge extends StatelessWidget {
       ),
       child: Text(
         TaskStatus.formatLabel(status),
-        style: AppTextStyles.labelSmall.copyWith(
+        style: AppTypography.label.copyWith(
           color: statusColor,
           fontSize: 11,
           fontWeight: FontWeight.w600,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/task_status.dart';
+import '../../../core/constants/colors.dart';
 import '../../../core/theme/text_styles.dart';
 import '../../../core/utils/date_time_formatter.dart';
 import '../../../core/widgets/app_card.dart';
@@ -31,6 +32,8 @@ class TaskListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
     final displaySeconds =
         isThisTaskRunning && currentRunningElapsedSeconds != null
         ? (currentRunningElapsedSeconds! > task.totalSeconds
@@ -52,7 +55,9 @@ class TaskListItem extends StatelessWidget {
                 Expanded(
                   child: Text(
                     task.taskName,
-                    style: AppTextStyles.labelMedium,
+                    style: AppTypography.actionLabel.copyWith(
+                      color: surface.textPrimary,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -65,7 +70,9 @@ class TaskListItem extends StatelessWidget {
             // Metadata: Duration & Date
             Text(
               '${DateTimeFormatter.formatSeconds(displaySeconds)} · ${DateTimeFormatter.formatDate(task.createdAt)}',
-              style: AppTextStyles.bodySmall,
+              style: AppTypography.helper.copyWith(
+                color: surface.textSecondary,
+              ),
             ),
             const SizedBox(height: 16),
             // Action Buttons Row
@@ -117,7 +124,7 @@ class TaskListItem extends StatelessWidget {
       ),
       child: Text(
         TaskStatus.formatLabel(task.status),
-        style: AppTextStyles.labelSmall.copyWith(
+        style: AppTypography.label.copyWith(
           color: taskStatus.getColor(),
           fontSize: 11,
         ),
@@ -183,7 +190,7 @@ class TaskListItem extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   buttonLabel,
-                  style: AppTextStyles.labelSmall.copyWith(
+                  style: AppTypography.label.copyWith(
                     color: buttonColor,
                     fontWeight: FontWeight.w600,
                   ),

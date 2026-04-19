@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/colors.dart';
+import '../../../core/theme/text_styles.dart';
 import '../../../core/widgets/app_button.dart';
 
 Future<String?> showTimerSessionNoteDialog(
@@ -50,8 +52,17 @@ Future<String?> showTimerSessionNoteDialog(
   final value = await showDialog<String>(
     context: context,
     builder: (dialogContext) {
+      final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
+      final surface = AppSurfaceTokens(isDark: isDark);
+
       return AlertDialog(
-        title: Text(title),
+        backgroundColor: surface.panel,
+        title: Text(
+          title,
+          style: AppTypography.sectionTitle.copyWith(
+            color: surface.textPrimary,
+          ),
+        ),
         constraints: const BoxConstraints(maxWidth: 560),
         content: SizedBox(
           width: 480,
@@ -105,7 +116,9 @@ Future<String?> showTimerSessionNoteDialog(
               const SizedBox(height: 8),
               Text(
                 'Tip: formatting is stored as plain text markers so it stays lightweight.',
-                style: Theme.of(dialogContext).textTheme.bodySmall,
+                style: AppTypography.helper.copyWith(
+                  color: surface.textSecondary,
+                ),
               ),
             ],
           ),
@@ -140,13 +153,20 @@ class _FormatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
+
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         visualDensity: VisualDensity.compact,
+        side: BorderSide(color: surface.border),
       ),
-      child: Text(label),
+      child: Text(
+        label,
+        style: AppTypography.actionLabel.copyWith(color: surface.textPrimary),
+      ),
     );
   }
 }

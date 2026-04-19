@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
 import '../constants/colors.dart';
+import '../theme/text_styles.dart';
 
 /// Reusable button widget with multiple variants
 /// Supports primary, secondary, danger, and ghost styles
@@ -137,25 +138,38 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tokens = AppSurfaceTokens(isDark: isDark);
 
     return ConstrainedBox(
       constraints: BoxConstraints(minWidth: minWidth ?? 0),
       child: SizedBox(
         width: isFullWidth ? double.infinity : null,
-        child: _buildButton(isDark),
+        child: _buildButton(tokens),
       ),
     );
   }
 
-  Widget _buildButton(bool isDark) {
+  Widget _buildButton(AppSurfaceTokens tokens) {
     switch (variant) {
       case ButtonVariant.primary:
         return ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: tokens.accent,
+            foregroundColor: tokens.isDark
+                ? const Color(0xFF002E69)
+                : Colors.white,
+            textStyle: AppTypography.actionLabel,
+          ),
           onPressed: isLoading || !isEnabled ? null : onPressed,
           child: _buildContent(),
         );
       case ButtonVariant.secondary:
         return OutlinedButton(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: tokens.textPrimary,
+            side: BorderSide(color: tokens.border),
+            textStyle: AppTypography.actionLabel,
+          ),
           onPressed: isLoading || !isEnabled ? null : onPressed,
           child: _buildContent(),
         );
@@ -164,12 +178,17 @@ class AppButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.error,
             disabledBackgroundColor: AppColors.error.withValues(alpha: 0.5),
+            textStyle: AppTypography.actionLabel,
           ),
           onPressed: isLoading || !isEnabled ? null : onPressed,
           child: _buildContent(),
         );
       case ButtonVariant.ghost:
         return TextButton(
+          style: TextButton.styleFrom(
+            foregroundColor: tokens.accent,
+            textStyle: AppTypography.actionLabel,
+          ),
           onPressed: isLoading || !isEnabled ? null : onPressed,
           child: _buildContent(),
         );
@@ -177,7 +196,7 @@ class AppButton extends StatelessWidget {
   }
 
   Widget _buildContent() {
-    final textWidget = Text(label);
+    final textWidget = Text(label, style: AppTypography.actionLabel);
 
     if (isLoading) {
       return SizedBox(

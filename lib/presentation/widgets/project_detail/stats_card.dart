@@ -20,6 +20,8 @@ class StatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final surface = AppSurfaceTokens(isDark: isDark);
+
     return AppCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -28,7 +30,12 @@ class StatsCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: AppTextStyles.labelMedium),
+              Text(
+                title,
+                style: AppTypography.actionLabel.copyWith(
+                  color: surface.textSecondary,
+                ),
+              ),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -40,7 +47,13 @@ class StatsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Text(value, style: AppTextStyles.headingLarge),
+          Text(
+            value,
+            style: AppTypography.metricValue.copyWith(
+              color: surface.textPrimary,
+              fontSize: 22,
+            ),
+          ),
         ],
       ),
     );

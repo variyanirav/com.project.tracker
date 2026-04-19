@@ -27,17 +27,18 @@ class RunningTimerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
 
     return AppCard(
       padding: EdgeInsets.all(AppConstants.spacing24),
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+      backgroundColor: surface.panel,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Status Label
           Text(
             'Currently Working On',
-            style: AppTextStyles.labelSmall.copyWith(
+            style: AppTypography.label.copyWith(
               color: AppColors.brandPrimary,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
@@ -52,10 +53,8 @@ class RunningTimerCard extends StatelessWidget {
             children: [
               Text(
                 projectName,
-                style: AppTextStyles.labelMedium.copyWith(
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary,
+                style: AppTypography.actionLabel.copyWith(
+                  color: surface.textSecondary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -63,7 +62,9 @@ class RunningTimerCard extends StatelessWidget {
               SizedBox(height: AppConstants.spacing4),
               Text(
                 taskName,
-                style: AppTextStyles.heading2,
+                style: AppTypography.sectionTitle.copyWith(
+                  color: surface.textPrimary,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
@@ -76,9 +77,7 @@ class RunningTimerCard extends StatelessWidget {
           // Timer Display
           Container(
             decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.darkSurface.withValues(alpha: 0.5)
-                  : AppColors.lightSurface.withValues(alpha: 0.5),
+              color: surface.panelHigh.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(AppConstants.roundRadius),
               border: Border.all(
                 color: AppColors.brandPrimary.withValues(alpha: 0.2),
@@ -90,10 +89,9 @@ class RunningTimerCard extends StatelessWidget {
             ),
             child: Text(
               elapsedTime,
-              style: TextStyle(
-                fontFamily: 'monospace',
+              style: AppTypography.metricValue.copyWith(
+                fontFamily: 'Courier New',
                 fontSize: 48,
-                fontWeight: FontWeight.w700,
                 color: AppColors.brandPrimary,
                 letterSpacing: 2,
               ),
@@ -118,9 +116,7 @@ class RunningTimerCard extends StatelessWidget {
                       vertical: AppConstants.spacing12,
                     ),
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.darkBorder
-                          : AppColors.lightBorder,
+                      color: surface.panelHigh,
                       borderRadius: BorderRadius.circular(
                         AppConstants.roundRadius,
                       ),
@@ -138,10 +134,8 @@ class RunningTimerCard extends StatelessWidget {
                         SizedBox(width: AppConstants.spacing8),
                         Text(
                           isPaused ? 'Start' : 'Pause',
-                          style: AppTextStyles.labelMedium.copyWith(
-                            color: isDark
-                                ? AppColors.darkTextPrimary
-                                : AppColors.lightTextPrimary,
+                          style: AppTypography.actionLabel.copyWith(
+                            color: surface.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -177,7 +171,7 @@ class RunningTimerCard extends StatelessWidget {
                         SizedBox(width: AppConstants.spacing8),
                         Text(
                           'Stop',
-                          style: AppTextStyles.labelMedium.copyWith(
+                          style: AppTypography.actionLabel.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
                           ),

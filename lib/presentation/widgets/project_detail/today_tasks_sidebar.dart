@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/task_status.dart';
+import '../../../core/constants/colors.dart';
 import '../../../core/theme/text_styles.dart';
 import '../../../core/utils/date_time_formatter.dart';
 import '../../../core/widgets/app_card.dart';
@@ -14,12 +15,17 @@ class TodayTasksSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           AppStrings.screenTitles.todaysTasks,
-          style: AppTextStyles.heading2,
+          style: AppTypography.sectionTitle.copyWith(
+            color: surface.textPrimary,
+          ),
         ),
         const SizedBox(height: 16),
         if (todaysTasks.isEmpty)
@@ -28,8 +34,8 @@ class TodayTasksSidebar extends StatelessWidget {
             child: Center(
               child: Text(
                 AppStrings.labels.noTasksCreatedToday,
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: const Color(0xFFA0AEC0),
+                style: AppTypography.body.copyWith(
+                  color: surface.textSecondary,
                 ),
               ),
             ),
@@ -37,7 +43,7 @@ class TodayTasksSidebar extends StatelessWidget {
         else
           Column(
             children: todaysTasks
-                .map((task) => _buildTodayTaskItem(task))
+                .map((task) => _buildTodayTaskItem(task, isDark))
                 .toList(),
           ),
       ],
@@ -45,7 +51,8 @@ class TodayTasksSidebar extends StatelessWidget {
   }
 
   /// Build individual today's task item
-  Widget _buildTodayTaskItem(TaskEntity task) {
+  Widget _buildTodayTaskItem(TaskEntity task, bool isDark) {
+    final surface = AppSurfaceTokens(isDark: isDark);
     final taskStatus = TaskStatus.fromValue(task.status);
 
     return Padding(
@@ -61,7 +68,9 @@ class TodayTasksSidebar extends StatelessWidget {
                 Expanded(
                   child: Text(
                     task.taskName,
-                    style: AppTextStyles.labelMedium,
+                    style: AppTypography.actionLabel.copyWith(
+                      color: surface.textPrimary,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -75,7 +84,9 @@ class TodayTasksSidebar extends StatelessWidget {
               children: [
                 Text(
                   DateTimeFormatter.formatSeconds(task.totalSeconds),
-                  style: AppTextStyles.bodySmall,
+                  style: AppTypography.helper.copyWith(
+                    color: surface.textSecondary,
+                  ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -88,7 +99,7 @@ class TodayTasksSidebar extends StatelessWidget {
                   ),
                   child: Text(
                     TaskStatus.formatLabel(task.status),
-                    style: AppTextStyles.labelSmall.copyWith(
+                    style: AppTypography.label.copyWith(
                       color: taskStatus.getColor(),
                       fontSize: 9,
                     ),

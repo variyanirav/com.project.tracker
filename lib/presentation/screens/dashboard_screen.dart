@@ -25,6 +25,9 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
+
     // Watch providers for real-time data
     final projectsAsync = ref.watch(projectsProvider);
     final timerAsync = ref.watch(timerProvider);
@@ -106,23 +109,24 @@ class DashboardScreen extends ConsumerWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Dashboard Overview', style: AppTextStyles.heading2),
+                    Text(
+                      'Dashboard Overview',
+                      style: AppTypography.sectionTitle.copyWith(
+                        color: surface.textPrimary,
+                      ),
+                    ),
                     SizedBox(height: AppConstants.spacing4),
                     Text(
                       'Welcome back! Tracking your efficiency today.',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary,
+                      style: AppTypography.helper.copyWith(
+                        color: surface.textSecondary,
                       ),
                     ),
                     SizedBox(height: AppConstants.spacing4),
                     Text(
                       'Version ${AppConstants.appVersion}',
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.darkTextTertiary
-                            : AppColors.lightTextTertiary,
+                      style: AppTypography.label.copyWith(
+                        color: surface.textMuted,
                       ),
                     ),
                   ],
@@ -132,7 +136,7 @@ class DashboardScreen extends ConsumerWidget {
                   backgroundColor: AppColors.brandPrimary,
                   child: Text(
                     'JD',
-                    style: AppTextStyles.labelMedium.copyWith(
+                    style: AppTypography.actionLabel.copyWith(
                       color: Colors.white,
                     ),
                   ),
@@ -255,11 +259,18 @@ class DashboardScreen extends ConsumerWidget {
                           color: AppColors.brandPrimary,
                         ),
                         SizedBox(height: AppConstants.spacing16),
-                        Text('No Projects Yet', style: AppTextStyles.heading2),
+                        Text(
+                          'No Projects Yet',
+                          style: AppTypography.sectionTitle.copyWith(
+                            color: surface.textPrimary,
+                          ),
+                        ),
                         SizedBox(height: AppConstants.spacing8),
                         Text(
                           'Create your first project to get started',
-                          style: AppTextStyles.bodyMedium,
+                          style: AppTypography.body.copyWith(
+                            color: surface.textSecondary,
+                          ),
                         ),
                         SizedBox(height: AppConstants.spacing24),
                         AppButton.primary(
@@ -326,7 +337,9 @@ class DashboardScreen extends ConsumerWidget {
                 children: [
                   Text(
                     'Recently Used Projects',
-                    style: AppTextStyles.titleLarge,
+                    style: AppTypography.sectionTitle.copyWith(
+                      color: surface.textPrimary,
+                    ),
                   ),
                   AppButton.primary(
                     label: '+ Add New Project',
@@ -510,7 +523,7 @@ class DashboardScreen extends ConsumerWidget {
                                 },
                                 child: Text(
                                   'View All Projects →',
-                                  style: AppTextStyles.labelMedium.copyWith(
+                                  style: AppTypography.actionLabel.copyWith(
                                     color: AppColors.brandPrimary,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -523,8 +536,14 @@ class DashboardScreen extends ConsumerWidget {
                   );
                 },
                 loading: () => Center(child: CircularProgressIndicator()),
-                error: (err, stack) =>
-                    Center(child: Text('Error loading projects: $err')),
+                error: (err, stack) => Center(
+                  child: Text(
+                    'Error loading projects: $err',
+                    style: AppTypography.body.copyWith(
+                      color: surface.textSecondary,
+                    ),
+                  ),
+                ),
               ),
           ],
         ),

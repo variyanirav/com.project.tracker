@@ -50,6 +50,7 @@ class _TodoListScreenState extends ConsumerState<TodoListScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
     final todosAsync = ref.watch(todoItemsProvider);
     final todoCountAsync = ref.watch(openTodoCountProvider);
     final completedCountAsync = ref.watch(completedTodoCountProvider);
@@ -120,14 +121,17 @@ class _TodoListScreenState extends ConsumerState<TodoListScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('To-Do List', style: AppTextStyles.heading2),
+                  Text(
+                    'To-Do List',
+                    style: AppTypography.sectionTitle.copyWith(
+                      color: surface.textPrimary,
+                    ),
+                  ),
                   const SizedBox(height: AppConstants.spacing8),
                   Text(
                     'Capture reminders, ideas, follow-ups, and future tasks.',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary,
+                    style: AppTypography.body.copyWith(
+                      color: surface.textSecondary,
                     ),
                   ),
                   const SizedBox(height: AppConstants.spacing24),
@@ -228,8 +232,14 @@ class _TodoListScreenState extends ConsumerState<TodoListScreen> {
                     },
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
-                    error: (err, _) =>
-                        Center(child: Text('Failed to load to-do items: $err')),
+                    error: (err, _) => Center(
+                      child: Text(
+                        'Failed to load to-do items: $err',
+                        style: AppTypography.body.copyWith(
+                          color: surface.textSecondary,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -363,26 +373,26 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
 
     return Container(
       height: 72,
       padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing24),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-        border: Border(
-          bottom: BorderSide(
-            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-          ),
-        ),
+        color: surface.panel,
+        border: Border(bottom: BorderSide(color: surface.border)),
       ),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: searchController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Search by title or description...',
-                prefixIcon: Icon(Icons.search),
+                hintStyle: AppTypography.helper.copyWith(
+                  color: surface.textMuted,
+                ),
+                prefixIcon: Icon(Icons.search, color: surface.textSecondary),
               ),
             ),
           ),
@@ -417,6 +427,9 @@ class _FilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
+
     return Row(
       children: [
         Wrap(
@@ -459,7 +472,14 @@ class _FilterBar extends StatelessWidget {
           width: 160,
           child: DropdownButtonFormField<String>(
             initialValue: selectedPriority,
-            decoration: const InputDecoration(labelText: 'Priority'),
+            dropdownColor: surface.panel,
+            style: AppTypography.body.copyWith(color: surface.textPrimary),
+            decoration: InputDecoration(
+              labelText: 'Priority',
+              labelStyle: AppTypography.label.copyWith(
+                color: surface.textSecondary,
+              ),
+            ),
             items: const [
               DropdownMenuItem(value: 'all', child: Text('All')),
               DropdownMenuItem(value: todoPriorityHigh, child: Text('High')),
@@ -496,8 +516,18 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
+
     return ChoiceChip(
-      label: Text(label),
+      label: Text(
+        label,
+        style: AppTypography.helper.copyWith(
+          color: selectedValue == value
+              ? surface.textPrimary
+              : surface.textSecondary,
+        ),
+      ),
       selected: selectedValue == value,
       onSelected: (_) => onSelected(value),
     );
@@ -518,32 +548,30 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
 
     return Container(
       padding: const EdgeInsets.all(AppConstants.spacing20),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+        color: surface.panel,
         borderRadius: BorderRadius.circular(AppConstants.roundRadius),
-        border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-        ),
+        border: Border.all(color: surface.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: isDark
-                  ? AppColors.darkTextSecondary
-                  : AppColors.lightTextSecondary,
-            ),
+            style: AppTypography.helper.copyWith(color: surface.textSecondary),
           ),
           const SizedBox(height: AppConstants.spacing8),
           valueAsync.when(
             data: (value) => Text(
               '$value',
-              style: AppTextStyles.heading2.copyWith(color: accent),
+              style: AppTypography.metricValue.copyWith(
+                color: accent,
+                fontSize: 28,
+              ),
             ),
             loading: () => const SizedBox(
               width: 18,
@@ -552,7 +580,10 @@ class _StatCard extends StatelessWidget {
             ),
             error: (_, __) => Text(
               '-',
-              style: AppTextStyles.heading2.copyWith(color: accent),
+              style: AppTypography.metricValue.copyWith(
+                color: accent,
+                fontSize: 28,
+              ),
             ),
           ),
         ],
@@ -583,15 +614,14 @@ class _TodoListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
     final isDone = todo.status == todoStatusDone;
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+        color: surface.panel,
         borderRadius: BorderRadius.circular(AppConstants.roundRadius),
-        border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-        ),
+        border: Border.all(color: surface.border),
       ),
       padding: const EdgeInsets.all(AppConstants.spacing16),
       child: Row(
@@ -616,7 +646,8 @@ class _TodoListItem extends StatelessWidget {
                     todo.title,
                     maxLines: AppConstants.maxTitleDisplayLines,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.titleSmall.copyWith(
+                    style: AppTypography.actionLabel.copyWith(
+                      color: surface.textPrimary,
                       decoration: isDone ? TextDecoration.lineThrough : null,
                     ),
                   ),
@@ -626,10 +657,8 @@ class _TodoListItem extends StatelessWidget {
                     padding: const EdgeInsets.only(top: AppConstants.spacing4),
                     child: Text(
                       todo.description,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: isDark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: surface.textSecondary,
                       ),
                     ),
                   ),
@@ -737,7 +766,7 @@ class _TodoListItem extends StatelessWidget {
       case todoStatusSnoozed:
         return AppColors.warning;
       default:
-        return AppColors.darkTextSecondary;
+        return AppColors.lightTextSecondary;
     }
   }
 }
@@ -756,7 +785,7 @@ class _Tag extends StatelessWidget {
         color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(text, style: AppTextStyles.caption.copyWith(color: color)),
+      child: Text(text, style: AppTypography.helper.copyWith(color: color)),
     );
   }
 }
@@ -769,16 +798,15 @@ class _EmptyTodoState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+        color: surface.panel,
         borderRadius: BorderRadius.circular(AppConstants.roundRadius),
-        border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-        ),
+        border: Border.all(color: surface.border),
       ),
       child: Column(
         children: [
@@ -788,14 +816,17 @@ class _EmptyTodoState extends StatelessWidget {
             color: AppColors.brandPrimary,
           ),
           const SizedBox(height: AppConstants.spacing12),
-          Text('No to-do items found', style: AppTextStyles.titleMedium),
+          Text(
+            'No to-do items found',
+            style: AppTypography.sectionTitle.copyWith(
+              color: surface.textPrimary,
+            ),
+          ),
           const SizedBox(height: AppConstants.spacing8),
           Text(
             'Try changing filters or create a new to-do item.',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: isDark
-                  ? AppColors.darkTextSecondary
-                  : AppColors.lightTextSecondary,
+            style: AppTypography.bodySmall.copyWith(
+              color: surface.textSecondary,
             ),
           ),
           const SizedBox(height: AppConstants.spacing16),

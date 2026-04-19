@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_tracker/data/database/app_database.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/colors.dart';
 import '../../../core/theme/text_styles.dart';
 import '../../../core/widgets/app_button.dart';
 import 'manage_categories_dialog.dart';
@@ -87,6 +88,7 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -95,7 +97,7 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
         constraints: const BoxConstraints(maxHeight: 740),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          color: Theme.of(context).scaffoldBackgroundColor,
+          color: surface.panel,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -108,11 +110,18 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('New Task', style: AppTextStyles.heading2),
+                        Text(
+                          'New Task',
+                          style: AppTypography.sectionTitle.copyWith(
+                            color: surface.textPrimary,
+                          ),
+                        ),
                         const SizedBox(height: AppConstants.spacing4),
                         Text(
                           'Create a task with clear scope and context.',
-                          style: AppTextStyles.bodySmall,
+                          style: AppTypography.bodySmall.copyWith(
+                            color: surface.textSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -126,10 +135,7 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
                 ],
               ),
             ),
-            Divider(
-              height: 1,
-              color: isDark ? Colors.grey[700] : Colors.grey[300],
-            ),
+            Divider(height: 1, color: surface.border),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(AppConstants.spacing24),
@@ -154,8 +160,8 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
                       const SizedBox(height: AppConstants.spacing4),
                       Text(
                         _titleError!,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: Colors.red,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.error,
                         ),
                       ),
                     ],
@@ -279,10 +285,7 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
                 ),
               ),
             ),
-            Divider(
-              height: 1,
-              color: isDark ? Colors.grey[700] : Colors.grey[300],
-            ),
+            Divider(height: 1, color: surface.border),
             Padding(
               padding: const EdgeInsets.all(AppConstants.spacing24),
               child: Row(

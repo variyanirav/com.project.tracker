@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../constants/colors.dart';
+import '../theme/text_styles.dart';
+
 /// Reusable text field widget with validation support
 class AppTextField extends StatefulWidget {
   final String label;
@@ -72,6 +75,9 @@ class _AppTextFieldState extends State<AppTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tokens = AppSurfaceTokens(isDark: isDark);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -80,7 +86,7 @@ class _AppTextFieldState extends State<AppTextField> {
           padding: const EdgeInsets.only(bottom: 8.0),
           child: Text(
             widget.label,
-            style: Theme.of(context).textTheme.labelLarge,
+            style: AppTypography.label.copyWith(color: tokens.textSecondary),
           ),
         ),
 
@@ -100,11 +106,40 @@ class _AppTextFieldState extends State<AppTextField> {
           },
           decoration: InputDecoration(
             hintText: widget.hintText,
+            hintStyle: AppTypography.bodySmall.copyWith(
+              color: tokens.textMuted,
+            ),
+            labelStyle: AppTypography.label.copyWith(
+              color: tokens.textSecondary,
+            ),
+            filled: true,
+            fillColor: tokens.panel,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: tokens.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: tokens.accent.withValues(alpha: 0.8),
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.error),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.error, width: 1.4),
+            ),
             prefixIcon: widget.prefixIcon != null
-                ? Icon(widget.prefixIcon)
+                ? Icon(widget.prefixIcon, color: tokens.textSecondary)
                 : null,
             suffixIcon: _buildSuffixIcon(),
             errorText: _errorText,
+            errorStyle: AppTypography.bodySmall.copyWith(
+              color: AppColors.error,
+            ),
             counterText: '', // Hide character count
           ),
         ),
@@ -115,11 +150,7 @@ class _AppTextFieldState extends State<AppTextField> {
             padding: const EdgeInsets.only(top: 4.0),
             child: Text(
               _errorText!,
-              style:
-                  Theme.of(
-                    context,
-                  ).textTheme.labelSmall?.copyWith(color: Colors.red) ??
-                  const TextStyle(color: Colors.red, fontSize: 12),
+              style: AppTypography.bodySmall.copyWith(color: AppColors.error),
             ),
           ),
       ],

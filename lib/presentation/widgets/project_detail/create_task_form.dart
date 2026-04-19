@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_tracker/data/database/app_database.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/colors.dart';
+import '../../../core/theme/text_styles.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../providers/category_provider.dart';
@@ -44,6 +46,9 @@ class _CreateTaskFormState extends ConsumerState<CreateTaskForm> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
+
     return AppCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -56,6 +61,12 @@ class _CreateTaskFormState extends ConsumerState<CreateTaskForm> {
             decoration: InputDecoration(
               labelText: AppStrings.labels.taskTitle,
               hintText: AppStrings.labels.taskTitleHint,
+              labelStyle: AppTypography.label.copyWith(
+                color: surface.textSecondary,
+              ),
+              hintStyle: AppTypography.helper.copyWith(
+                color: surface.textMuted,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -80,8 +91,15 @@ class _CreateTaskFormState extends ConsumerState<CreateTaskForm> {
 
                   return DropdownButtonFormField<String>(
                     initialValue: _selectedCategoryId,
+                    dropdownColor: surface.panel,
+                    style: AppTypography.body.copyWith(
+                      color: surface.textPrimary,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Category',
+                      labelStyle: AppTypography.label.copyWith(
+                        color: surface.textSecondary,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -107,8 +125,15 @@ class _CreateTaskFormState extends ConsumerState<CreateTaskForm> {
                 loading: () => const LinearProgressIndicator(minHeight: 2),
                 error: (_, __) => DropdownButtonFormField<String>(
                   initialValue: AppDatabase.uncategorizedCategoryId,
+                  dropdownColor: surface.panel,
+                  style: AppTypography.body.copyWith(
+                    color: surface.textPrimary,
+                  ),
                   decoration: InputDecoration(
                     labelText: 'Category',
+                    labelStyle: AppTypography.label.copyWith(
+                      color: surface.textSecondary,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -135,6 +160,12 @@ class _CreateTaskFormState extends ConsumerState<CreateTaskForm> {
             decoration: InputDecoration(
               labelText: AppStrings.labels.description,
               hintText: AppStrings.labels.descriptionHint,
+              labelStyle: AppTypography.label.copyWith(
+                color: surface.textSecondary,
+              ),
+              hintStyle: AppTypography.helper.copyWith(
+                color: surface.textMuted,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),

@@ -6,6 +6,8 @@ import 'package:project_tracker/domain/entities/category_entity.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/colors.dart';
 import '../../core/theme/text_styles.dart';
+import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_card.dart';
 import '../../core/widgets/custom_scaffold.dart';
 import '../providers/category_provider.dart';
 import '../providers/repository_provider.dart';
@@ -225,6 +227,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
     final dailyGoalHoursAsync = ref.watch(dailyGoalProvider);
 
     return CustomScaffold(
@@ -285,18 +288,21 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Categories', style: AppTextStyles.heading2),
+            Text(
+              'Categories',
+              style: AppTypography.sectionTitle.copyWith(
+                color: surface.textPrimary,
+              ),
+            ),
             const SizedBox(height: AppConstants.spacing4),
             Text(
               'Create and control task categories used across tasks and reports.',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: isDark
-                    ? AppColors.darkTextSecondary
-                    : AppColors.lightTextSecondary,
+              style: AppTypography.bodySmall.copyWith(
+                color: surface.textSecondary,
               ),
             ),
             const SizedBox(height: AppConstants.spacing24),
-            Card(
+            AppCard(
               child: Padding(
                 padding: const EdgeInsets.all(AppConstants.spacing16),
                 child: Row(
@@ -304,8 +310,11 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                     Expanded(
                       child: TextField(
                         controller: _newCategoryController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'New category name',
+                          labelStyle: AppTypography.label.copyWith(
+                            color: surface.textSecondary,
+                          ),
                           border: OutlineInputBorder(),
                         ),
                         onSubmitted: (_) {
@@ -318,18 +327,10 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                     const SizedBox(width: AppConstants.spacing12),
                     SizedBox(
                       height: 48,
-                      child: ElevatedButton.icon(
+                      child: AppButton.primary(
                         onPressed: _isCreating ? null : _createCategory,
-                        icon: _isCreating
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.add),
-                        label: const Text('Add'),
+                        icon: _isCreating ? null : Icons.add,
+                        label: _isCreating ? 'Adding...' : 'Add',
                       ),
                     ),
                   ],
@@ -342,8 +343,13 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                 .when(
                   data: (categories) {
                     if (categories.isEmpty) {
-                      return const Center(
-                        child: Text('No categories available'),
+                      return Center(
+                        child: Text(
+                          'No categories available',
+                          style: AppTypography.body.copyWith(
+                            color: surface.textSecondary,
+                          ),
+                        ),
                       );
                     }
 
@@ -359,13 +365,24 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                             category.id == AppDatabase.uncategorizedCategoryId;
 
                         return ListTile(
+                          tileColor: surface.panel,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(color: Colors.grey.shade300),
+                            side: BorderSide(color: surface.border),
                           ),
-                          title: Text(category.name),
+                          title: Text(
+                            category.name,
+                            style: AppTypography.actionLabel.copyWith(
+                              color: surface.textPrimary,
+                            ),
+                          ),
                           subtitle: isUncategorized
-                              ? const Text('System fallback category')
+                              ? Text(
+                                  'System fallback category',
+                                  style: AppTypography.helper.copyWith(
+                                    color: surface.textSecondary,
+                                  ),
+                                )
                               : null,
                           trailing: Wrap(
                             spacing: 4,
@@ -396,8 +413,14 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                   },
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
-                  error: (error, _) =>
-                      Center(child: Text('Failed to load categories: $error')),
+                  error: (error, _) => Center(
+                    child: Text(
+                      'Failed to load categories: $error',
+                      style: AppTypography.body.copyWith(
+                        color: surface.textSecondary,
+                      ),
+                    ),
+                  ),
                 ),
           ],
         ),

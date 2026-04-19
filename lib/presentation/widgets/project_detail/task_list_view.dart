@@ -109,6 +109,8 @@ class _TaskListViewState extends ConsumerState<TaskListView> {
     final canGoNext =
         _pageSize != -1 &&
         (_currentPage + 1) * safePageSize < filteredTasks.length;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,16 +135,27 @@ class _TaskListViewState extends ConsumerState<TaskListView> {
           children: [
             Text(
               '${filteredTasks.length} tasks',
-              style: AppTextStyles.bodySmall,
+              style: AppTypography.helper.copyWith(
+                color: surface.textSecondary,
+              ),
             ),
             Row(
               children: [
-                Text('Rows:', style: AppTextStyles.bodySmall),
+                Text(
+                  'Rows:',
+                  style: AppTypography.helper.copyWith(
+                    color: surface.textSecondary,
+                  ),
+                ),
                 const SizedBox(width: 8),
                 SizedBox(
                   width: 120,
                   child: DropdownButtonFormField<int>(
                     initialValue: _pageSize,
+                    dropdownColor: surface.panel,
+                    style: AppTypography.body.copyWith(
+                      color: surface.textPrimary,
+                    ),
                     decoration: const InputDecoration(
                       isDense: true,
                       contentPadding: EdgeInsets.symmetric(
@@ -229,7 +242,9 @@ class _TaskListViewState extends ConsumerState<TaskListView> {
               ),
               Text(
                 'Page ${_currentPage + 1} of $totalPages',
-                style: AppTextStyles.bodySmall,
+                style: AppTypography.helper.copyWith(
+                  color: surface.textSecondary,
+                ),
               ),
               AppButton.secondary(
                 label: AppStrings.buttons.next,
@@ -289,6 +304,7 @@ class _TaskListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
     final status = TaskStatus.fromValue(task.status);
     final durationSeconds = isRunning
         ? (currentRunningElapsedSeconds > task.totalSeconds
@@ -300,11 +316,9 @@ class _TaskListItem extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+        color: surface.panel,
         borderRadius: BorderRadius.circular(AppConstants.roundRadius),
-        border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-        ),
+        border: Border.all(color: surface.border),
       ),
       padding: const EdgeInsets.all(AppConstants.spacing16),
       child: Row(
@@ -346,7 +360,8 @@ class _TaskListItem extends StatelessWidget {
                           task.taskName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.titleSmall.copyWith(
+                          style: AppTypography.actionLabel.copyWith(
+                            color: surface.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -419,10 +434,8 @@ class _TaskListItem extends StatelessWidget {
                   hasDescription ? description : 'No details provided',
                   maxLines: compact ? 2 : 3,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: isDark
-                        ? AppColors.darkTextSecondary
-                        : AppColors.lightTextSecondary,
+                  style: AppTypography.body.copyWith(
+                    color: surface.textSecondary,
                   ),
                 ),
                 const SizedBox(height: AppConstants.spacing8),
@@ -465,7 +478,7 @@ class _Tag extends StatelessWidget {
         color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(text, style: AppTextStyles.caption.copyWith(color: color)),
+      child: Text(text, style: AppTypography.helper.copyWith(color: color)),
     );
   }
 }

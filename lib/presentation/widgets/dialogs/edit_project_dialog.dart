@@ -92,6 +92,7 @@ class _EditProjectDialogState extends State<EditProjectDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -100,7 +101,7 @@ class _EditProjectDialogState extends State<EditProjectDialog> {
         constraints: const BoxConstraints(maxHeight: 750),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          color: Theme.of(context).scaffoldBackgroundColor,
+          color: surface.panel,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -111,7 +112,12 @@ class _EditProjectDialogState extends State<EditProjectDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Edit Project', style: AppTextStyles.heading2),
+                  Text(
+                    'Edit Project',
+                    style: AppTypography.sectionTitle.copyWith(
+                      color: surface.textPrimary,
+                    ),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.of(context).pop(),
@@ -128,7 +134,12 @@ class _EditProjectDialogState extends State<EditProjectDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Project Name Field
-                    Text('Project Name', style: AppTextStyles.labelMedium),
+                    Text(
+                      'Project Name',
+                      style: AppTypography.actionLabel.copyWith(
+                        color: surface.textPrimary,
+                      ),
+                    ),
                     SizedBox(height: AppConstants.spacing8),
                     AppTextField(
                       controller: _nameController,
@@ -144,15 +155,20 @@ class _EditProjectDialogState extends State<EditProjectDialog> {
                       SizedBox(height: AppConstants.spacing8),
                       Text(
                         _nameError!,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: Colors.red,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.error,
                         ),
                       ),
                     ],
                     SizedBox(height: AppConstants.spacing16),
 
                     // Description Field
-                    Text('Description', style: AppTextStyles.labelMedium),
+                    Text(
+                      'Description',
+                      style: AppTypography.actionLabel.copyWith(
+                        color: surface.textPrimary,
+                      ),
+                    ),
                     SizedBox(height: AppConstants.spacing8),
                     AppTextField(
                       controller: _descriptionController,
@@ -163,7 +179,12 @@ class _EditProjectDialogState extends State<EditProjectDialog> {
                     SizedBox(height: AppConstants.spacing24),
 
                     // Emoji Selector
-                    Text('Project Avatar', style: AppTextStyles.labelMedium),
+                    Text(
+                      'Project Avatar',
+                      style: AppTypography.actionLabel.copyWith(
+                        color: surface.textPrimary,
+                      ),
+                    ),
                     SizedBox(height: AppConstants.spacing12),
                     Wrap(
                       spacing: AppConstants.spacing12,
@@ -207,14 +228,17 @@ class _EditProjectDialogState extends State<EditProjectDialog> {
                     Container(
                       padding: const EdgeInsets.all(AppConstants.spacing16),
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.grey[900] : Colors.grey[50],
+                        color: surface.panelHigh,
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: surface.border),
                       ),
                       child: Row(
                         children: [
                           Text(
                             'Selected Avatar: ',
-                            style: AppTextStyles.labelMedium,
+                            style: AppTypography.actionLabel.copyWith(
+                              color: surface.textPrimary,
+                            ),
                           ),
                           const SizedBox(width: 8),
                           Text(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/colors.dart';
 import '../../../core/theme/text_styles.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../../core/widgets/app_button.dart';
@@ -41,16 +42,15 @@ class ProjectHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppConstants.spacing24),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[900] : Colors.grey[50],
+        color: surface.panel,
         borderRadius: BorderRadius.circular(AppConstants.roundRadius),
-        border: Border.all(
-          color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
-        ),
+        border: Border.all(color: surface.border),
       ),
       child: Row(
         children: [
@@ -63,7 +63,9 @@ class ProjectHeader extends StatelessWidget {
               children: [
                 Text(
                   AppStrings.screenTitles.projectDetails,
-                  style: AppTextStyles.labelMedium,
+                  style: AppTypography.label.copyWith(
+                    color: surface.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Tooltip(
@@ -72,7 +74,9 @@ class ProjectHeader extends StatelessWidget {
                     projectName,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.heading2,
+                    style: AppTypography.sectionTitle.copyWith(
+                      color: surface.textPrimary,
+                    ),
                   ),
                 ),
               ],

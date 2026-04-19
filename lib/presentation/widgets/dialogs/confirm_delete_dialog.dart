@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/colors.dart';
 import '../../../core/theme/text_styles.dart';
 import '../../../core/widgets/app_button.dart';
 
@@ -21,13 +22,17 @@ class ConfirmDeleteDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         width: 400,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          color: Theme.of(context).scaffoldBackgroundColor,
+          color: surface.panel,
+          border: Border.all(color: surface.border),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -60,21 +65,26 @@ class ConfirmDeleteDialog extends StatelessWidget {
                   // Title
                   Text(
                     'Delete ${itemType.toUpperCase()}?',
-                    style: AppTextStyles.heading2,
+                    style: AppTypography.sectionTitle.copyWith(
+                      color: surface.textPrimary,
+                    ),
                   ),
                   SizedBox(height: AppConstants.spacing12),
 
                   // Description
                   RichText(
                     text: TextSpan(
-                      style: AppTextStyles.bodyMedium,
+                      style: AppTypography.body.copyWith(
+                        color: surface.textPrimary,
+                      ),
                       children: [
                         const TextSpan(
                           text: 'Are you sure you want to delete ',
                         ),
                         TextSpan(
                           text: '"$itemName"',
-                          style: AppTextStyles.bodyMedium.copyWith(
+                          style: AppTypography.body.copyWith(
+                            color: surface.textPrimary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -86,7 +96,7 @@ class ConfirmDeleteDialog extends StatelessWidget {
                     SizedBox(height: AppConstants.spacing12),
                     Text(
                       description!,
-                      style: AppTextStyles.bodySmall.copyWith(
+                      style: AppTypography.bodySmall.copyWith(
                         color: Colors.orange,
                       ),
                     ),

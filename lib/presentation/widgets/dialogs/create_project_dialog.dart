@@ -63,9 +63,10 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
 
     return Dialog(
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+      backgroundColor: surface.panel,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppConstants.roundRadius),
       ),
@@ -80,7 +81,12 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Create New Project', style: AppTextStyles.heading2),
+                  Text(
+                    'Create New Project',
+                    style: AppTypography.sectionTitle.copyWith(
+                      color: surface.textPrimary,
+                    ),
+                  ),
                   IconButton(
                     icon: Icon(Icons.close),
                     onPressed: () => Navigator.of(context).pop(),
@@ -91,7 +97,12 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
               SizedBox(height: AppConstants.spacing24),
 
               // Project Name Field
-              Text('Project Name', style: AppTextStyles.labelMedium),
+              Text(
+                'Project Name',
+                style: AppTypography.actionLabel.copyWith(
+                  color: surface.textPrimary,
+                ),
+              ),
               SizedBox(height: AppConstants.spacing8),
               AppTextField(
                 label: 'Enter project name',
@@ -102,7 +113,12 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
               SizedBox(height: AppConstants.spacing20),
 
               // Project Description Field
-              Text('Description', style: AppTextStyles.labelMedium),
+              Text(
+                'Description',
+                style: AppTypography.actionLabel.copyWith(
+                  color: surface.textPrimary,
+                ),
+              ),
               SizedBox(height: AppConstants.spacing8),
               AppTextField(
                 label: 'Enter project description',
@@ -114,17 +130,18 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
               SizedBox(height: AppConstants.spacing20),
 
               // Emoji Selector
-              Text('Project Avatar', style: AppTextStyles.labelMedium),
+              Text(
+                'Project Avatar',
+                style: AppTypography.actionLabel.copyWith(
+                  color: surface.textPrimary,
+                ),
+              ),
               SizedBox(height: AppConstants.spacing12),
               Container(
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                  color: surface.panelHigh,
                   borderRadius: BorderRadius.circular(AppConstants.roundRadius),
-                  border: Border.all(
-                    color: isDark
-                        ? AppColors.darkBorder
-                        : AppColors.lightBorder,
-                  ),
+                  border: Border.all(color: surface.border),
                 ),
                 padding: EdgeInsets.all(AppConstants.spacing16),
                 child: Wrap(
@@ -172,10 +189,8 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
                 children: [
                   Text(
                     'Selected Avatar',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary,
+                    style: AppTypography.label.copyWith(
+                      color: surface.textSecondary,
                     ),
                   ),
                   SizedBox(height: AppConstants.spacing8),

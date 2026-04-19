@@ -64,3 +64,36 @@ class AppColors {
     Color(0xFF06B6D4), // Cyan
   ];
 }
+
+/// Semantic surface tokens used for consistent section layering across screens.
+///
+/// Phase 0 matrix:
+/// - page: screen background
+/// - panel: default section container
+/// - panelHigh: elevated/alternating section rows
+/// - panelLowest: low-contrast nested panel backgrounds
+/// - tableHeader: table header surface
+/// - border: default section border
+class AppSurfaceTokens {
+  const AppSurfaceTokens({required this.isDark});
+
+  final bool isDark;
+
+  Color get page => isDark ? AppColors.darkBg : AppColors.lightBg;
+  Color get panel => isDark ? AppColors.darkSurface : AppColors.lightSurface;
+  Color get panelHigh => isDark ? AppColors.darkCard : AppColors.lightCard;
+  Color get panelLowest => isDark ? AppColors.darkBg : AppColors.lightBg;
+  Color get tableHeader => isDark ? AppColors.darkBg : AppColors.lightCard;
+  Color get border => isDark ? AppColors.darkBorder : AppColors.lightBorder;
+
+  Color get textPrimary =>
+      isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+  Color get textSecondary =>
+      isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+  Color get textMuted =>
+      isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary;
+
+  Color get accent => isDark ? const Color(0xFFADC6FF) : AppColors.brandPrimary;
+  Color get accentStrong =>
+      isDark ? const Color(0xFF4B8EFF) : AppColors.brandDark;
+}

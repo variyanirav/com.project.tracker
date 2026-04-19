@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/task_status.dart';
+import '../../../core/constants/colors.dart';
 import '../../../core/theme/text_styles.dart';
 import '../../../core/utils/date_time_formatter.dart';
 import '../../../core/widgets/app_card.dart';
@@ -31,6 +32,7 @@ class ActiveTimerCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final surface = AppSurfaceTokens(isDark: isDark);
     final taskTitle = (activeTask?.taskName ?? 'Task').trim();
     final taskDescription = (activeTask?.description ?? '').trim();
     final showDescription = taskDescription.isNotEmpty;
@@ -41,7 +43,7 @@ class ActiveTimerCard extends ConsumerWidget {
 
     return AppCard(
       padding: const EdgeInsets.all(24),
-      backgroundColor: isDark ? Colors.grey[900] : Colors.grey[50],
+      backgroundColor: surface.panel,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -59,7 +61,9 @@ class ActiveTimerCard extends ConsumerWidget {
               Expanded(
                 child: Text(
                   AppStrings.labels.currentlyTracking,
-                  style: AppTextStyles.labelMedium,
+                  style: AppTypography.actionLabel.copyWith(
+                    color: surface.textSecondary,
+                  ),
                 ),
               ),
               Container(
@@ -76,7 +80,7 @@ class ActiveTimerCard extends ConsumerWidget {
                 ),
                 child: Text(
                   TaskStatus.formatLabel(status.code),
-                  style: AppTextStyles.labelSmall.copyWith(color: statusColor),
+                  style: AppTypography.label.copyWith(color: statusColor),
                 ),
               ),
             ],
@@ -91,7 +95,9 @@ class ActiveTimerCard extends ConsumerWidget {
                 waitDuration: const Duration(milliseconds: 350),
                 child: Text(
                   taskTitle,
-                  style: AppTextStyles.heading2,
+                  style: AppTypography.sectionTitle.copyWith(
+                    color: surface.textPrimary,
+                  ),
                   maxLines: AppConstants.maxTitleDisplayLines,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -99,8 +105,8 @@ class ActiveTimerCard extends ConsumerWidget {
               const SizedBox(height: 14),
               Text(
                 'Task Details',
-                style: AppTextStyles.labelSmall.copyWith(
-                  color: isDark ? Colors.white70 : Colors.black54,
+                style: AppTypography.label.copyWith(
+                  color: surface.textSecondary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -112,27 +118,23 @@ class ActiveTimerCard extends ConsumerWidget {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : Colors.black.withValues(alpha: 0.03),
+                  color: surface.panelLowest,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.12)
-                        : Colors.black.withValues(alpha: 0.10),
-                  ),
+                  border: Border.all(color: surface.border),
                 ),
                 child: showDescription
                     ? SingleChildScrollView(
                         child: SelectableText(
                           taskDescription,
-                          style: AppTextStyles.bodySmall,
+                          style: AppTypography.body.copyWith(
+                            color: surface.textPrimary,
+                          ),
                         ),
                       )
                     : Text(
                         'No task description provided yet.',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: isDark ? Colors.white60 : Colors.black54,
+                        style: AppTypography.body.copyWith(
+                          color: surface.textSecondary,
                         ),
                       ),
               ),

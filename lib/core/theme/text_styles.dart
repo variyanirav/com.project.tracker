@@ -140,3 +140,73 @@ class AppTextStyles {
     letterSpacing: 0.4,
   );
 }
+
+/// Semantic typography roles used during the multi-screen UI rollout.
+///
+/// Phase 0 source of truth:
+/// - Headings: Manrope
+/// - Body/labels: Inter
+class AppTypography {
+  AppTypography._();
+
+  // Header roles
+  static TextStyle get screenTitle => AppTextStyles.heading1.copyWith(
+    fontFamily: 'Manrope',
+    fontWeight: FontWeight.w700,
+  );
+
+  static TextStyle get screenSubtitle => AppTextStyles.bodyMedium.copyWith(
+    fontFamily: 'Inter',
+    fontWeight: FontWeight.w400,
+  );
+
+  static TextStyle get sectionTitle => AppTextStyles.titleMedium.copyWith(
+    fontFamily: 'Manrope',
+    fontWeight: FontWeight.w700,
+  );
+
+  // Metric roles
+  static TextStyle get metricValue => AppTextStyles.heading1.copyWith(
+    fontFamily: 'Manrope',
+    fontWeight: FontWeight.w800,
+  );
+
+  static TextStyle get metricSuffix => AppTextStyles.titleMedium.copyWith(
+    fontFamily: 'Inter',
+    fontWeight: FontWeight.w500,
+  );
+
+  // Body roles
+  static TextStyle get body => AppTextStyles.bodyMedium.copyWith(
+    fontFamily: 'Inter',
+    fontWeight: FontWeight.w400,
+  );
+
+  static TextStyle get bodySmall => AppTextStyles.bodySmall.copyWith(
+    fontFamily: 'Inter',
+    fontWeight: FontWeight.w400,
+  );
+
+  static TextStyle get helper => AppTextStyles.bodySmall.copyWith(
+    fontFamily: 'Inter',
+    fontWeight: FontWeight.w400,
+  );
+
+  // Label roles
+  static TextStyle get label => AppTextStyles.labelSmall.copyWith(
+    fontFamily: 'Inter',
+    fontWeight: FontWeight.w500,
+    letterSpacing: 1.0,
+  );
+
+  static TextStyle get labelCaps => AppTextStyles.labelSmall.copyWith(
+    fontFamily: 'Inter',
+    fontWeight: FontWeight.w500,
+    letterSpacing: 1.2,
+  );
+
+  static TextStyle get actionLabel => AppTextStyles.labelMedium.copyWith(
+    fontFamily: 'Inter',
+    fontWeight: FontWeight.w500,
+  );
+}

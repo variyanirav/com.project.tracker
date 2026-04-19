@@ -37,9 +37,10 @@ class _DailyGoalSettingsDialogState extends State<DailyGoalSettingsDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
 
     return Dialog(
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+      backgroundColor: surface.panel,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppConstants.roundRadius),
       ),
@@ -53,7 +54,12 @@ class _DailyGoalSettingsDialogState extends State<DailyGoalSettingsDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Daily Goal Settings', style: AppTextStyles.heading2),
+                Text(
+                  'Daily Goal Settings',
+                  style: AppTypography.sectionTitle.copyWith(
+                    color: surface.textPrimary,
+                  ),
+                ),
                 IconButton(
                   icon: Icon(Icons.close),
                   onPressed: () => Navigator.of(context).pop(),
@@ -64,10 +70,8 @@ class _DailyGoalSettingsDialogState extends State<DailyGoalSettingsDialog> {
             SizedBox(height: AppConstants.spacing4),
             Text(
               'Set your daily tracking goal',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: isDark
-                    ? AppColors.darkTextSecondary
-                    : AppColors.lightTextSecondary,
+              style: AppTypography.bodySmall.copyWith(
+                color: surface.textSecondary,
               ),
             ),
 
@@ -76,8 +80,9 @@ class _DailyGoalSettingsDialogState extends State<DailyGoalSettingsDialog> {
             // Current Setting Display
             Container(
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                color: surface.panelHigh,
                 borderRadius: BorderRadius.circular(AppConstants.roundRadius),
+                border: Border.all(color: surface.border),
               ),
               padding: EdgeInsets.symmetric(
                 horizontal: AppConstants.spacing24,
@@ -87,10 +92,8 @@ class _DailyGoalSettingsDialogState extends State<DailyGoalSettingsDialog> {
                 children: [
                   Text(
                     'Current Daily Goal',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary,
+                    style: AppTypography.label.copyWith(
+                      color: surface.textSecondary,
                     ),
                   ),
                   SizedBox(height: AppConstants.spacing12),
@@ -109,7 +112,12 @@ class _DailyGoalSettingsDialogState extends State<DailyGoalSettingsDialog> {
             SizedBox(height: AppConstants.spacing32),
 
             // Hour Selector with Slider
-            Text('Select Hours', style: AppTextStyles.labelMedium),
+            Text(
+              'Select Hours',
+              style: AppTypography.actionLabel.copyWith(
+                color: surface.textPrimary,
+              ),
+            ),
             SizedBox(height: AppConstants.spacing16),
             Slider(
               value: _selectedHours.toDouble(),
@@ -118,9 +126,7 @@ class _DailyGoalSettingsDialogState extends State<DailyGoalSettingsDialog> {
               divisions: 15,
               label: '$_selectedHours hours',
               activeColor: AppColors.brandPrimary,
-              inactiveColor: isDark
-                  ? AppColors.darkBorder
-                  : AppColors.lightBorder,
+              inactiveColor: isDark ? surface.border : surface.border,
               onChanged: (value) {
                 setState(() {
                   _selectedHours = value.toInt();
@@ -134,19 +140,11 @@ class _DailyGoalSettingsDialogState extends State<DailyGoalSettingsDialog> {
               children: [
                 Text(
                   '1h',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: isDark
-                        ? AppColors.darkTextTertiary
-                        : AppColors.lightTextTertiary,
-                  ),
+                  style: AppTypography.label.copyWith(color: surface.textMuted),
                 ),
                 Text(
                   '16h',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: isDark
-                        ? AppColors.darkTextTertiary
-                        : AppColors.lightTextTertiary,
-                  ),
+                  style: AppTypography.label.copyWith(color: surface.textMuted),
                 ),
               ],
             ),
@@ -154,7 +152,12 @@ class _DailyGoalSettingsDialogState extends State<DailyGoalSettingsDialog> {
             SizedBox(height: AppConstants.spacing32),
 
             // Quick Select Buttons
-            Text('Quick Select', style: AppTextStyles.labelMedium),
+            Text(
+              'Quick Select',
+              style: AppTypography.actionLabel.copyWith(
+                color: surface.textPrimary,
+              ),
+            ),
             SizedBox(height: AppConstants.spacing12),
             Wrap(
               spacing: AppConstants.spacing8,
@@ -175,9 +178,7 @@ class _DailyGoalSettingsDialogState extends State<DailyGoalSettingsDialog> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.brandPrimary
-                          : (isDark
-                                ? AppColors.darkBorder
-                                : AppColors.lightBorder),
+                          : surface.panelHigh,
                       borderRadius: BorderRadius.circular(
                         AppConstants.roundRadius,
                       ),
@@ -189,7 +190,7 @@ class _DailyGoalSettingsDialogState extends State<DailyGoalSettingsDialog> {
                     ),
                     child: Text(
                       '$hours hours',
-                      style: AppTextStyles.labelSmall.copyWith(
+                      style: AppTypography.label.copyWith(
                         color: isSelected ? Colors.white : null,
                         fontWeight: FontWeight.w600,
                       ),
@@ -219,7 +220,7 @@ class _DailyGoalSettingsDialogState extends State<DailyGoalSettingsDialog> {
                   Expanded(
                     child: Text(
                       'Your daily goal helps you track productivity. You can change this anytime.',
-                      style: AppTextStyles.bodySmall.copyWith(
+                      style: AppTypography.bodySmall.copyWith(
                         color: AppColors.brandPrimary,
                       ),
                     ),
@@ -232,11 +233,7 @@ class _DailyGoalSettingsDialogState extends State<DailyGoalSettingsDialog> {
             Center(
               child: Text(
                 'App Version ${AppConstants.appVersion}',
-                style: AppTextStyles.labelSmall.copyWith(
-                  color: isDark
-                      ? AppColors.darkTextTertiary
-                      : AppColors.lightTextTertiary,
-                ),
+                style: AppTypography.label.copyWith(color: surface.textMuted),
               ),
             ),
 

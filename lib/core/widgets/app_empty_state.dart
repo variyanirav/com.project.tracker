@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../constants/colors.dart';
 import '../theme/text_styles.dart';
 
 /// Shared empty-state component for consistent no-data experiences.
@@ -19,8 +20,9 @@ class AppEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedIconColor =
-        iconColor ?? Theme.of(context).colorScheme.primary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tokens = AppSurfaceTokens(isDark: isDark);
+    final resolvedIconColor = iconColor ?? tokens.accent;
 
     return Center(
       child: Padding(
@@ -30,11 +32,16 @@ class AppEmptyState extends StatelessWidget {
           children: [
             Icon(icon, size: 48, color: resolvedIconColor),
             const SizedBox(height: 16),
-            Text(title, style: AppTextStyles.heading2),
+            Text(
+              title,
+              style: AppTypography.sectionTitle.copyWith(
+                color: tokens.textPrimary,
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
               message,
-              style: AppTextStyles.bodySmall,
+              style: AppTypography.helper.copyWith(color: tokens.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],

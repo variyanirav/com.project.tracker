@@ -65,16 +65,15 @@ class _UpsertTodoDialogState extends ConsumerState<UpsertTodoDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
     final projectsAsync = ref.watch(projectsProvider);
 
     return Dialog(
       insetPadding: const EdgeInsets.all(AppConstants.spacing24),
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+      backgroundColor: surface.panel,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: BorderSide(
-          color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-        ),
+        side: BorderSide(color: surface.border),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 720),
@@ -94,15 +93,15 @@ class _UpsertTodoDialogState extends ConsumerState<UpsertTodoDialog> {
                         children: [
                           Text(
                             _isEditing ? 'Edit To-Do' : 'New To-Do',
-                            style: AppTextStyles.titleLarge,
+                            style: AppTypography.sectionTitle.copyWith(
+                              color: surface.textPrimary,
+                            ),
                           ),
                           const SizedBox(height: AppConstants.spacing4),
                           Text(
                             'Capture reminders, ideas, and follow-ups quickly.',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: isDark
-                                  ? AppColors.darkTextSecondary
-                                  : AppColors.lightTextSecondary,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: surface.textSecondary,
                             ),
                           ),
                         ],
@@ -284,7 +283,12 @@ class _UpsertTodoDialogState extends ConsumerState<UpsertTodoDialog> {
                       onPressed: _isSaving
                           ? null
                           : () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(
+                        'Cancel',
+                        style: AppTypography.actionLabel.copyWith(
+                          color: surface.textSecondary,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: AppConstants.spacing12),
                     ElevatedButton(
@@ -365,6 +369,7 @@ class _DateField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
 
     return InputDecorator(
       decoration: InputDecoration(labelText: label),
@@ -375,12 +380,8 @@ class _DateField extends StatelessWidget {
               date == null
                   ? 'Not set'
                   : '${date!.year}-${date!.month.toString().padLeft(2, '0')}-${date!.day.toString().padLeft(2, '0')}',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: date == null
-                    ? (isDark
-                          ? AppColors.darkTextTertiary
-                          : AppColors.lightTextTertiary)
-                    : null,
+              style: AppTypography.body.copyWith(
+                color: date == null ? surface.textMuted : surface.textPrimary,
               ),
             ),
           ),

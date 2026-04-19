@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_tracker/data/database/app_database.dart';
 import 'package:project_tracker/domain/entities/category_entity.dart';
 
+import '../../../core/constants/colors.dart';
+import '../../../core/theme/text_styles.dart';
+import '../../../core/widgets/app_button.dart';
 import '../../providers/category_provider.dart';
 
 /// User-facing category management dialog.
@@ -226,8 +229,12 @@ class _ManageCategoriesDialogState
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      backgroundColor: surface.panel,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 620, maxHeight: 640),
         child: Padding(
@@ -238,9 +245,11 @@ class _ManageCategoriesDialogState
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Manage Categories',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                    style: AppTypography.sectionTitle.copyWith(
+                      color: surface.textPrimary,
+                    ),
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
@@ -268,16 +277,10 @@ class _ManageCategoriesDialogState
                   const SizedBox(width: 12),
                   SizedBox(
                     height: 48,
-                    child: ElevatedButton.icon(
+                    child: AppButton.primary(
                       onPressed: _isCreating ? null : _createCategory,
-                      icon: _isCreating
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.add),
-                      label: const Text('Add'),
+                      icon: _isCreating ? null : Icons.add,
+                      label: _isCreating ? 'Adding...' : 'Add',
                     ),
                   ),
                 ],
@@ -291,8 +294,13 @@ class _ManageCategoriesDialogState
                     .when(
                       data: (categories) {
                         if (categories.isEmpty) {
-                          return const Center(
-                            child: Text('No categories available'),
+                          return Center(
+                            child: Text(
+                              'No categories available',
+                              style: AppTypography.body.copyWith(
+                                color: surface.textSecondary,
+                              ),
+                            ),
                           );
                         }
 
@@ -307,13 +315,24 @@ class _ManageCategoriesDialogState
                                 AppDatabase.uncategorizedCategoryId;
 
                             return ListTile(
+                              tileColor: surface.panel,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                side: BorderSide(color: Colors.grey.shade300),
+                                side: BorderSide(color: surface.border),
                               ),
-                              title: Text(category.name),
+                              title: Text(
+                                category.name,
+                                style: AppTypography.actionLabel.copyWith(
+                                  color: surface.textPrimary,
+                                ),
+                              ),
                               subtitle: isUncategorized
-                                  ? const Text('System fallback category')
+                                  ? Text(
+                                      'System fallback category',
+                                      style: AppTypography.helper.copyWith(
+                                        color: surface.textSecondary,
+                                      ),
+                                    )
                                   : null,
                               trailing: Wrap(
                                 spacing: 4,

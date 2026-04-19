@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import '../../../core/utils/date_time_formatter.dart';
 import '../../../core/constants/task_status.dart';
+import '../../../core/constants/colors.dart';
 import '../../../core/theme/text_styles.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../domain/entities/task_entity.dart';
@@ -213,6 +214,8 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
     final task = widget.task;
     final status = TaskStatus.fromValue(task.status);
     final screenSize = MediaQuery.of(context).size;
@@ -226,6 +229,7 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: surface.panel,
       clipBehavior: Clip.antiAlias,
       child: ConstrainedBox(
         constraints: BoxConstraints(
@@ -241,7 +245,12 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text('Task Details', style: AppTextStyles.heading2),
+                    child: Text(
+                      'Task Details',
+                      style: AppTypography.sectionTitle.copyWith(
+                        color: surface.textPrimary,
+                      ),
+                    ),
                   ),
                   IconButton(
                     tooltip: 'Close',
@@ -318,6 +327,7 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
     final panelTint = brightness == Brightness.dark
         ? colors.primaryContainer.withValues(alpha: 0.16)
         : colors.primaryContainer.withValues(alpha: 0.12);
+    final surface = AppSurfaceTokens(isDark: brightness == Brightness.dark);
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -341,21 +351,22 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
               children: [
                 Text(
                   'Title',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: theme.textTheme.bodySmall?.color?.withValues(
-                      alpha: 0.72,
-                    ),
+                  style: AppTypography.label.copyWith(
+                    color: surface.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(widget.task.taskName, style: AppTextStyles.heading2),
+                Text(
+                  widget.task.taskName,
+                  style: AppTypography.sectionTitle.copyWith(
+                    color: surface.textPrimary,
+                  ),
+                ),
                 const SizedBox(height: 14),
                 Text(
                   'Description',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: theme.textTheme.bodySmall?.color?.withValues(
-                      alpha: 0.72,
-                    ),
+                  style: AppTypography.label.copyWith(
+                    color: surface.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -378,7 +389,9 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
                           hasDescription
                               ? description
                               : 'No description provided',
-                          style: AppTextStyles.bodySmall,
+                          style: AppTypography.bodySmall.copyWith(
+                            color: surface.textPrimary,
+                          ),
                         ),
                       ),
                     ),
@@ -406,6 +419,7 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
     final panelTint = brightness == Brightness.dark
         ? colors.secondaryContainer.withValues(alpha: 0.20)
         : colors.secondaryContainer.withValues(alpha: 0.14);
+    final surface = AppSurfaceTokens(isDark: brightness == Brightness.dark);
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -431,9 +445,7 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
                 ),
                 child: Text(
                   status.label,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: status.getColor(),
-                  ),
+                  style: AppTypography.label.copyWith(color: status.getColor()),
                 ),
               ),
             ),
@@ -443,7 +455,8 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
               label: 'Billing Type',
               valueWidget: Text(
                 widget.task.isBillable ? 'Billable' : 'Non-billable',
-                style: AppTextStyles.bodyMedium.copyWith(
+                style: AppTypography.body.copyWith(
+                  color: surface.textPrimary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -454,7 +467,7 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
               label: 'Timer Status',
               valueWidget: Text(
                 timerStatus,
-                style: AppTextStyles.bodyMedium.copyWith(
+                style: AppTypography.body.copyWith(
                   color: timerStatusColor,
                   fontWeight: FontWeight.w600,
                 ),
@@ -466,7 +479,8 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
               label: 'Total Time Logged',
               valueWidget: Text(
                 DateTimeFormatter.formatSeconds(widget.task.totalSeconds),
-                style: AppTextStyles.bodyMedium.copyWith(
+                style: AppTypography.body.copyWith(
+                  color: surface.textPrimary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -477,7 +491,7 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
               label: 'Created On',
               valueWidget: Text(
                 DateTimeFormatter.formatDate(widget.task.createdAt),
-                style: AppTextStyles.bodyMedium,
+                style: AppTypography.body.copyWith(color: surface.textPrimary),
               ),
             ),
           ],
@@ -496,7 +510,7 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
       children: [
         Text(
           label,
-          style: AppTextStyles.labelSmall.copyWith(
+          style: AppTypography.label.copyWith(
             color: brightness == Brightness.dark
                 ? Colors.white70
                 : Colors.black54,
@@ -519,6 +533,7 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
       alpha: brightness == Brightness.dark ? 0.22 : 0.56,
     );
     final borderColor = theme.dividerColor;
+    final surface = AppSurfaceTokens(isDark: brightness == Brightness.dark);
 
     return Container(
       width: double.infinity,
@@ -533,7 +548,12 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
           Row(
             children: [
               Expanded(
-                child: Text('Session History', style: AppTextStyles.titleSmall),
+                child: Text(
+                  'Session History',
+                  style: AppTypography.actionLabel.copyWith(
+                    color: surface.textPrimary,
+                  ),
+                ),
               ),
               Wrap(
                 spacing: 8,
@@ -584,7 +604,9 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
                 if (sorted.isEmpty) {
                   return Text(
                     'No sessions logged yet',
-                    style: AppTextStyles.bodySmall,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: surface.textSecondary,
+                    ),
                   );
                 }
 
@@ -800,7 +822,9 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
                   const Center(child: LinearProgressIndicator(minHeight: 2)),
               error: (error, _) => Text(
                 'Failed to load sessions: $error',
-                style: AppTextStyles.bodySmall,
+                style: AppTypography.bodySmall.copyWith(
+                  color: surface.textSecondary,
+                ),
               ),
             ),
           ),
@@ -853,7 +877,7 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.labelMedium.copyWith(
+                style: AppTypography.actionLabel.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -883,7 +907,7 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
         value,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: AppTextStyles.bodySmall,
+        style: AppTypography.bodySmall,
       ),
     );
   }
@@ -897,7 +921,7 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
           value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTextStyles.bodySmall,
+          style: AppTypography.bodySmall,
         ),
       ),
     );

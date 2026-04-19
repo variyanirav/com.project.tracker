@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../constants/colors.dart';
+
 /// Reusable card widget
 class AppCard extends StatelessWidget {
   final Widget child;
@@ -21,6 +23,9 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tokens = AppSurfaceTokens(isDark: isDark);
+
     return GestureDetector(
       onTap: onTap,
       child: MouseRegion(
@@ -28,16 +33,15 @@ class AppCard extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
-            color: backgroundColor ?? Theme.of(context).cardColor,
-            border: Border.all(
-              color: borderColor ?? Colors.grey.shade300,
-              width: 1,
-            ),
+            color: backgroundColor ?? tokens.panel,
+            border: Border.all(color: borderColor ?? tokens.border, width: 1),
             borderRadius: const BorderRadius.all(Radius.circular(12.0)),
             boxShadow: elevation != null && elevation! > 0
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.22 : 0.08,
+                      ),
                       blurRadius: elevation ?? 2,
                       offset: Offset(0, elevation ?? 2),
                     ),

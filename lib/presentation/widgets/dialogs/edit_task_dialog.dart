@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_tracker/data/database/app_database.dart';
 import '../../../core/constants/task_status.dart';
+import '../../../core/constants/colors.dart';
 import '../../../core/theme/text_styles.dart';
 import '../../providers/category_provider.dart';
 
@@ -95,6 +96,7 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
     final screenSize = MediaQuery.of(context).size;
 
     return Dialog(
@@ -106,7 +108,7 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: Theme.of(context).scaffoldBackgroundColor,
+            color: surface.panel,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -116,7 +118,12 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Edit Task', style: AppTextStyles.heading2),
+                  Text(
+                    'Edit Task',
+                    style: AppTypography.sectionTitle.copyWith(
+                      color: surface.textPrimary,
+                    ),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.of(context).pop(),
@@ -126,12 +133,20 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
               const SizedBox(height: 24),
 
               // Task Title Field
-              Text('Task Name', style: AppTextStyles.labelMedium),
+              Text(
+                'Task Name',
+                style: AppTypography.actionLabel.copyWith(
+                  color: surface.textPrimary,
+                ),
+              ),
               const SizedBox(height: 8),
               TextField(
                 controller: _titleController,
                 decoration: InputDecoration(
                   hintText: 'Enter task name',
+                  hintStyle: AppTypography.helper.copyWith(
+                    color: surface.textMuted,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -150,13 +165,21 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
               const SizedBox(height: 16),
 
               // Description Field
-              Text('Description (Optional)', style: AppTextStyles.labelMedium),
+              Text(
+                'Description (Optional)',
+                style: AppTypography.actionLabel.copyWith(
+                  color: surface.textPrimary,
+                ),
+              ),
               const SizedBox(height: 8),
               TextField(
                 controller: _descriptionController,
                 maxLines: 3,
                 decoration: InputDecoration(
                   hintText: 'Enter task description',
+                  hintStyle: AppTypography.helper.copyWith(
+                    color: surface.textMuted,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -169,7 +192,12 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
               const SizedBox(height: 16),
 
               // Category Dropdown
-              Text('Category', style: AppTextStyles.labelMedium),
+              Text(
+                'Category',
+                style: AppTypography.actionLabel.copyWith(
+                  color: surface.textPrimary,
+                ),
+              ),
               const SizedBox(height: 8),
               ref
                   .watch(categoriesProvider)
@@ -185,12 +213,9 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
                       return Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          border: Border.all(
-                            color: isDark
-                                ? Colors.grey[700]!
-                                : Colors.grey[300]!,
-                          ),
+                          border: Border.all(color: surface.border),
                           borderRadius: BorderRadius.circular(8),
+                          color: surface.panelHigh,
                         ),
                         child: DropdownButton<String>(
                           value: _selectedCategoryId,
@@ -215,10 +240,9 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
                     error: (_, __) => Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        border: Border.all(
-                          color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-                        ),
+                        border: Border.all(color: surface.border),
                         borderRadius: BorderRadius.circular(8),
+                        color: surface.panelHigh,
                       ),
                       child: DropdownButton<String>(
                         value: AppDatabase.uncategorizedCategoryId,
@@ -236,15 +260,19 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
                   ),
               const SizedBox(height: 16),
 
-              Text('Billing Type', style: AppTextStyles.labelMedium),
+              Text(
+                'Billing Type',
+                style: AppTypography.actionLabel.copyWith(
+                  color: surface.textPrimary,
+                ),
+              ),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  border: Border.all(
-                    color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-                  ),
+                  border: Border.all(color: surface.border),
                   borderRadius: BorderRadius.circular(8),
+                  color: surface.panelHigh,
                 ),
                 child: DropdownButton<bool>(
                   value: _isBillable,
@@ -270,15 +298,19 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
               const SizedBox(height: 16),
 
               // Status Dropdown
-              Text('Status', style: AppTextStyles.labelMedium),
+              Text(
+                'Status',
+                style: AppTypography.actionLabel.copyWith(
+                  color: surface.textPrimary,
+                ),
+              ),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  border: Border.all(
-                    color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-                  ),
+                  border: Border.all(color: surface.border),
                   borderRadius: BorderRadius.circular(8),
+                  color: surface.panelHigh,
                 ),
                 child: DropdownButton<TaskStatus>(
                   value: _selectedStatus,
@@ -307,7 +339,12 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel'),
+                    child: Text(
+                      'Cancel',
+                      style: AppTypography.actionLabel.copyWith(
+                        color: surface.textSecondary,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton(

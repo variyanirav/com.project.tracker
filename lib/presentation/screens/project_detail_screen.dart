@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/task_status.dart';
+import '../../core/constants/colors.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/utils/date_time_formatter.dart';
 import '../../core/utils/live_hours_overlay.dart';
@@ -52,6 +53,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
 
     // Get selected project ID from navigation provider
     final selectedProjectId = ref.watch(selectedProjectIdProvider);
@@ -72,7 +74,12 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     if (selectedProject == null) {
       return CustomScaffold(
         activeRoute: AppRouter.projectDetail,
-        child: const Center(child: Text('No project found')),
+        child: Center(
+          child: Text(
+            'No project found',
+            style: AppTypography.body.copyWith(color: surface.textSecondary),
+          ),
+        ),
       );
     }
 
@@ -313,7 +320,9 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                         _taskView == 'active'
                             ? AppStrings.screenTitles.projectTasks
                             : 'Archived Tasks',
-                        style: AppTextStyles.heading2,
+                        style: AppTypography.sectionTitle.copyWith(
+                          color: surface.textPrimary,
+                        ),
                       ),
                       const Spacer(),
                       ChoiceChip(
@@ -504,7 +513,9 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                       error: (err, stack) => Center(
                         child: Text(
                           '${AppStrings.errors.loadingTasks}: $err',
-                          style: AppTextStyles.bodySmall,
+                          style: AppTypography.body.copyWith(
+                            color: surface.textSecondary,
+                          ),
                         ),
                       ),
                     )
@@ -537,7 +548,9 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                       error: (err, stack) => Center(
                         child: Text(
                           '${AppStrings.errors.loadingTasks}: $err',
-                          style: AppTextStyles.bodySmall,
+                          style: AppTypography.body.copyWith(
+                            color: surface.textSecondary,
+                          ),
                         ),
                       ),
                     ),

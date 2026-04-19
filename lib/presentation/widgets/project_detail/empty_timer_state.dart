@@ -12,9 +12,11 @@ class EmptyTimerState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final surface = AppSurfaceTokens(isDark: isDark);
+
     return AppCard(
       padding: const EdgeInsets.all(24),
-      backgroundColor: isDark ? Colors.grey[900] : Colors.grey[50],
+      backgroundColor: surface.panel,
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -23,12 +25,14 @@ class EmptyTimerState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               AppStrings.labels.noActiveTimer,
-              style: AppTextStyles.heading2,
+              style: AppTypography.sectionTitle.copyWith(
+                color: surface.textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               AppStrings.messages.startTimerInstructions,
-              style: AppTextStyles.bodySmall,
+              style: AppTypography.body.copyWith(color: surface.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],

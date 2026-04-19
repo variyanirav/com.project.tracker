@@ -24,6 +24,8 @@ class ProjectListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
     final dailyGoalHoursAsync = ref.watch(dailyGoalProvider);
 
     return CustomScaffold(
@@ -93,14 +95,17 @@ class ProjectListScreen extends ConsumerWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('All Projects', style: AppTextStyles.heading2),
+                    Text(
+                      'All Projects',
+                      style: AppTypography.sectionTitle.copyWith(
+                        color: surface.textPrimary,
+                      ),
+                    ),
                     SizedBox(height: AppConstants.spacing4),
                     Text(
                       'Manage and view all your projects',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary,
+                      style: AppTypography.helper.copyWith(
+                        color: surface.textSecondary,
                       ),
                     ),
                   ],
@@ -180,12 +185,16 @@ class ProjectListScreen extends ConsumerWidget {
                               SizedBox(height: AppConstants.spacing16),
                               Text(
                                 'No projects yet',
-                                style: AppTextStyles.heading2,
+                                style: AppTypography.sectionTitle.copyWith(
+                                  color: surface.textPrimary,
+                                ),
                               ),
                               SizedBox(height: AppConstants.spacing8),
                               Text(
                                 'Create your first project to get started!',
-                                style: AppTextStyles.bodyMedium,
+                                style: AppTypography.body.copyWith(
+                                  color: surface.textSecondary,
+                                ),
                               ),
                             ],
                           ),
@@ -407,8 +416,14 @@ class ProjectListScreen extends ConsumerWidget {
                     );
                   },
                   loading: () => Center(child: CircularProgressIndicator()),
-                  error: (err, stack) =>
-                      Center(child: Text('Error loading projects: $err')),
+                  error: (err, stack) => Center(
+                    child: Text(
+                      'Error loading projects: $err',
+                      style: AppTypography.body.copyWith(
+                        color: surface.textSecondary,
+                      ),
+                    ),
+                  ),
                 );
               },
             ),

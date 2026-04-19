@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/theme/text_styles.dart';
@@ -7,20 +8,19 @@ import '../../../core/utils/live_hours_overlay.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../providers/timer_provider.dart';
 
-/// Daily progress card showing progress towards daily goal
+/// Daily progress card showing progress towards daily goal.
 class DailyProgressCard extends ConsumerWidget {
   const DailyProgressCard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = AppSurfaceTokens(isDark: isDark);
 
-    // Watch providers for real data
     final todayHoursAsync = ref.watch(todayTotalHoursProvider);
     final dailyGoalAsync = ref.watch(dailyGoalProvider);
     final timerState = ref.watch(timerProvider);
 
-    // Use .when() to handle loading/error states
     return todayHoursAsync.when(
       data: (todayHours) => dailyGoalAsync.when(
         data: (dailyGoalHours) {
@@ -36,7 +36,6 @@ class DailyProgressCard extends ConsumerWidget {
               ? 0.0
               : (liveTodayHours / dailyGoalHours).clamp(0.0, 1.0);
 
-          // Convert hours to hours and minutes
           final todayHoursPart = liveTodayHours.toInt();
           final todayMinutesPart = ((liveTodayHours - todayHoursPart) * 60)
               .toInt();
@@ -45,7 +44,6 @@ class DailyProgressCard extends ConsumerWidget {
           final goalMinutesPart = ((dailyGoalHours - goalHoursPart) * 60)
               .toInt();
 
-          // Calculate a friendly progress message
           final progressMessage = progress >= 1.0
               ? 'Great job! You\'ve completed your daily goal!'
               : progress >= 0.75
@@ -59,42 +57,40 @@ class DailyProgressCard extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Left side - Text content
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Daily Progress', style: AppTextStyles.titleMedium),
+                      Text(
+                        'Daily Progress',
+                        style: AppTypography.sectionTitle.copyWith(
+                          color: surface.textPrimary,
+                        ),
+                      ),
                       SizedBox(height: AppConstants.spacing8),
                       Text(
                         '${(progress * 100).toStringAsFixed(0)}% of your daily goal. $progressMessage',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: isDark
-                              ? AppColors.darkTextSecondary
-                              : AppColors.lightTextSecondary,
+                        style: AppTypography.body.copyWith(
+                          color: surface.textSecondary,
                         ),
                       ),
                       SizedBox(height: AppConstants.spacing24),
-                      // Stats row
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Time Logged
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 'Time Logged',
-                                style: AppTextStyles.labelSmall.copyWith(
-                                  color: isDark
-                                      ? AppColors.darkTextTertiary
-                                      : AppColors.lightTextTertiary,
+                                style: AppTypography.label.copyWith(
+                                  color: surface.textMuted,
                                 ),
                               ),
                               SizedBox(height: AppConstants.spacing4),
                               Text(
                                 '${todayHoursPart}h ${todayMinutesPart}m',
-                                style: AppTextStyles.heading2.copyWith(
+                                style: AppTypography.metricValue.copyWith(
                                   color: AppColors.brandPrimary,
                                   fontSize: 28.0,
                                 ),
@@ -102,23 +98,21 @@ class DailyProgressCard extends ConsumerWidget {
                             ],
                           ),
                           SizedBox(width: AppConstants.spacing32),
-                          // Daily Goal
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 'Daily Goal',
-                                style: AppTextStyles.labelSmall.copyWith(
-                                  color: isDark
-                                      ? AppColors.darkTextTertiary
-                                      : AppColors.lightTextTertiary,
+                                style: AppTypography.label.copyWith(
+                                  color: surface.textMuted,
                                 ),
                               ),
                               SizedBox(height: AppConstants.spacing4),
                               Text(
                                 '${goalHoursPart}h ${goalMinutesPart.toString().padLeft(2, '0')}m',
-                                style: AppTextStyles.heading2.copyWith(
+                                style: AppTypography.metricValue.copyWith(
                                   fontSize: 28.0,
+                                  color: surface.textPrimary,
                                 ),
                               ),
                             ],
@@ -128,25 +122,23 @@ class DailyProgressCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-
-                // Right side - Radial progress
                 Padding(
                   padding: EdgeInsets.only(left: AppConstants.spacing32),
-                  child: _buildRadialProgress(progress),
+                  child: _buildRadialProgress(progress, surface),
                 ),
               ],
             ),
           );
         },
-        loading: () => _buildLoadingCard(isDark),
-        error: (error, stack) => _buildErrorCard(isDark, error.toString()),
+        loading: () => _buildLoadingCard(surface),
+        error: (_, __) => _buildErrorCard(surface),
       ),
-      loading: () => _buildLoadingCard(isDark),
-      error: (error, stack) => _buildErrorCard(isDark, error.toString()),
+      loading: () => _buildLoadingCard(surface),
+      error: (_, __) => _buildErrorCard(surface),
     );
   }
 
-  Widget _buildLoadingCard(bool isDark) {
+  Widget _buildLoadingCard(AppSurfaceTokens surface) {
     return AppCard(
       padding: EdgeInsets.all(AppConstants.spacing24),
       child: Row(
@@ -156,14 +148,17 @@ class DailyProgressCard extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Daily Progress', style: AppTextStyles.titleMedium),
+                Text(
+                  'Daily Progress',
+                  style: AppTypography.sectionTitle.copyWith(
+                    color: surface.textPrimary,
+                  ),
+                ),
                 SizedBox(height: AppConstants.spacing8),
                 Text(
                   'Loading progress...',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: isDark
-                        ? AppColors.darkTextSecondary
-                        : AppColors.lightTextSecondary,
+                  style: AppTypography.body.copyWith(
+                    color: surface.textSecondary,
                   ),
                 ),
               ],
@@ -182,7 +177,7 @@ class DailyProgressCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildErrorCard(bool isDark, String error) {
+  Widget _buildErrorCard(AppSurfaceTokens surface) {
     return AppCard(
       padding: EdgeInsets.all(AppConstants.spacing24),
       child: Row(
@@ -192,14 +187,17 @@ class DailyProgressCard extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Daily Progress', style: AppTextStyles.titleMedium),
+                Text(
+                  'Daily Progress',
+                  style: AppTypography.sectionTitle.copyWith(
+                    color: surface.textPrimary,
+                  ),
+                ),
                 SizedBox(height: AppConstants.spacing8),
                 Text(
                   'Error loading progress. Please try again.',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: isDark
-                        ? AppColors.darkTextSecondary
-                        : AppColors.lightTextSecondary,
+                  style: AppTypography.body.copyWith(
+                    color: surface.textSecondary,
                   ),
                 ),
               ],
@@ -210,23 +208,21 @@ class DailyProgressCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildRadialProgress(double progress) {
+  Widget _buildRadialProgress(double progress, AppSurfaceTokens surface) {
     return SizedBox(
       width: 160,
       height: 160,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Background circle
           CustomPaint(
             size: Size(160, 160),
             painter: _RadialProgressPainter(
               progress: 1.0,
-              color: AppColors.darkBorder.withValues(alpha: 0.2),
+              color: surface.border.withValues(alpha: 0.2),
               width: 12,
             ),
           ),
-          // Progress circle
           CustomPaint(
             size: Size(160, 160),
             painter: _RadialProgressPainter(
@@ -235,15 +231,11 @@ class DailyProgressCard extends ConsumerWidget {
               width: 12,
             ),
           ),
-          // Center text
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '${(progress * 100).toStringAsFixed(0)}%',
-                style: AppTextStyles.heading1,
-              ),
-            ],
+          Text(
+            '${(progress * 100).toStringAsFixed(0)}%',
+            style: AppTypography.metricValue.copyWith(
+              color: surface.textPrimary,
+            ),
           ),
         ],
       ),
@@ -252,22 +244,21 @@ class DailyProgressCard extends ConsumerWidget {
 }
 
 class _RadialProgressPainter extends CustomPainter {
-  final double progress;
-  final Color color;
-  final double width;
-
   _RadialProgressPainter({
     required this.progress,
     required this.color,
     required this.width,
   });
 
+  final double progress;
+  final Color color;
+  final double width;
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - width) / 2;
 
-    // Draw arc
     final paint = Paint()
       ..color = color
       ..strokeWidth = width
