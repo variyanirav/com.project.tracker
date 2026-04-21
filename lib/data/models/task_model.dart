@@ -10,6 +10,7 @@ class TaskModel {
   final String? categoryId;
   final String taskName;
   final String description;
+  final double? estimatedHours;
   final String status;
   final bool isBillable;
   final int totalSeconds;
@@ -25,6 +26,7 @@ class TaskModel {
     this.categoryId,
     required this.taskName,
     required this.description,
+    this.estimatedHours,
     required this.status,
     required this.isBillable,
     required this.totalSeconds,
@@ -43,6 +45,7 @@ class TaskModel {
       categoryId: data.categoryId,
       taskName: data.taskName,
       description: data.description ?? '',
+      estimatedHours: data.estimatedHours,
       status: data.status,
       isBillable: data.isBillable,
       totalSeconds: data.totalSeconds,
@@ -62,6 +65,7 @@ class TaskModel {
       categoryId: categoryId,
       taskName: taskName,
       description: description,
+      estimatedHours: estimatedHours,
       status: status,
       isBillable: isBillable,
       totalSeconds: totalSeconds,

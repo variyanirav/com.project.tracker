@@ -13,6 +13,7 @@ class EditTaskDialog extends ConsumerStatefulWidget {
   final String? initialCategoryId;
   final String initialTitle;
   final String initialDescription;
+  final double? initialEstimatedHours;
   final bool initialIsBillable;
   final TaskStatus initialStatus;
   final Function(
@@ -20,6 +21,7 @@ class EditTaskDialog extends ConsumerStatefulWidget {
     String categoryId,
     String title,
     String description,
+    double? estimatedHours,
     TaskStatus status,
     bool isBillable,
   )
@@ -31,6 +33,7 @@ class EditTaskDialog extends ConsumerStatefulWidget {
     this.initialCategoryId,
     required this.initialTitle,
     required this.initialDescription,
+    this.initialEstimatedHours,
     this.initialIsBillable = true,
     required this.initialStatus,
     required this.onSavePressed,
@@ -43,10 +46,12 @@ class EditTaskDialog extends ConsumerStatefulWidget {
 class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
+  late TextEditingController _estimatedHoursController;
   late TaskStatus _selectedStatus;
   late String _selectedCategoryId;
   late bool _isBillable;
   String? _titleError;
+  String? _estimatedHoursError;
 
   @override
   void initState() {
@@ -54,6 +59,9 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
     _titleController = TextEditingController(text: widget.initialTitle);
     _descriptionController = TextEditingController(
       text: widget.initialDescription,
+    );
+    _estimatedHoursController = TextEditingController(
+      text: widget.initialEstimatedHours?.toString() ?? '',
     );
     _selectedStatus = widget.initialStatus;
     _selectedCategoryId =
@@ -65,11 +73,15 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _estimatedHoursController.dispose();
     super.dispose();
   }
 
   void _validateAndSave() {
-    setState(() => _titleError = null);
+    setState(() {
+      _titleError = null;
+      _estimatedHoursError = null;
+    });
 
     if (_titleController.text.trim().isEmpty) {
       setState(() => _titleError = 'Please enter task name');
@@ -81,11 +93,33 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
       return;
     }
 
+    final estimatedHoursText = _estimatedHoursController.text.trim();
+    double? estimatedHours;
+    if (estimatedHoursText.isNotEmpty) {
+      estimatedHours = double.tryParse(estimatedHoursText);
+      if (estimatedHours == null || estimatedHours <= 0) {
+        setState(() {
+          _estimatedHoursError =
+              'Enter estimated time in hours (for example: 1.5 or 8).';
+        });
+        return;
+      }
+
+      if (estimatedHours > 500) {
+        setState(() {
+          _estimatedHoursError =
+              'Estimated hours should be less than or equal to 500.';
+        });
+        return;
+      }
+    }
+
     widget.onSavePressed(
       widget.taskId,
       _selectedCategoryId,
       _titleController.text.trim(),
       _descriptionController.text.trim(),
+      estimatedHours,
       _selectedStatus,
       _isBillable,
     );
@@ -188,6 +222,41 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
                     vertical: 12,
                   ),
                 ),
+              ),
+              const SizedBox(height: 16),
+
+              Text(
+                'Estimated Hours (Optional)',
+                style: AppTypography.actionLabel.copyWith(
+                  color: surface.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _estimatedHoursController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Hours only (e.g. 8 or 2.5)',
+                  helperText: 'Enter hours, not days',
+                  hintStyle: AppTypography.helper.copyWith(
+                    color: surface.textMuted,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  errorText: _estimatedHoursError,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
+                onChanged: (_) {
+                  if (_estimatedHoursError != null) {
+                    setState(() => _estimatedHoursError = null);
+                  }
+                },
               ),
               const SizedBox(height: 16),
 

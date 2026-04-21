@@ -420,6 +420,25 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
         ? colors.secondaryContainer.withValues(alpha: 0.20)
         : colors.secondaryContainer.withValues(alpha: 0.14);
     final surface = AppSurfaceTokens(isDark: brightness == Brightness.dark);
+    final estimatedHours = widget.task.estimatedHours;
+    final actualHours = widget.task.totalSeconds / 3600.0;
+    final varianceHours = estimatedHours == null
+        ? null
+        : actualHours - estimatedHours;
+    final varianceLabel = varianceHours == null
+        ? 'Not available'
+        : varianceHours > 0
+        ? '${varianceHours.toStringAsFixed(2)}h over estimate'
+        : varianceHours < 0
+        ? '${varianceHours.toStringAsFixed(2)}h under estimate'
+        : 'On estimate';
+    final varianceColor = varianceHours == null
+        ? surface.textSecondary
+        : varianceHours > 0
+        ? Colors.red
+        : varianceHours < 0
+        ? Colors.green
+        : Colors.blue;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -481,6 +500,32 @@ class _ViewTaskDialogState extends ConsumerState<ViewTaskDialog> {
                 DateTimeFormatter.formatSeconds(widget.task.totalSeconds),
                 style: AppTypography.body.copyWith(
                   color: surface.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _metaLabelValue(
+              brightness: brightness,
+              label: 'Estimated Time',
+              valueWidget: Text(
+                estimatedHours == null
+                    ? 'Not set'
+                    : '${estimatedHours.toStringAsFixed(2)} hours',
+                style: AppTypography.body.copyWith(
+                  color: surface.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _metaLabelValue(
+              brightness: brightness,
+              label: 'Variance',
+              valueWidget: Text(
+                varianceLabel,
+                style: AppTypography.body.copyWith(
+                  color: varianceColor,
                   fontWeight: FontWeight.w600,
                 ),
               ),

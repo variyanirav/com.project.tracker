@@ -15,6 +15,7 @@ class CreateTaskDialog extends ConsumerStatefulWidget {
     String title,
     String? description,
     String categoryId,
+    double? estimatedHours,
     bool isBillable,
   )
   onCreatePressed;
@@ -28,24 +29,32 @@ class CreateTaskDialog extends ConsumerStatefulWidget {
 class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _estimatedHoursController = TextEditingController();
 
   String _selectedCategoryId = AppDatabase.uncategorizedCategoryId;
   bool _isBillable = true;
   String? _titleError;
+  String? _estimatedHoursError;
   bool _isSaving = false;
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _estimatedHoursController.dispose();
     super.dispose();
   }
 
   Future<void> _validateAndCreate() async {
-    setState(() => _titleError = null);
+    setState(() {
+      _titleError = null;
+      _estimatedHoursError = null;
+    });
 
     final title = _titleController.text.trim();
     final description = _descriptionController.text.trim();
+    final estimatedHoursText = _estimatedHoursController.text.trim();
+    double? estimatedHours;
 
     if (title.isEmpty) {
       setState(() => _titleError = 'Task title is required');
@@ -68,12 +77,34 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
       return;
     }
 
+    if (estimatedHoursText.isNotEmpty) {
+      final parsed = double.tryParse(estimatedHoursText);
+      if (parsed == null || parsed <= 0) {
+        setState(() {
+          _estimatedHoursError =
+              'Enter estimated time in hours (for example: 1.5 or 8).';
+        });
+        return;
+      }
+
+      if (parsed > 500) {
+        setState(() {
+          _estimatedHoursError =
+              'Estimated hours should be less than or equal to 500.';
+        });
+        return;
+      }
+
+      estimatedHours = parsed;
+    }
+
     setState(() => _isSaving = true);
     try {
       await widget.onCreatePressed(
         title,
         description.isNotEmpty ? description : null,
         _selectedCategoryId,
+        estimatedHours,
         _isBillable,
       );
       if (!mounted) return;
@@ -244,6 +275,34 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
                         label: const Text('Manage Categories'),
                       ),
                     ),
+                    const SizedBox(height: AppConstants.spacing12),
+                    TextField(
+                      controller: _estimatedHoursController,
+                      enabled: !_isSaving,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Estimated Hours (Optional)',
+                        hintText: 'Enter hours only, e.g. 8 or 2.5',
+                        helperText:
+                            'Use hours, not days. Leave empty if you do not want to estimate.',
+                      ),
+                      onChanged: (_) {
+                        if (_estimatedHoursError != null) {
+                          setState(() => _estimatedHoursError = null);
+                        }
+                      },
+                    ),
+                    if (_estimatedHoursError != null) ...[
+                      const SizedBox(height: AppConstants.spacing4),
+                      Text(
+                        _estimatedHoursError!,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.error,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: AppConstants.spacing12),
                     DropdownButtonFormField<bool>(
                       initialValue: _isBillable,

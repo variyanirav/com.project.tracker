@@ -9,6 +9,7 @@ class Tasks extends Table {
   TextColumn get categoryId => text().nullable()();
   TextColumn get taskName => text()();
   TextColumn get description => text().nullable()();
+  RealColumn get estimatedHours => real().nullable()();
   TextColumn get status => text().withDefault(
     const Constant('todo'),
   )(); // todo, inProgress, inReview, onHold, complete

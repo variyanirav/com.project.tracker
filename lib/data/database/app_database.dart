@@ -24,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   // Getters for DAOs (optional, for convenience)
   late final projectsDao = ProjectsDao(this);
@@ -72,6 +72,11 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 7) {
           await _createFocusRunsTableIfNeeded();
+        }
+        if (from < 8) {
+          if (!await _columnExists('tasks', 'estimated_hours')) {
+            await m.addColumn(tasks, tasks.estimatedHours);
+          }
         }
       },
     );

@@ -26,6 +26,7 @@ abstract class ITaskRepository {
     String? categoryId,
     required String taskName,
     required String? description,
+    double? estimatedHours,
     bool isBillable = true,
   });
 

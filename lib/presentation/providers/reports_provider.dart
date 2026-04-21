@@ -333,7 +333,7 @@ final detailedCsvExportProvider = FutureProvider<String>((ref) async {
 
   final csvBuffer = StringBuffer();
   csvBuffer.writeln(
-    'Project,Task,Billing Type,Start Time,End Time,Duration (Hours),Date',
+    'Project,Task,Billing Type,Estimated (Hours),Start Time,End Time,Duration (Hours),Date',
   );
 
   for (final project in projects) {
@@ -366,7 +366,7 @@ final detailedCsvExportProvider = FutureProvider<String>((ref) async {
       final endTimeStr = _formatHumanReadableDateTime(endTime);
 
       csvBuffer.writeln(
-        '${project.name},${task.taskName},${task.isBillable ? 'Billable' : 'Non-billable'},$startTimeStr,$endTimeStr,${durationHours.toStringAsFixed(2)},$dateStr',
+        '${project.name},${task.taskName},${task.isBillable ? 'Billable' : 'Non-billable'},${task.estimatedHours?.toStringAsFixed(2) ?? ''},$startTimeStr,$endTimeStr,${durationHours.toStringAsFixed(2)},$dateStr',
       );
     }
   }
@@ -400,7 +400,7 @@ final sessionDetailCsvExportProvider = FutureProvider.family<String, CsvExportPa
   );
   csvBuffer.writeln('');
   csvBuffer.writeln(
-    'Project,Task,Billing Type,Category,Session Start,Session End,Duration (Hours),Start Note,Stop Note',
+    'Project,Task,Billing Type,Category,Estimated (Hours),Session Start,Session End,Duration (Hours),Start Note,Stop Note',
   );
 
   for (final project in scopedProjects) {
@@ -430,7 +430,7 @@ final sessionDetailCsvExportProvider = FutureProvider.family<String, CsvExportPa
       final endTime = session.endTime ?? DateTime.now();
 
       csvBuffer.writeln(
-        '${_escapeCsv(project.name)},${_escapeCsv(task.taskName)},${_escapeCsv(task.isBillable ? 'Billable' : 'Non-billable')},${_escapeCsv(categoryName)},${_escapeCsv(_formatHumanReadableDateTime(session.startTime))},${_escapeCsv(_formatHumanReadableDateTime(endTime))},${(session.totalSeconds / 3600.0).toStringAsFixed(2)},${_escapeCsv(session.startNote?.trim() ?? '')},${_escapeCsv(session.stopNote?.trim() ?? '')}',
+        '${_escapeCsv(project.name)},${_escapeCsv(task.taskName)},${_escapeCsv(task.isBillable ? 'Billable' : 'Non-billable')},${_escapeCsv(categoryName)},${_escapeCsv(task.estimatedHours?.toStringAsFixed(2) ?? '')},${_escapeCsv(_formatHumanReadableDateTime(session.startTime))},${_escapeCsv(_formatHumanReadableDateTime(endTime))},${(session.totalSeconds / 3600.0).toStringAsFixed(2)},${_escapeCsv(session.startNote?.trim() ?? '')},${_escapeCsv(session.stopNote?.trim() ?? '')}',
       );
     }
   }
@@ -464,7 +464,7 @@ final taskBreakdownCsvExportProvider = FutureProvider.family<String, CsvExportPa
   );
   csvBuffer.writeln('');
   csvBuffer.writeln(
-    'Project,Task,Billing Type,Category,Task Status,Session Count,Total Hours (${_rangeLabel(params)}),Last Session Start',
+    'Project,Task,Billing Type,Category,Estimated (Hours),Task Status,Session Count,Total Hours (${_rangeLabel(params)}),Last Session Start',
   );
 
   for (final project in projects) {
@@ -507,7 +507,7 @@ final taskBreakdownCsvExportProvider = FutureProvider.family<String, CsvExportPa
             );
 
       csvBuffer.writeln(
-        '${_escapeCsv(project.name)},${_escapeCsv(task.taskName)},${_escapeCsv(task.isBillable ? 'Billable' : 'Non-billable')},${_escapeCsv(categoryName)},${_escapeCsv(TaskStatus.formatLabel(task.status))},${taskSessions.length},$totalHours,${_escapeCsv(latestSession ?? '')}',
+        '${_escapeCsv(project.name)},${_escapeCsv(task.taskName)},${_escapeCsv(task.isBillable ? 'Billable' : 'Non-billable')},${_escapeCsv(categoryName)},${_escapeCsv(task.estimatedHours?.toStringAsFixed(2) ?? '')},${_escapeCsv(TaskStatus.formatLabel(task.status))},${taskSessions.length},$totalHours,${_escapeCsv(latestSession ?? '')}',
       );
     }
   }

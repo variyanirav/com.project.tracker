@@ -5,6 +5,7 @@ class TaskEntity {
   final String? categoryId;
   final String taskName;
   final String? description;
+  final double? estimatedHours;
   final String status;
   final bool isBillable;
   final int totalSeconds;
@@ -20,6 +21,7 @@ class TaskEntity {
     this.categoryId,
     required this.taskName,
     this.description,
+    this.estimatedHours,
     required this.status,
     this.isBillable = true,
     required this.totalSeconds,
@@ -36,6 +38,7 @@ class TaskEntity {
     String? categoryId,
     String? taskName,
     String? description,
+    double? estimatedHours,
     String? status,
     bool? isBillable,
     int? totalSeconds,
@@ -51,6 +54,7 @@ class TaskEntity {
       categoryId: categoryId ?? this.categoryId,
       taskName: taskName ?? this.taskName,
       description: description ?? this.description,
+      estimatedHours: estimatedHours ?? this.estimatedHours,
       status: status ?? this.status,
       isBillable: isBillable ?? this.isBillable,
       totalSeconds: totalSeconds ?? this.totalSeconds,

@@ -55,6 +55,7 @@ class TaskRepositoryImpl implements ITaskRepository {
     String? categoryId,
     required String taskName,
     required String? description,
+    double? estimatedHours,
     bool isBillable = true,
   }) async {
     final id = const Uuid().v4();
@@ -66,6 +67,7 @@ class TaskRepositoryImpl implements ITaskRepository {
       categoryId: categoryId ?? AppDatabase.uncategorizedCategoryId,
       taskName: taskName,
       description: description ?? '',
+      estimatedHours: estimatedHours,
       status: 'todo',
       isBillable: isBillable,
       totalSeconds: 0,
@@ -88,6 +90,7 @@ class TaskRepositoryImpl implements ITaskRepository {
       categoryId: task.categoryId ?? AppDatabase.uncategorizedCategoryId,
       taskName: task.taskName,
       description: task.description ?? '',
+      estimatedHours: task.estimatedHours,
       status: task.status,
       isBillable: task.isBillable,
       totalSeconds: task.totalSeconds,
@@ -226,6 +229,7 @@ class TaskRepositoryImpl implements ITaskRepository {
       description: (data.description?.isNotEmpty ?? false)
           ? data.description
           : null,
+      estimatedHours: data.estimatedHours,
       status: data.status,
       isBillable: data.isBillable,
       totalSeconds: data.totalSeconds,

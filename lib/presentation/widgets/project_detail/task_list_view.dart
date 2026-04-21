@@ -311,6 +311,25 @@ class _TaskListItem extends StatelessWidget {
               ? currentRunningElapsedSeconds
               : task.totalSeconds)
         : task.totalSeconds;
+    final actualHours = durationSeconds / 3600.0;
+    final estimatedHours = task.estimatedHours;
+    final estimateVariance = estimatedHours == null
+        ? null
+        : actualHours - estimatedHours;
+    final estimateVarianceLabel = estimateVariance == null
+        ? null
+        : estimateVariance > 0
+        ? '+${estimateVariance.toStringAsFixed(2)}h over'
+        : estimateVariance < 0
+        ? '${estimateVariance.toStringAsFixed(2)}h under'
+        : 'On target';
+    final estimateVarianceColor = estimateVariance == null
+        ? null
+        : estimateVariance > 0
+        ? AppColors.error
+        : estimateVariance < 0
+        ? AppColors.success
+        : AppColors.info;
     final description = task.description?.trim();
     final hasDescription = description != null && description.isNotEmpty;
 
@@ -452,6 +471,20 @@ class _TaskListItem extends StatelessWidget {
                       text: DateTimeFormatter.formatSeconds(durationSeconds),
                       color: AppColors.warning,
                     ),
+                    _Tag(
+                      text: estimatedHours == null
+                          ? 'Estimate: Not set'
+                          : 'Estimate: ${estimatedHours.toStringAsFixed(2)}h',
+                      color: estimatedHours == null
+                          ? surface.textSecondary
+                          : AppColors.brandPrimary,
+                    ),
+                    if (estimateVarianceLabel != null &&
+                        estimateVarianceColor != null)
+                      _Tag(
+                        text: estimateVarianceLabel,
+                        color: estimateVarianceColor,
+                      ),
                     _Tag(text: status.label, color: status.getColor()),
                   ],
                 ),

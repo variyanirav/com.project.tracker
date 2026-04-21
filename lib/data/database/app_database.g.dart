@@ -890,6 +890,17 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskData> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _estimatedHoursMeta = const VerificationMeta(
+    'estimatedHours',
+  );
+  @override
+  late final GeneratedColumn<double> estimatedHours = GeneratedColumn<double>(
+    'estimated_hours',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -994,6 +1005,7 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskData> {
     categoryId,
     taskName,
     description,
+    estimatedHours,
     status,
     isBillable,
     totalSeconds,
@@ -1048,6 +1060,15 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskData> {
         description.isAcceptableOrUnknown(
           data['description']!,
           _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('estimated_hours')) {
+      context.handle(
+        _estimatedHoursMeta,
+        estimatedHours.isAcceptableOrUnknown(
+          data['estimated_hours']!,
+          _estimatedHoursMeta,
         ),
       );
     }
@@ -1141,6 +1162,10 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskData> {
         DriftSqlType.string,
         data['${effectivePrefix}description'],
       ),
+      estimatedHours: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}estimated_hours'],
+      ),
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
@@ -1188,6 +1213,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
   final String? categoryId;
   final String taskName;
   final String? description;
+  final double? estimatedHours;
   final String status;
   final bool isBillable;
   final int totalSeconds;
@@ -1202,6 +1228,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
     this.categoryId,
     required this.taskName,
     this.description,
+    this.estimatedHours,
     required this.status,
     required this.isBillable,
     required this.totalSeconds,
@@ -1222,6 +1249,9 @@ class TaskData extends DataClass implements Insertable<TaskData> {
     map['task_name'] = Variable<String>(taskName);
     if (!nullToAbsent || description != null) {
       map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || estimatedHours != null) {
+      map['estimated_hours'] = Variable<double>(estimatedHours);
     }
     map['status'] = Variable<String>(status);
     map['is_billable'] = Variable<bool>(isBillable);
@@ -1249,6 +1279,9 @@ class TaskData extends DataClass implements Insertable<TaskData> {
       description: description == null && nullToAbsent
           ? const Value.absent()
           : Value(description),
+      estimatedHours: estimatedHours == null && nullToAbsent
+          ? const Value.absent()
+          : Value(estimatedHours),
       status: Value(status),
       isBillable: Value(isBillable),
       totalSeconds: Value(totalSeconds),
@@ -1275,6 +1308,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
       categoryId: serializer.fromJson<String?>(json['categoryId']),
       taskName: serializer.fromJson<String>(json['taskName']),
       description: serializer.fromJson<String?>(json['description']),
+      estimatedHours: serializer.fromJson<double?>(json['estimatedHours']),
       status: serializer.fromJson<String>(json['status']),
       isBillable: serializer.fromJson<bool>(json['isBillable']),
       totalSeconds: serializer.fromJson<int>(json['totalSeconds']),
@@ -1294,6 +1328,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
       'categoryId': serializer.toJson<String?>(categoryId),
       'taskName': serializer.toJson<String>(taskName),
       'description': serializer.toJson<String?>(description),
+      'estimatedHours': serializer.toJson<double?>(estimatedHours),
       'status': serializer.toJson<String>(status),
       'isBillable': serializer.toJson<bool>(isBillable),
       'totalSeconds': serializer.toJson<int>(totalSeconds),
@@ -1311,6 +1346,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
     Value<String?> categoryId = const Value.absent(),
     String? taskName,
     Value<String?> description = const Value.absent(),
+    Value<double?> estimatedHours = const Value.absent(),
     String? status,
     bool? isBillable,
     int? totalSeconds,
@@ -1325,6 +1361,9 @@ class TaskData extends DataClass implements Insertable<TaskData> {
     categoryId: categoryId.present ? categoryId.value : this.categoryId,
     taskName: taskName ?? this.taskName,
     description: description.present ? description.value : this.description,
+    estimatedHours: estimatedHours.present
+        ? estimatedHours.value
+        : this.estimatedHours,
     status: status ?? this.status,
     isBillable: isBillable ?? this.isBillable,
     totalSeconds: totalSeconds ?? this.totalSeconds,
@@ -1349,6 +1388,9 @@ class TaskData extends DataClass implements Insertable<TaskData> {
       description: data.description.present
           ? data.description.value
           : this.description,
+      estimatedHours: data.estimatedHours.present
+          ? data.estimatedHours.value
+          : this.estimatedHours,
       status: data.status.present ? data.status.value : this.status,
       isBillable: data.isBillable.present
           ? data.isBillable.value
@@ -1376,6 +1418,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
           ..write('categoryId: $categoryId, ')
           ..write('taskName: $taskName, ')
           ..write('description: $description, ')
+          ..write('estimatedHours: $estimatedHours, ')
           ..write('status: $status, ')
           ..write('isBillable: $isBillable, ')
           ..write('totalSeconds: $totalSeconds, ')
@@ -1395,6 +1438,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
     categoryId,
     taskName,
     description,
+    estimatedHours,
     status,
     isBillable,
     totalSeconds,
@@ -1413,6 +1457,7 @@ class TaskData extends DataClass implements Insertable<TaskData> {
           other.categoryId == this.categoryId &&
           other.taskName == this.taskName &&
           other.description == this.description &&
+          other.estimatedHours == this.estimatedHours &&
           other.status == this.status &&
           other.isBillable == this.isBillable &&
           other.totalSeconds == this.totalSeconds &&
@@ -1429,6 +1474,7 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
   final Value<String?> categoryId;
   final Value<String> taskName;
   final Value<String?> description;
+  final Value<double?> estimatedHours;
   final Value<String> status;
   final Value<bool> isBillable;
   final Value<int> totalSeconds;
@@ -1444,6 +1490,7 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
     this.categoryId = const Value.absent(),
     this.taskName = const Value.absent(),
     this.description = const Value.absent(),
+    this.estimatedHours = const Value.absent(),
     this.status = const Value.absent(),
     this.isBillable = const Value.absent(),
     this.totalSeconds = const Value.absent(),
@@ -1460,6 +1507,7 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
     this.categoryId = const Value.absent(),
     required String taskName,
     this.description = const Value.absent(),
+    this.estimatedHours = const Value.absent(),
     this.status = const Value.absent(),
     this.isBillable = const Value.absent(),
     this.totalSeconds = const Value.absent(),
@@ -1480,6 +1528,7 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
     Expression<String>? categoryId,
     Expression<String>? taskName,
     Expression<String>? description,
+    Expression<double>? estimatedHours,
     Expression<String>? status,
     Expression<bool>? isBillable,
     Expression<int>? totalSeconds,
@@ -1496,6 +1545,7 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
       if (categoryId != null) 'category_id': categoryId,
       if (taskName != null) 'task_name': taskName,
       if (description != null) 'description': description,
+      if (estimatedHours != null) 'estimated_hours': estimatedHours,
       if (status != null) 'status': status,
       if (isBillable != null) 'is_billable': isBillable,
       if (totalSeconds != null) 'total_seconds': totalSeconds,
@@ -1514,6 +1564,7 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
     Value<String?>? categoryId,
     Value<String>? taskName,
     Value<String?>? description,
+    Value<double?>? estimatedHours,
     Value<String>? status,
     Value<bool>? isBillable,
     Value<int>? totalSeconds,
@@ -1530,6 +1581,7 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
       categoryId: categoryId ?? this.categoryId,
       taskName: taskName ?? this.taskName,
       description: description ?? this.description,
+      estimatedHours: estimatedHours ?? this.estimatedHours,
       status: status ?? this.status,
       isBillable: isBillable ?? this.isBillable,
       totalSeconds: totalSeconds ?? this.totalSeconds,
@@ -1559,6 +1611,9 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
     }
     if (description.present) {
       map['description'] = Variable<String>(description.value);
+    }
+    if (estimatedHours.present) {
+      map['estimated_hours'] = Variable<double>(estimatedHours.value);
     }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
@@ -1598,6 +1653,7 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
           ..write('categoryId: $categoryId, ')
           ..write('taskName: $taskName, ')
           ..write('description: $description, ')
+          ..write('estimatedHours: $estimatedHours, ')
           ..write('status: $status, ')
           ..write('isBillable: $isBillable, ')
           ..write('totalSeconds: $totalSeconds, ')
@@ -3678,6 +3734,7 @@ typedef $$TasksTableCreateCompanionBuilder =
       Value<String?> categoryId,
       required String taskName,
       Value<String?> description,
+      Value<double?> estimatedHours,
       Value<String> status,
       Value<bool> isBillable,
       Value<int> totalSeconds,
@@ -3695,6 +3752,7 @@ typedef $$TasksTableUpdateCompanionBuilder =
       Value<String?> categoryId,
       Value<String> taskName,
       Value<String?> description,
+      Value<double?> estimatedHours,
       Value<String> status,
       Value<bool> isBillable,
       Value<int> totalSeconds,
@@ -3736,6 +3794,11 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
 
   ColumnFilters<String> get description => $composableBuilder(
     column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get estimatedHours => $composableBuilder(
+    column: $table.estimatedHours,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3814,6 +3877,11 @@ class $$TasksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get estimatedHours => $composableBuilder(
+    column: $table.estimatedHours,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get status => $composableBuilder(
     column: $table.status,
     builder: (column) => ColumnOrderings(column),
@@ -3883,6 +3951,11 @@ class $$TasksTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get estimatedHours => $composableBuilder(
+    column: $table.estimatedHours,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
 
@@ -3949,6 +4022,7 @@ class $$TasksTableTableManager
                 Value<String?> categoryId = const Value.absent(),
                 Value<String> taskName = const Value.absent(),
                 Value<String?> description = const Value.absent(),
+                Value<double?> estimatedHours = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<bool> isBillable = const Value.absent(),
                 Value<int> totalSeconds = const Value.absent(),
@@ -3964,6 +4038,7 @@ class $$TasksTableTableManager
                 categoryId: categoryId,
                 taskName: taskName,
                 description: description,
+                estimatedHours: estimatedHours,
                 status: status,
                 isBillable: isBillable,
                 totalSeconds: totalSeconds,
@@ -3981,6 +4056,7 @@ class $$TasksTableTableManager
                 Value<String?> categoryId = const Value.absent(),
                 required String taskName,
                 Value<String?> description = const Value.absent(),
+                Value<double?> estimatedHours = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<bool> isBillable = const Value.absent(),
                 Value<int> totalSeconds = const Value.absent(),
@@ -3996,6 +4072,7 @@ class $$TasksTableTableManager
                 categoryId: categoryId,
                 taskName: taskName,
                 description: description,
+                estimatedHours: estimatedHours,
                 status: status,
                 isBillable: isBillable,
                 totalSeconds: totalSeconds,

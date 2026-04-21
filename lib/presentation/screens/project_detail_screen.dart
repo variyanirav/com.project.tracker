@@ -434,6 +434,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                               initialCategoryId: task.categoryId,
                               initialTitle: task.taskName,
                               initialDescription: task.description ?? '',
+                              initialEstimatedHours: task.estimatedHours,
                               initialIsBillable: task.isBillable,
                               initialStatus: TaskStatus.fromValue(task.status),
                               onSavePressed:
@@ -442,6 +443,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                     categoryId,
                                     title,
                                     description,
+                                    estimatedHours,
                                     status,
                                     isBillable,
                                   ) async {
@@ -453,6 +455,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                           categoryId: categoryId,
                                           taskName: title,
                                           description: description,
+                                          estimatedHours: estimatedHours,
                                           status: status.code,
                                           isBillable: isBillable,
                                           totalSeconds: task.totalSeconds,
@@ -571,19 +574,21 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     final created = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => CreateTaskDialog(
-        onCreatePressed: (title, description, categoryId, isBillable) async {
-          await ref.read(
-            createTaskProvider(
-              CreateTaskParams(
-                projectId: projectId,
-                categoryId: categoryId,
-                taskName: title,
-                description: description,
-                isBillable: isBillable,
-              ),
-            ).future,
-          );
-        },
+        onCreatePressed:
+            (title, description, categoryId, estimatedHours, isBillable) async {
+              await ref.read(
+                createTaskProvider(
+                  CreateTaskParams(
+                    projectId: projectId,
+                    categoryId: categoryId,
+                    taskName: title,
+                    description: description,
+                    estimatedHours: estimatedHours,
+                    isBillable: isBillable,
+                  ),
+                ).future,
+              );
+            },
       ),
     );
 

@@ -1,3 +1,81 @@
+# Release Notes - Project Tracker v1.3.1
+
+**Release Date:** April 20, 2026  
+**Version:** 1.3.1 (Build 5)  
+**Status:** ✅ Stable Release
+
+---
+
+## 🎉 Highlights
+
+### Task Estimation and Actual Hours Comparison
+This release adds optional task-level estimated hours and surfaces estimated vs actual comparisons throughout Project Detail and CSV exports.
+
+**Key Highlights:**
+- ✅ Optional estimated-hours input when creating or editing a task
+- ✅ Clear guidance to enter hours (not days) with numeric validation
+- ✅ Task list tags now show estimate and over/under variance against actual tracked time
+- ✅ Task details dialog now includes estimated time and variance summary
+- ✅ CSV exports now include an `Estimated (Hours)` column alongside actual duration
+- ✅ Backward-compatible database migration adds nullable `estimated_hours` field
+
+---
+
+## 🆕 What's New in v1.3.1
+
+### 1. Optional Estimated Hours on Tasks
+- **Create Task Dialog**: Added optional field for estimated hours
+- **Edit Task Dialog**: Added editable estimate with the same validations
+- **Validation Rules**: Value must be numeric and greater than 0 if provided
+- **User Guidance**: Input helper text explicitly asks for hours, not days
+
+**Files Updated:**
+- `lib/presentation/widgets/dialogs/create_task_dialog.dart`
+- `lib/presentation/widgets/dialogs/edit_task_dialog.dart`
+- `lib/presentation/screens/project_detail_screen.dart`
+- `lib/presentation/providers/task_provider.dart`
+
+### 2. Estimated vs Actual Visibility in Project Detail
+- **Task Row Tags**: Display estimate and variance (over/under/on target)
+- **Task Detail Modal**: Added Estimated Time and Variance metadata
+- **Decision Support**: Faster visibility into under-estimated or over-worked tasks
+
+**Files Updated:**
+- `lib/presentation/widgets/project_detail/task_list_view.dart`
+- `lib/presentation/widgets/dialogs/view_task_dialog.dart`
+
+### 3. CSV Export Enhancement
+- Added `Estimated (Hours)` to detailed task/session export outputs
+- Keeps existing duration/actual hour output intact for billing and analysis
+
+**Files Updated:**
+- `lib/presentation/providers/reports_provider.dart`
+
+### 4. Data Model and Migration
+- **Database Schema**: Added nullable `estimated_hours` column in `tasks`
+- **Schema Version**: Bumped database schema to 8
+- **Persistence Wiring**: Entity/model/repository flow now carries optional estimates end-to-end
+
+**Files Updated:**
+- `lib/data/database/tables/tasks_table.dart`
+- `lib/data/database/app_database.dart`
+- `lib/domain/entities/task_entity.dart`
+- `lib/domain/repositories/itask_repository.dart`
+- `lib/data/repositories/task_repository_impl.dart`
+- `lib/data/models/task_model.dart`
+
+---
+
+## ✅ Validation (v1.3.1)
+
+- `flutter pub run build_runner build --delete-conflicting-outputs`
+- `flutter test test/data/task_status_migration_test.dart test/models/timer_session_model_test.dart`
+- `flutter analyze` (existing info-level warnings remain; no new errors from this release)
+
+---
+
+## Previous Release - v1.3.0
+
 # Release Notes - Project Tracker v1.3.0
 
 **Release Date:** April 19, 2026  

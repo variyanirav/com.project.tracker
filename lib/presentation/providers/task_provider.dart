@@ -90,6 +90,7 @@ final createTaskProvider = FutureProvider.family<void, CreateTaskParams>((
     categoryId: params.categoryId,
     taskName: params.taskName,
     description: params.description,
+    estimatedHours: params.estimatedHours,
     isBillable: params.isBillable,
   );
 
@@ -113,6 +114,7 @@ final updateTaskProvider = FutureProvider.family<void, UpdateTaskParams>((
     categoryId: params.categoryId,
     taskName: params.taskName,
     description: params.description,
+    estimatedHours: params.estimatedHours,
     status: params.status,
     isBillable: params.isBillable,
     totalSeconds: params.totalSeconds,
@@ -230,6 +232,7 @@ class CreateTaskParams {
   final String? categoryId;
   final String taskName;
   final String? description;
+  final double? estimatedHours;
   final bool isBillable;
 
   CreateTaskParams({
@@ -237,6 +240,7 @@ class CreateTaskParams {
     this.categoryId,
     required this.taskName,
     this.description,
+    this.estimatedHours,
     this.isBillable = true,
   });
 }
@@ -248,6 +252,7 @@ class UpdateTaskParams {
   final String? categoryId;
   final String taskName;
   final String? description;
+  final double? estimatedHours;
   final String status;
   final bool isBillable;
   final int totalSeconds;
@@ -262,6 +267,7 @@ class UpdateTaskParams {
     this.categoryId,
     required this.taskName,
     this.description,
+    this.estimatedHours,
     required this.status,
     required this.isBillable,
     required this.totalSeconds,
