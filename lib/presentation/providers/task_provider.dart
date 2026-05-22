@@ -32,6 +32,13 @@ final archivedTasksByProjectProvider =
       return await repository.getArchivedTasksByProject(projectId);
     });
 
+/// Provider for deleted tasks filtered by project
+final deletedTasksByProjectProvider =
+    FutureProvider.family<List<TaskEntity>, String>((ref, projectId) async {
+      final repository = ref.watch(taskRepositoryProvider);
+      return await repository.getDeletedTasksByProject(projectId);
+    });
+
 /// Provider for tasks filtered by status
 final tasksByStatusProvider = FutureProvider.family<List<TaskEntity>, String>((
   ref,
@@ -145,7 +152,21 @@ final deleteTaskProvider = FutureProvider.family<void, DeleteTaskParams>((
   ref.invalidate(tasksProvider);
   ref.invalidate(tasksByProjectProvider(params.projectId));
   ref.invalidate(taskByIdProvider(params.taskId));
+  ref.invalidate(deletedTasksByProjectProvider(params.projectId));
 });
+
+/// Provider for permanently deleting a task
+final permanentlyDeleteTaskProvider =
+    FutureProvider.family<void, DeleteTaskParams>((ref, params) async {
+      final repository = ref.watch(taskRepositoryProvider);
+      await repository.permanentlyDeleteTask(params.taskId);
+
+      ref.invalidate(tasksProvider);
+      ref.invalidate(tasksByProjectProvider(params.projectId));
+      ref.invalidate(archivedTasksByProjectProvider(params.projectId));
+      ref.invalidate(deletedTasksByProjectProvider(params.projectId));
+      ref.invalidate(taskByIdProvider(params.taskId));
+    });
 
 /// Provider for archiving a task
 final archiveTaskProvider = FutureProvider.family<void, ArchiveTaskParams>((
@@ -176,6 +197,20 @@ final unarchiveTaskProvider = FutureProvider.family<void, ArchiveTaskParams>((
   ref.invalidate(archivedTasksByProjectProvider(params.projectId));
   ref.invalidate(taskByIdProvider(params.taskId));
 });
+
+/// Provider for restoring a deleted task from Trash
+final restoreDeletedTaskProvider =
+    FutureProvider.family<void, DeleteTaskParams>((ref, params) async {
+      final repository = ref.watch(taskRepositoryProvider);
+      await repository.restoreDeletedTask(params.taskId);
+
+      ref.invalidate(tasksProvider);
+      ref.invalidate(tasksByProjectProvider(params.projectId));
+      ref.invalidate(activeTasksByProjectProvider(params.projectId));
+      ref.invalidate(archivedTasksByProjectProvider(params.projectId));
+      ref.invalidate(deletedTasksByProjectProvider(params.projectId));
+      ref.invalidate(taskByIdProvider(params.taskId));
+    });
 
 /// Provider for updating task status
 final updateTaskStatusProvider =

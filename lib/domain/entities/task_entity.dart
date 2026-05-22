@@ -12,6 +12,8 @@ class TaskEntity {
   final bool isRunning;
   final DateTime? lastStartedAt;
   final String? lastSessionId;
+  final DateTime? deletedAt;
+  final String? deletedStatus;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -28,6 +30,8 @@ class TaskEntity {
     required this.isRunning,
     this.lastStartedAt,
     this.lastSessionId,
+    this.deletedAt,
+    this.deletedStatus,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -45,6 +49,8 @@ class TaskEntity {
     bool? isRunning,
     DateTime? lastStartedAt,
     String? lastSessionId,
+    DateTime? deletedAt,
+    String? deletedStatus,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -61,6 +67,8 @@ class TaskEntity {
       isRunning: isRunning ?? this.isRunning,
       lastStartedAt: lastStartedAt ?? this.lastStartedAt,
       lastSessionId: lastSessionId ?? this.lastSessionId,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedStatus: deletedStatus ?? this.deletedStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

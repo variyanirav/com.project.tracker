@@ -20,6 +20,8 @@ class Tasks extends Table {
   BoolColumn get isRunning => boolean().withDefault(const Constant(false))();
   DateTimeColumn get lastStartedAt => dateTime().nullable()();
   TextColumn get lastSessionId => text().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get deletedStatus => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 

@@ -43,6 +43,10 @@ fi
 echo "[2/5] Running focused tests..."
 cd "$WORKSPACE_DIR"
 flutter test \
+  test/data/task_repository_impl_test.dart \
+  test/providers/reports_provider_test.dart \
+  test/screens/project_detail_trash_flow_test.dart \
+  test/screens/reports_screen_test.dart \
   test/data/focus_timer_repository_impl_test.dart \
   test/domain/focus_timer_usecases_test.dart \
   test/integration/focus_timer_integration_test.dart \

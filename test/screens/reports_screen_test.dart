@@ -44,21 +44,18 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    final openButtonFinder = find.widgetWithText(
-      OutlinedButton,
-      'Open Export Folder',
-    );
-    OutlinedButton openButton = tester.widget<OutlinedButton>(openButtonFinder);
-    expect(openButton.onPressed, isNull);
+    final folderIconFinder = find.byIcon(Icons.folder_open);
+    final folderButtonFinder = find
+        .ancestor(of: folderIconFinder, matching: find.byType(InkWell))
+        .first;
+    InkWell openButton = tester.widget<InkWell>(folderButtonFinder);
+    expect(openButton.onTap, isNull);
     expect(find.text('Last export location: Not exported yet'), findsOneWidget);
-    expect(find.text('Category Filter'), findsOneWidget);
-    expect(
-      find.text('CSV uses the same report filters above.'),
-      findsOneWidget,
-    );
+    expect(find.text('CATEGORY FILTER'), findsOneWidget);
+    expect(find.textContaining('APPLIED FILTERS'), findsOneWidget);
 
     expect(find.text('Download Summary CSV'), findsOneWidget);
-    expect(find.text('Download Session Detail CSV'), findsOneWidget);
+    expect(find.text('Download Detailed CSV'), findsOneWidget);
 
     final downloadButtonFinder = find.text('Download Summary CSV');
     await tester.ensureVisible(downloadButtonFinder);
@@ -66,8 +63,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    openButton = tester.widget<OutlinedButton>(openButtonFinder);
-    expect(openButton.onPressed, isNotNull);
+    openButton = tester.widget<InkWell>(folderButtonFinder);
+    expect(openButton.onTap, isNotNull);
     expect(
       find.text('Last export location: /tmp/test_export.csv'),
       findsOneWidget,

@@ -14,7 +14,6 @@ import '../providers/timer_provider.dart';
 import '../routes/app_router.dart';
 import '../utils/timer_session_actions.dart';
 import '../widgets/dialogs/edit_task_dialog.dart';
-import '../widgets/dialogs/confirm_delete_dialog.dart';
 import '../widgets/dialogs/create_task_dialog.dart';
 import '../../core/widgets/app_confirmation_dialog.dart';
 import '../widgets/dialogs/timer_session_note_dialog.dart';
@@ -102,10 +101,18 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     final archivedTasksAsync = ref.watch(
       archivedTasksByProjectProvider(selectedProject.id),
     );
+    final deletedTasksAsync = ref.watch(
+      deletedTasksByProjectProvider(selectedProject.id),
+    );
     final timerState = ref.watch(timerProvider);
     final timerTickAsync = ref.watch(timerTickProvider);
     final hasActiveTimerForSelectedProject =
         timerState.isRunning && timerState.projectId == selectedProject.id;
+    final taskViewTitle = switch (_taskView) {
+      'archive' => 'Archived Tasks',
+      'trash' => 'Trash',
+      _ => AppStrings.screenTitles.projectTasks,
+    };
 
     return CustomScaffold(
       activeRoute: AppRouter.projectDetail,
@@ -317,9 +324,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                   Row(
                     children: [
                       Text(
-                        _taskView == 'active'
-                            ? AppStrings.screenTitles.projectTasks
-                            : 'Archived Tasks',
+                        taskViewTitle,
                         style: AppTypography.sectionTitle.copyWith(
                           color: surface.textPrimary,
                         ),
@@ -336,6 +341,12 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                         selected: _taskView == 'archive',
                         onSelected: (_) =>
                             setState(() => _taskView = 'archive'),
+                      ),
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: const Text('Trash'),
+                        selected: _taskView == 'trash',
+                        onSelected: (_) => setState(() => _taskView = 'trash'),
                       ),
                     ],
                   ),
@@ -478,9 +489,14 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                         onDeletePressed: (task) {
                           showDialog(
                             context: context,
-                            builder: (context) => ConfirmDeleteDialog(
-                              itemName: task.taskName,
-                              itemType: 'task',
+                            builder: (context) => AppConfirmationDialog(
+                              title: 'Move to Trash',
+                              message:
+                                  'Move "${task.taskName}" to Trash? You can restore it later from the Trash tab.',
+                              confirmLabel: 'Move',
+                              cancelLabel: 'Cancel',
+                              icon: Icons.delete_outline,
+                              iconColor: Colors.orange,
                               onConfirmPressed: () async {
                                 await ref.read(
                                   deleteTaskProvider(
@@ -489,16 +505,6 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                       projectId: selectedProject.id,
                                     ),
                                   ).future,
-                                );
-                                ref.invalidate(
-                                  activeTasksByProjectProvider(
-                                    selectedProject.id,
-                                  ),
-                                );
-                                ref.invalidate(
-                                  archivedTasksByProjectProvider(
-                                    selectedProject.id,
-                                  ),
                                 );
                               },
                             ),
@@ -522,7 +528,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                         ),
                       ),
                     )
-                  else
+                  else if (_taskView == 'archive')
                     archivedTasksAsync.when(
                       data: (tasks) => TaskListView(
                         tasks: tasks,
@@ -531,20 +537,62 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                         currentRunningElapsedSeconds: 0,
                         readOnly: true,
                         showStatusFilters: false,
-                        emptyTitle: 'No archived tasks',
+                        emptyTitle: 'No items in Archive',
                         emptyMessage:
                             'Archive completed tasks to keep them out of the main list.',
                         onViewPressed: (task) =>
                             _openTaskDetails(task, readOnly: true),
                         onStartStopPressed: (_) {},
                         onEditPressed: (_) {},
-                        onDeletePressed: (_) {},
-                        onRestorePressed: (task) => _restoreTask(
+                        onRestorePressed: (task) => _restoreArchivedTask(
                           context,
                           ref,
                           selectedProject.id,
                           task,
                         ),
+                        allowPermanentDeleteAction: false,
+                        onDeletePressed: (_) {},
+                      ),
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (err, stack) => Center(
+                        child: Text(
+                          '${AppStrings.errors.loadingTasks}: $err',
+                          style: AppTypography.body.copyWith(
+                            color: surface.textSecondary,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    deletedTasksAsync.when(
+                      data: (tasks) => TaskListView(
+                        tasks: tasks,
+                        timerRunningTaskId: null,
+                        isTimerRunning: false,
+                        currentRunningElapsedSeconds: 0,
+                        readOnly: true,
+                        showStatusFilters: false,
+                        emptyTitle: 'No items in Trash',
+                        emptyMessage:
+                            'Restore deleted tasks from Trash or delete them permanently.',
+                        onViewPressed: (task) =>
+                            _openTaskDetails(task, readOnly: true),
+                        onStartStopPressed: (_) {},
+                        onEditPressed: (_) {},
+                        onDeletePressed: (task) => _permanentlyDeleteTask(
+                          context,
+                          ref,
+                          selectedProject.id,
+                          task,
+                        ),
+                        onRestorePressed: (task) => _restoreArchivedTask(
+                          context,
+                          ref,
+                          selectedProject.id,
+                          task,
+                        ),
+                        allowPermanentDeleteAction: true,
                       ),
                       loading: () =>
                           const Center(child: CircularProgressIndicator()),
@@ -642,7 +690,41 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     }
   }
 
-  Future<void> _restoreTask(
+  Future<void> _permanentlyDeleteTask(
+    BuildContext context,
+    WidgetRef ref,
+    String projectId,
+    TaskEntity task,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AppConfirmationDialog(
+        title: 'Delete Permanently',
+        message:
+            'Permanently delete "${task.taskName}"? This cannot be restored.',
+        confirmLabel: 'Delete',
+        cancelLabel: 'Cancel',
+        icon: Icons.delete_forever,
+        iconColor: Colors.red,
+        onConfirmPressed: () async {
+          await ref.read(
+            permanentlyDeleteTaskProvider(
+              DeleteTaskParams(taskId: task.id, projectId: projectId),
+            ).future,
+          );
+        },
+      ),
+    );
+
+    if (confirmed == true) {
+      ref.invalidate(tasksByProjectProvider(projectId));
+      ref.invalidate(activeTasksByProjectProvider(projectId));
+      ref.invalidate(archivedTasksByProjectProvider(projectId));
+      ref.invalidate(deletedTasksByProjectProvider(projectId));
+    }
+  }
+
+  Future<void> _restoreArchivedTask(
     BuildContext context,
     WidgetRef ref,
     String projectId,
@@ -652,14 +734,14 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       context: context,
       builder: (dialogContext) => AppConfirmationDialog(
         title: 'Restore Task',
-        message: 'Restore "${task.taskName}" back to completed tasks?',
+        message: 'Restore "${task.taskName}" from Trash?',
         confirmLabel: 'Yes',
         cancelLabel: 'No',
-        icon: Icons.unarchive_outlined,
+        icon: Icons.restore_outlined,
         onConfirmPressed: () async {
           await ref.read(
-            unarchiveTaskProvider(
-              ArchiveTaskParams(taskId: task.id, projectId: projectId),
+            restoreDeletedTaskProvider(
+              DeleteTaskParams(taskId: task.id, projectId: projectId),
             ).future,
           );
         },
@@ -669,6 +751,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     if (confirmed == true) {
       ref.invalidate(activeTasksByProjectProvider(projectId));
       ref.invalidate(archivedTasksByProjectProvider(projectId));
+      ref.invalidate(deletedTasksByProjectProvider(projectId));
     }
   }
 }

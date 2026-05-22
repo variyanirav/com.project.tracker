@@ -199,6 +199,19 @@ String _formatHumanReadableDateTime(DateTime dateTime) {
   return '$datePart, $timePart';
 }
 
+bool _isExportableTask(TaskEntity task) {
+  return task.status != TaskStatus.archived.code;
+}
+
+String _joinNotes(Iterable<String?> notes) {
+  final cleaned = notes
+      .map((note) => note?.trim() ?? '')
+      .where((note) => note.isNotEmpty)
+      .toList();
+
+  return cleaned.join(' | ');
+}
+
 /// Unified provider for project summaries using selected period/project/category.
 final projectSummaryProvider =
     FutureProvider.family<List<ProjectReportData>, CsvExportParams>((
@@ -330,46 +343,77 @@ final detailedCsvExportProvider = FutureProvider<String>((ref) async {
   final projects = await ref.watch(projectsProvider.future);
   final timerRepository = ref.read(timerSessionRepositoryProvider);
   final taskRepository = ref.read(taskRepositoryProvider);
-
-  final csvBuffer = StringBuffer();
-  csvBuffer.writeln(
-    'Project,Task,Billing Type,Estimated (Hours),Start Time,End Time,Duration (Hours),Date',
+  final categoryRepository = ref.read(categoryRepositoryProvider);
+  final categories = await categoryRepository.getAllCategories();
+  final categoryMap = {for (final c in categories) c.id: c.name};
+  final range = _rangeForParams(
+    const CsvExportParams(period: ReportPeriod.thisWeek),
   );
 
+  final csvBuffer = StringBuffer();
+  csvBuffer.writeln('Report Range,${_escapeCsv('All tasks')},');
+  csvBuffer.writeln('');
+  csvBuffer.writeln(
+    'Project,Task,Billing Type,Category,Status,Estimation (Hours),Actual (Hours),Session Start,End Date,Start Note,End Note',
+  );
+
+  double totalEstimatedHours = 0;
+  double totalActualHours = 0;
+
   for (final project in projects) {
-    final tasks = await taskRepository.getTasksByProject(project.id);
+    final tasks = (await taskRepository.getTasksByProject(
+      project.id,
+    )).where(_isExportableTask).toList();
     final sessions = await timerRepository.getSessionsByProject(project.id);
+    final periodSessions = sessions
+        .where(
+          (s) =>
+              !s.startTime.isBefore(range.start) &&
+              s.startTime.isBefore(range.end),
+        )
+        .toList();
 
-    for (final session in sessions) {
-      final task = tasks.firstWhere(
-        (t) => t.id == session.taskId,
-        orElse: () => TaskEntity(
-          id: '',
-          projectId: project.id,
-          taskName: 'Unknown Task',
-          description: null,
-          status: '',
-          isBillable: true,
-          totalSeconds: 0,
-          isRunning: false,
-          lastStartedAt: null,
-          lastSessionId: null,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
+    final sessionsByTask = <String, List<TimerSessionEntity>>{};
+    for (final session in periodSessions) {
+      sessionsByTask.putIfAbsent(session.taskId, () => []).add(session);
+    }
+
+    for (final task in tasks) {
+      final taskSessions = sessionsByTask[task.id] ?? const [];
+      final actualSeconds = taskSessions.fold<int>(
+        0,
+        (sum, session) => sum + session.totalSeconds,
       );
+      final actualHours = actualSeconds / 3600.0;
+      final estimatedHours = task.estimatedHours ?? 0.0;
+      final categoryName =
+          categoryMap[task.categoryId] ??
+          categoryMap[AppDatabase.uncategorizedCategoryId] ??
+          'Uncategorized';
+      final sessionStart = taskSessions.isEmpty
+          ? null
+          : taskSessions
+                .map((session) => session.startTime)
+                .reduce((a, b) => a.isBefore(b) ? a : b);
+      final sessionEnd = taskSessions.isEmpty
+          ? null
+          : taskSessions
+                .map((session) => session.endTime ?? session.startTime)
+                .reduce((a, b) => a.isAfter(b) ? a : b);
 
-      final endTime = session.endTime ?? DateTime.now();
-      final durationHours = session.totalSeconds / 3600.0;
-      final dateStr = _formatHumanReadableDate(session.startTime);
-      final startTimeStr = _formatHumanReadableDateTime(session.startTime);
-      final endTimeStr = _formatHumanReadableDateTime(endTime);
+      totalEstimatedHours += estimatedHours;
+      totalActualHours += actualHours;
 
       csvBuffer.writeln(
-        '${project.name},${task.taskName},${task.isBillable ? 'Billable' : 'Non-billable'},${task.estimatedHours?.toStringAsFixed(2) ?? ''},$startTimeStr,$endTimeStr,${durationHours.toStringAsFixed(2)},$dateStr',
+        '${_escapeCsv(project.name)},${_escapeCsv(task.taskName)},${_escapeCsv(task.isBillable ? 'Billable' : 'Non-billable')},${_escapeCsv(categoryName)},${_escapeCsv(TaskStatus.formatLabel(task.status))},${estimatedHours.toStringAsFixed(2)},${actualHours.toStringAsFixed(2)},${_escapeCsv(sessionStart == null ? '' : _formatHumanReadableDateTime(sessionStart))},${_escapeCsv(sessionEnd == null ? '' : _formatHumanReadableDateTime(sessionEnd))},${_escapeCsv(_joinNotes(taskSessions.map((session) => session.startNote)))},${_escapeCsv(_joinNotes(taskSessions.map((session) => session.stopNote)))}',
       );
     }
   }
+
+  csvBuffer.writeln('');
+  csvBuffer.writeln(
+    'Grand Total,,,,,${totalEstimatedHours.toStringAsFixed(2)},${totalActualHours.toStringAsFixed(2)},,,,,',
+  );
 
   return csvBuffer.toString();
 });
@@ -400,12 +444,16 @@ final sessionDetailCsvExportProvider = FutureProvider.family<String, CsvExportPa
   );
   csvBuffer.writeln('');
   csvBuffer.writeln(
-    'Project,Task,Billing Type,Category,Estimated (Hours),Session Start,Session End,Duration (Hours),Start Note,Stop Note',
+    'Project,Task,Billing Type,Category,Status,Estimation (Hours),Actual (Hours),Session Start,End Date,Start Note,End Note',
   );
 
+  double totalEstimatedHours = 0;
+  double totalActualHours = 0;
+
   for (final project in scopedProjects) {
-    final tasks = await taskRepository.getTasksByProject(project.id);
-    final taskMap = {for (final task in tasks) task.id: task};
+    final tasks = (await taskRepository.getTasksByProject(
+      project.id,
+    )).where(_isExportableTask).toList();
     final sessions = await timerRepository.getSessionsByProject(project.id);
     final periodSessions = sessions
         .where(
@@ -415,25 +463,51 @@ final sessionDetailCsvExportProvider = FutureProvider.family<String, CsvExportPa
         )
         .toList();
 
+    final sessionsByTask = <String, List<TimerSessionEntity>>{};
     for (final session in periodSessions) {
-      final task = taskMap[session.taskId];
-      if (task == null) continue;
+      sessionsByTask.putIfAbsent(session.taskId, () => []).add(session);
+    }
 
+    for (final task in tasks) {
       if (params.categoryId != null && task.categoryId != params.categoryId) {
         continue;
       }
 
+      final taskSessions = sessionsByTask[task.id] ?? const [];
+      final actualSeconds = taskSessions.fold<int>(
+        0,
+        (sum, session) => sum + session.totalSeconds,
+      );
+      final actualHours = actualSeconds / 3600.0;
+      final estimatedHours = task.estimatedHours ?? 0.0;
       final categoryName =
           categoryMap[task.categoryId] ??
           categoryMap[AppDatabase.uncategorizedCategoryId] ??
           'Uncategorized';
-      final endTime = session.endTime ?? DateTime.now();
+      final sessionStart = taskSessions.isEmpty
+          ? null
+          : taskSessions
+                .map((session) => session.startTime)
+                .reduce((a, b) => a.isBefore(b) ? a : b);
+      final sessionEnd = taskSessions.isEmpty
+          ? null
+          : taskSessions
+                .map((session) => session.endTime ?? session.startTime)
+                .reduce((a, b) => a.isAfter(b) ? a : b);
+
+      totalEstimatedHours += estimatedHours;
+      totalActualHours += actualHours;
 
       csvBuffer.writeln(
-        '${_escapeCsv(project.name)},${_escapeCsv(task.taskName)},${_escapeCsv(task.isBillable ? 'Billable' : 'Non-billable')},${_escapeCsv(categoryName)},${_escapeCsv(task.estimatedHours?.toStringAsFixed(2) ?? '')},${_escapeCsv(_formatHumanReadableDateTime(session.startTime))},${_escapeCsv(_formatHumanReadableDateTime(endTime))},${(session.totalSeconds / 3600.0).toStringAsFixed(2)},${_escapeCsv(session.startNote?.trim() ?? '')},${_escapeCsv(session.stopNote?.trim() ?? '')}',
+        '${_escapeCsv(project.name)},${_escapeCsv(task.taskName)},${_escapeCsv(task.isBillable ? 'Billable' : 'Non-billable')},${_escapeCsv(categoryName)},${_escapeCsv(TaskStatus.formatLabel(task.status))},${estimatedHours.toStringAsFixed(2)},${actualHours.toStringAsFixed(2)},${_escapeCsv(sessionStart == null ? '' : _formatHumanReadableDateTime(sessionStart))},${_escapeCsv(sessionEnd == null ? '' : _formatHumanReadableDateTime(sessionEnd))},${_escapeCsv(_joinNotes(taskSessions.map((session) => session.startNote)))},${_escapeCsv(_joinNotes(taskSessions.map((session) => session.stopNote)))}',
       );
     }
   }
+
+  csvBuffer.writeln('');
+  csvBuffer.writeln(
+    'Grand Total,,,,,${totalEstimatedHours.toStringAsFixed(2)},${totalActualHours.toStringAsFixed(2)},,,,,',
+  );
 
   return csvBuffer.toString();
 });
@@ -468,7 +542,9 @@ final taskBreakdownCsvExportProvider = FutureProvider.family<String, CsvExportPa
   );
 
   for (final project in projects) {
-    final tasks = await taskRepository.getTasksByProject(project.id);
+    final tasks = (await taskRepository.getTasksByProject(
+      project.id,
+    )).where(_isExportableTask).toList();
     final sessions = await timerRepository.getSessionsByProject(project.id);
     final periodSessions = sessions
         .where(

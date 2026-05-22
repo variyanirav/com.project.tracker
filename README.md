@@ -9,8 +9,9 @@ A professional macOS desktop application for tracking billable hours on projects
 - ✅ Track time on individual tasks with start/pause/stop controls
 - ✅ Use the standalone Focus Timer for healthy work/break sessions
 - ✅ Archive and restore completed tasks with read-only protection
+- ✅ Move deleted tasks to Trash with restore and permanent delete options
 - ✅ View daily progress and aggregate statistics
-- ✅ Export weekly CSV reports for billing and analysis
+- ✅ Export weekly CSV reports for billing and analysis, including task rows with estimation and actual hours
 - ✅ Organize work sessions with optional notes and categories
 
 ## 🎨 Features
@@ -37,6 +38,12 @@ A professional macOS desktop application for tracking billable hours on projects
 - **Phase Tracking**: Tracks each focus phase with history and summary cards
 - **Theme Parity**: Matches the current light/dark themes, dialog widths, and typography
 - **Production Validation**: Focus timer domain, data, provider, screen, navigation, and integration tests pass
+
+### Trash and Export Release (Latest - v1.4.0)
+- **Recoverable Trash**: Deleting a task now moves it to Trash instead of hard deleting it
+- **Restore and Purge**: Trash supports restore back to the previous task status or permanent delete
+- **Task-Centric CSV Export**: Exported task data now includes estimation, actual hours, status, category, and session notes
+- **Totals Row**: CSV exports now include total estimation and actual hours at the bottom
 
 ## 🏗️ Architecture
 
@@ -190,6 +197,6 @@ For issues, feature requests, or questions about architecture, refer to:
 
 ---
 
-**Last Updated**: April 19, 2026  
+**Last Updated**: May 22, 2026  
 **Status**: Active Development  
-**Current Version**: 1.3.0
+**Current Version**: 1.4.0

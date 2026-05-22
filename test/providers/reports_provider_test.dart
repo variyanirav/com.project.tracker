@@ -72,12 +72,20 @@ void main() {
 
         expect(
           csv,
-          contains('Project,Task,Category,Task Status,Session Count'),
+          contains(
+            'Project,Task,Billing Type,Category,Estimated (Hours),Task Status,Session Count',
+          ),
         );
         expect(csv, contains('"TaskA"'));
         expect(csv, contains('"TaskB"'));
-        expect(csv, contains('"TaskA","Uncategorized","To Do",1,'));
-        expect(csv, contains('"TaskB","Uncategorized","To Do",0,'));
+        expect(
+          csv,
+          contains('"Alpha","TaskA","Billable","Uncategorized","","To Do",1,'),
+        );
+        expect(
+          csv,
+          contains('"Alpha","TaskB","Billable","Uncategorized","","To Do",0,'),
+        );
       },
     );
 
@@ -144,20 +152,28 @@ void main() {
 
       expect(
         thisWeekCsv,
-        contains('"TaskThisWeek","Uncategorized","To Do",1,'),
+        contains(
+          '"Beta","TaskThisWeek","Billable","Uncategorized","","To Do",1,',
+        ),
       );
       expect(
         thisWeekCsv,
-        contains('"TaskLastWeek","Uncategorized","To Do",0,'),
+        contains(
+          '"Beta","TaskLastWeek","Billable","Uncategorized","","To Do",0,',
+        ),
       );
 
       expect(
         lastWeekCsv,
-        contains('"TaskThisWeek","Uncategorized","To Do",0,'),
+        contains(
+          '"Beta","TaskThisWeek","Billable","Uncategorized","","To Do",0,',
+        ),
       );
       expect(
         lastWeekCsv,
-        contains('"TaskLastWeek","Uncategorized","To Do",1,'),
+        contains(
+          '"Beta","TaskLastWeek","Billable","Uncategorized","","To Do",1,',
+        ),
       );
     });
 
@@ -285,7 +301,7 @@ void main() {
       expect(development.totalHours, closeTo(1800 / 3600, 0.01));
     });
 
-    test('detailed export uses human-readable date format', () async {
+    test('task detail export uses human-readable date format', () async {
       final projectRepo = container.read(projectRepositoryProvider);
       final taskRepo = container.read(taskRepositoryProvider);
       final timerRepo = container.read(timerSessionRepositoryProvider);
@@ -315,14 +331,128 @@ void main() {
         totalSeconds: 1800,
       );
 
-      final csv = await container.read(detailedCsvExportProvider.future);
+      final csv = await container.read(
+        sessionDetailCsvExportProvider(
+          CsvExportParams(
+            period: ReportPeriod.thisWeek,
+            projectId: project.id,
+            customStartUtc: DateTime.utc(2026, 3, 1),
+            customEndUtcExclusive: DateTime.utc(2026, 4, 1),
+          ),
+        ).future,
+      );
 
+      expect(csv, contains('Project,Task,Billing Type,Category,Status'));
       expect(csv, isNot(contains(RegExp(r'\d{4}-\d{2}-\d{2}T'))));
       expect(
         csv,
         contains(RegExp(r'\b\d{1,2}(st|nd|rd|th)\s+[A-Za-z]+\s+\d{4}\b')),
       );
     });
+
+    test(
+      'task detail export includes empty tasks, excludes archived and deleted tasks, and totals estimation and actual hours',
+      () async {
+        final projectRepo = container.read(projectRepositoryProvider);
+        final taskRepo = container.read(taskRepositoryProvider);
+        final timerRepo = container.read(timerSessionRepositoryProvider);
+
+        final project = await projectRepo.createProject(
+          name: 'Task Detail Export',
+          description: 'TDE',
+          color: 'TDE',
+        );
+
+        final activeTask = await taskRepo.createTask(
+          projectId: project.id,
+          categoryId: AppDatabase.learningCategoryId,
+          taskName: 'Active With Session',
+          description: 'active task',
+          estimatedHours: 2,
+        );
+        await taskRepo.createTask(
+          projectId: project.id,
+          categoryId: AppDatabase.developmentCategoryId,
+          taskName: 'No Session Task',
+          description: 'empty task',
+          estimatedHours: 1,
+        );
+        final archivedTask = await taskRepo.createTask(
+          projectId: project.id,
+          taskName: 'Archived Task',
+          description: 'should not export',
+          estimatedHours: 4,
+        );
+        final deletedTask = await taskRepo.createTask(
+          projectId: project.id,
+          taskName: 'Deleted Task',
+          description: 'should not export',
+          estimatedHours: 5,
+        );
+
+        final activeTaskEntity = (await taskRepo.getTaskById(activeTask.id))!;
+        await taskRepo.updateTask(
+          activeTaskEntity.copyWith(
+            status: 'complete',
+            totalSeconds: 5400,
+            isRunning: false,
+          ),
+        );
+
+        final start = DateTime.utc(2026, 3, 26, 9, 0);
+        final session = await timerRepo.createSession(
+          taskId: activeTask.id,
+          projectId: project.id,
+          startTime: start,
+        );
+        await timerRepo.updateSessionStartNote(
+          session.id,
+          'Session start note',
+        );
+        await timerRepo.stopSession(
+          session.id,
+          endTime: start.add(const Duration(minutes: 45)),
+          totalSeconds: 2700,
+        );
+        await timerRepo.updateSessionStopNote(session.id, 'Session end note');
+
+        final archivedTaskEntity = (await taskRepo.getTaskById(
+          archivedTask.id,
+        ))!;
+        await taskRepo.updateTask(
+          archivedTaskEntity.copyWith(status: 'archived'),
+        );
+
+        await taskRepo.deleteTask(deletedTask.id);
+
+        final csv = await container.read(
+          sessionDetailCsvExportProvider(
+            CsvExportParams(
+              period: ReportPeriod.thisWeek,
+              projectId: project.id,
+              customStartUtc: DateTime.utc(2026, 3, 1),
+              customEndUtcExclusive: DateTime.utc(2026, 4, 1),
+            ),
+          ).future,
+        );
+
+        expect(
+          csv,
+          contains(
+            'Project,Task,Billing Type,Category,Status,Estimation (Hours),Actual (Hours),Session Start,End Date,Start Note,End Note',
+          ),
+        );
+        expect(csv, contains('Active With Session'));
+        expect(csv, contains('No Session Task'));
+        expect(csv, isNot(contains('Archived Task')));
+        expect(csv, isNot(contains('Deleted Task')));
+        expect(csv, contains('Session start note'));
+        expect(csv, contains('Session end note'));
+        expect(csv, contains('Grand Total'));
+        expect(csv, contains('3.00'));
+        expect(csv, contains('0.75'));
+      },
+    );
 
     test(
       'task breakdown latest session uses human-readable date format',
@@ -554,7 +684,7 @@ void main() {
       );
 
       expect(csv, contains('Start Note'));
-      expect(csv, contains('Stop Note'));
+      expect(csv, contains('End Note'));
       expect(csv, contains('Define scope'));
       expect(csv, contains('Delivered outline'));
     });

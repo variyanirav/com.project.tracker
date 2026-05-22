@@ -976,6 +976,28 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskData> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deletedStatusMeta = const VerificationMeta(
+    'deletedStatus',
+  );
+  @override
+  late final GeneratedColumn<String> deletedStatus = GeneratedColumn<String>(
+    'deleted_status',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1012,6 +1034,8 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskData> {
     isRunning,
     lastStartedAt,
     lastSessionId,
+    deletedAt,
+    deletedStatus,
     createdAt,
     updatedAt,
   ];
@@ -1117,6 +1141,21 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskData> {
         ),
       );
     }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_status')) {
+      context.handle(
+        _deletedStatusMeta,
+        deletedStatus.isAcceptableOrUnknown(
+          data['deleted_status']!,
+          _deletedStatusMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1190,6 +1229,14 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskData> {
         DriftSqlType.string,
         data['${effectivePrefix}last_session_id'],
       ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      deletedStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}deleted_status'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1220,6 +1267,8 @@ class TaskData extends DataClass implements Insertable<TaskData> {
   final bool isRunning;
   final DateTime? lastStartedAt;
   final String? lastSessionId;
+  final DateTime? deletedAt;
+  final String? deletedStatus;
   final DateTime createdAt;
   final DateTime updatedAt;
   const TaskData({
@@ -1235,6 +1284,8 @@ class TaskData extends DataClass implements Insertable<TaskData> {
     required this.isRunning,
     this.lastStartedAt,
     this.lastSessionId,
+    this.deletedAt,
+    this.deletedStatus,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -1262,6 +1313,12 @@ class TaskData extends DataClass implements Insertable<TaskData> {
     }
     if (!nullToAbsent || lastSessionId != null) {
       map['last_session_id'] = Variable<String>(lastSessionId);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || deletedStatus != null) {
+      map['deleted_status'] = Variable<String>(deletedStatus);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -1292,6 +1349,12 @@ class TaskData extends DataClass implements Insertable<TaskData> {
       lastSessionId: lastSessionId == null && nullToAbsent
           ? const Value.absent()
           : Value(lastSessionId),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      deletedStatus: deletedStatus == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedStatus),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -1315,6 +1378,8 @@ class TaskData extends DataClass implements Insertable<TaskData> {
       isRunning: serializer.fromJson<bool>(json['isRunning']),
       lastStartedAt: serializer.fromJson<DateTime?>(json['lastStartedAt']),
       lastSessionId: serializer.fromJson<String?>(json['lastSessionId']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      deletedStatus: serializer.fromJson<String?>(json['deletedStatus']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -1335,6 +1400,8 @@ class TaskData extends DataClass implements Insertable<TaskData> {
       'isRunning': serializer.toJson<bool>(isRunning),
       'lastStartedAt': serializer.toJson<DateTime?>(lastStartedAt),
       'lastSessionId': serializer.toJson<String?>(lastSessionId),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'deletedStatus': serializer.toJson<String?>(deletedStatus),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -1353,6 +1420,8 @@ class TaskData extends DataClass implements Insertable<TaskData> {
     bool? isRunning,
     Value<DateTime?> lastStartedAt = const Value.absent(),
     Value<String?> lastSessionId = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> deletedStatus = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => TaskData(
@@ -1374,6 +1443,10 @@ class TaskData extends DataClass implements Insertable<TaskData> {
     lastSessionId: lastSessionId.present
         ? lastSessionId.value
         : this.lastSessionId,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    deletedStatus: deletedStatus.present
+        ? deletedStatus.value
+        : this.deletedStatus,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -1405,6 +1478,10 @@ class TaskData extends DataClass implements Insertable<TaskData> {
       lastSessionId: data.lastSessionId.present
           ? data.lastSessionId.value
           : this.lastSessionId,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      deletedStatus: data.deletedStatus.present
+          ? data.deletedStatus.value
+          : this.deletedStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -1425,6 +1502,8 @@ class TaskData extends DataClass implements Insertable<TaskData> {
           ..write('isRunning: $isRunning, ')
           ..write('lastStartedAt: $lastStartedAt, ')
           ..write('lastSessionId: $lastSessionId, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedStatus: $deletedStatus, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1445,6 +1524,8 @@ class TaskData extends DataClass implements Insertable<TaskData> {
     isRunning,
     lastStartedAt,
     lastSessionId,
+    deletedAt,
+    deletedStatus,
     createdAt,
     updatedAt,
   );
@@ -1464,6 +1545,8 @@ class TaskData extends DataClass implements Insertable<TaskData> {
           other.isRunning == this.isRunning &&
           other.lastStartedAt == this.lastStartedAt &&
           other.lastSessionId == this.lastSessionId &&
+          other.deletedAt == this.deletedAt &&
+          other.deletedStatus == this.deletedStatus &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -1481,6 +1564,8 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
   final Value<bool> isRunning;
   final Value<DateTime?> lastStartedAt;
   final Value<String?> lastSessionId;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> deletedStatus;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -1497,6 +1582,8 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
     this.isRunning = const Value.absent(),
     this.lastStartedAt = const Value.absent(),
     this.lastSessionId = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.deletedStatus = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1514,6 +1601,8 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
     this.isRunning = const Value.absent(),
     this.lastStartedAt = const Value.absent(),
     this.lastSessionId = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.deletedStatus = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -1535,6 +1624,8 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
     Expression<bool>? isRunning,
     Expression<DateTime>? lastStartedAt,
     Expression<String>? lastSessionId,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? deletedStatus,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -1552,6 +1643,8 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
       if (isRunning != null) 'is_running': isRunning,
       if (lastStartedAt != null) 'last_started_at': lastStartedAt,
       if (lastSessionId != null) 'last_session_id': lastSessionId,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (deletedStatus != null) 'deleted_status': deletedStatus,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1571,6 +1664,8 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
     Value<bool>? isRunning,
     Value<DateTime?>? lastStartedAt,
     Value<String?>? lastSessionId,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? deletedStatus,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -1588,6 +1683,8 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
       isRunning: isRunning ?? this.isRunning,
       lastStartedAt: lastStartedAt ?? this.lastStartedAt,
       lastSessionId: lastSessionId ?? this.lastSessionId,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedStatus: deletedStatus ?? this.deletedStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1633,6 +1730,12 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
     if (lastSessionId.present) {
       map['last_session_id'] = Variable<String>(lastSessionId.value);
     }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (deletedStatus.present) {
+      map['deleted_status'] = Variable<String>(deletedStatus.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1660,6 +1763,8 @@ class TasksCompanion extends UpdateCompanion<TaskData> {
           ..write('isRunning: $isRunning, ')
           ..write('lastStartedAt: $lastStartedAt, ')
           ..write('lastSessionId: $lastSessionId, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedStatus: $deletedStatus, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -3741,6 +3846,8 @@ typedef $$TasksTableCreateCompanionBuilder =
       Value<bool> isRunning,
       Value<DateTime?> lastStartedAt,
       Value<String?> lastSessionId,
+      Value<DateTime?> deletedAt,
+      Value<String?> deletedStatus,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -3759,6 +3866,8 @@ typedef $$TasksTableUpdateCompanionBuilder =
       Value<bool> isRunning,
       Value<DateTime?> lastStartedAt,
       Value<String?> lastSessionId,
+      Value<DateTime?> deletedAt,
+      Value<String?> deletedStatus,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -3829,6 +3938,16 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
 
   ColumnFilters<String> get lastSessionId => $composableBuilder(
     column: $table.lastSessionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deletedStatus => $composableBuilder(
+    column: $table.deletedStatus,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3912,6 +4031,16 @@ class $$TasksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deletedStatus => $composableBuilder(
+    column: $table.deletedStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -3982,6 +4111,14 @@ class $$TasksTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedStatus => $composableBuilder(
+    column: $table.deletedStatus,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -4029,6 +4166,8 @@ class $$TasksTableTableManager
                 Value<bool> isRunning = const Value.absent(),
                 Value<DateTime?> lastStartedAt = const Value.absent(),
                 Value<String?> lastSessionId = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> deletedStatus = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -4045,6 +4184,8 @@ class $$TasksTableTableManager
                 isRunning: isRunning,
                 lastStartedAt: lastStartedAt,
                 lastSessionId: lastSessionId,
+                deletedAt: deletedAt,
+                deletedStatus: deletedStatus,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -4063,6 +4204,8 @@ class $$TasksTableTableManager
                 Value<bool> isRunning = const Value.absent(),
                 Value<DateTime?> lastStartedAt = const Value.absent(),
                 Value<String?> lastSessionId = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> deletedStatus = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -4079,6 +4222,8 @@ class $$TasksTableTableManager
                 isRunning: isRunning,
                 lastStartedAt: lastStartedAt,
                 lastSessionId: lastSessionId,
+                deletedAt: deletedAt,
+                deletedStatus: deletedStatus,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,

@@ -11,6 +11,9 @@ abstract class ITaskRepository {
     String? status,
   });
 
+  /// Get deleted tasks for a specific project
+  Future<List<TaskEntity>> getDeletedTasksByProject(String projectId);
+
   /// Get all tasks across all projects
   Future<List<TaskEntity>> getAllTasks({String? status});
 
@@ -33,8 +36,11 @@ abstract class ITaskRepository {
   /// Update existing task
   Future<void> updateTask(TaskEntity task);
 
-  /// Delete task
+  /// Soft delete task by moving it to Trash
   Future<void> deleteTask(String id);
+
+  /// Permanently delete task from the database
+  Future<void> permanentlyDeleteTask(String id);
 
   /// Update task status
   /// [taskId] - the task to update
@@ -91,6 +97,9 @@ abstract class ITaskRepository {
 
   /// Unarchive task
   Future<void> unarchiveTask(String id);
+
+  /// Restore task from Trash
+  Future<void> restoreDeletedTask(String id);
 
   /// Get archived tasks for a project
   Future<List<TaskEntity>> getArchivedTasksByProject(String projectId);

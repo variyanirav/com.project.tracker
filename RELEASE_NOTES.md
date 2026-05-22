@@ -1,60 +1,35 @@
-# Release Notes - Project Tracker v1.3.1
+# Release Notes - Project Tracker v1.4.0
 
-**Release Date:** April 20, 2026  
-**Version:** 1.3.1 (Build 5)  
+**Release Date:** May 22, 2026  
+**Version:** 1.4.0 (Build 6)  
 **Status:** ✅ Stable Release
 
 ---
 
 ## 🎉 Highlights
 
-### Task Estimation and Actual Hours Comparison
-This release adds optional task-level estimated hours and surfaces estimated vs actual comparisons throughout Project Detail and CSV exports.
+### Trash and Task Export Release
+This release adds a recoverable Trash flow for tasks and upgrades CSV exports to a task-centric format that includes both estimation and actual hours.
 
 **Key Highlights:**
-- ✅ Optional estimated-hours input when creating or editing a task
-- ✅ Clear guidance to enter hours (not days) with numeric validation
-- ✅ Task list tags now show estimate and over/under variance against actual tracked time
-- ✅ Task details dialog now includes estimated time and variance summary
-- ✅ CSV exports now include an `Estimated (Hours)` column alongside actual duration
-- ✅ Backward-compatible database migration adds nullable `estimated_hours` field
+- ✅ Delete now moves tasks to Trash instead of permanently removing them
+- ✅ Trash tab supports restore and permanent delete actions
+- ✅ Deleted tasks keep their original status for accurate restore behavior
+- ✅ CSV task exports now include all non-archived, non-deleted tasks even when they have no sessions
+- ✅ Estimation and actual duration now appear side by side in export output
+- ✅ Export output now includes Status, Category, Session Start, End Date, Start Note, and End Note
+- ✅ Grand total row added for estimation and actual hours
+- ✅ Backward-compatible database migration adds `deleted_at` and `deleted_status` fields
 
 ---
 
-## 🆕 What's New in v1.3.1
+## 🆕 What's New in v1.4.0
 
-### 1. Optional Estimated Hours on Tasks
-- **Create Task Dialog**: Added optional field for estimated hours
-- **Edit Task Dialog**: Added editable estimate with the same validations
-- **Validation Rules**: Value must be numeric and greater than 0 if provided
-- **User Guidance**: Input helper text explicitly asks for hours, not days
-
-**Files Updated:**
-- `lib/presentation/widgets/dialogs/create_task_dialog.dart`
-- `lib/presentation/widgets/dialogs/edit_task_dialog.dart`
-- `lib/presentation/screens/project_detail_screen.dart`
-- `lib/presentation/providers/task_provider.dart`
-
-### 2. Estimated vs Actual Visibility in Project Detail
-- **Task Row Tags**: Display estimate and variance (over/under/on target)
-- **Task Detail Modal**: Added Estimated Time and Variance metadata
-- **Decision Support**: Faster visibility into under-estimated or over-worked tasks
-
-**Files Updated:**
-- `lib/presentation/widgets/project_detail/task_list_view.dart`
-- `lib/presentation/widgets/dialogs/view_task_dialog.dart`
-
-### 3. CSV Export Enhancement
-- Added `Estimated (Hours)` to detailed task/session export outputs
-- Keeps existing duration/actual hour output intact for billing and analysis
-
-**Files Updated:**
-- `lib/presentation/providers/reports_provider.dart`
-
-### 4. Data Model and Migration
-- **Database Schema**: Added nullable `estimated_hours` column in `tasks`
-- **Schema Version**: Bumped database schema to 8
-- **Persistence Wiring**: Entity/model/repository flow now carries optional estimates end-to-end
+### 1. Recoverable Trash for Tasks
+- **Soft Delete**: Deleting a task moves it to Trash instead of removing it immediately
+- **Restore Workflow**: Tasks can be restored from Trash and regain their previous status
+- **Permanent Delete**: Trash entries can also be removed permanently when needed
+- **Database Migration**: Added `deleted_at` and `deleted_status` to preserve trash state
 
 **Files Updated:**
 - `lib/data/database/tables/tasks_table.dart`
@@ -62,15 +37,51 @@ This release adds optional task-level estimated hours and surfaces estimated vs 
 - `lib/domain/entities/task_entity.dart`
 - `lib/domain/repositories/itask_repository.dart`
 - `lib/data/repositories/task_repository_impl.dart`
-- `lib/data/models/task_model.dart`
+- `lib/presentation/screens/project_detail_screen.dart`
+- `lib/presentation/providers/task_provider.dart`
+
+### 2. Task-Centric CSV Export
+- **All Tasks Included**: Non-archived and non-deleted tasks export even without timer sessions
+- **Column Layout**: Task, Billing Type, Category, Status, Estimation, Actual, Session Start, End Date, Start Note, End Note
+- **Totals Footer**: Grand total rows summarize estimation and actual hours for the export scope
+- **Session Notes**: Multiple session notes are joined into the export row for traceability
+
+**Files Updated:**
+- `lib/presentation/providers/reports_provider.dart`
+- `lib/presentation/screens/reports_screen.dart`
+
+### 3. Updated Release Validation
+- **Trash Flow Tests**: Added widget coverage for move-to-trash, restore, archive separation, and permanent delete
+- **Report Export Tests**: Added provider coverage for task-only exports, empty tasks, exclusion rules, and footer totals
+- **Reports Screen Smoke Test**: Updated to match the current export panel control and labels
+
+**Files Updated:**
+- `test/data/task_repository_impl_test.dart`
+- `test/screens/project_detail_trash_flow_test.dart`
+- `test/providers/reports_provider_test.dart`
+- `test/screens/reports_screen_test.dart`
+
+### 4. Data Model and Migration
+- **Database Schema**: Added nullable `deleted_at` and `deleted_status` columns in `tasks`
+- **Schema Version**: Bumped database schema to 9
+- **Persistence Wiring**: Entity/model/repository flow now carries trash metadata end-to-end
+
+**Files Updated:**
+- `lib/data/database/app_database.dart`
+- `lib/domain/entities/task_entity.dart`
+- `lib/domain/repositories/itask_repository.dart`
+- `lib/data/repositories/task_repository_impl.dart`
 
 ---
 
-## ✅ Validation (v1.3.1)
+## ✅ Validation (v1.4.0)
 
 - `flutter pub run build_runner build --delete-conflicting-outputs`
-- `flutter test test/data/task_status_migration_test.dart test/models/timer_session_model_test.dart`
-- `flutter analyze` (existing info-level warnings remain; no new errors from this release)
+- `flutter test test/data/task_repository_impl_test.dart`
+- `flutter test test/providers/reports_provider_test.dart`
+- `flutter test test/screens/project_detail_trash_flow_test.dart`
+- `flutter test test/screens/reports_screen_test.dart`
+- `flutter analyze` (no new errors from this release)
 
 ---
 

@@ -10,7 +10,7 @@ import 'package:project_tracker/presentation/screens/reports_screen.dart';
 import 'package:project_tracker/presentation/screens/todo_list_screen.dart';
 
 void main() {
-  Future<void> _pumpProjectList(WidgetTester tester) async {
+  Future<void> pumpProjectList(WidgetTester tester) async {
     await tester.binding.setSurfaceSize(const Size(1400, 1000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -28,7 +28,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> _pumpTodoList(WidgetTester tester) async {
+  Future<void> pumpTodoList(WidgetTester tester) async {
     await tester.binding.setSurfaceSize(const Size(1400, 1000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -49,7 +49,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> _pumpReports(WidgetTester tester) async {
+  Future<void> pumpReports(WidgetTester tester) async {
     await tester.binding.setSurfaceSize(const Size(1400, 1000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -71,7 +71,7 @@ void main() {
   }
 
   testWidgets('project list settings opens daily goal dialog', (tester) async {
-    await _pumpProjectList(tester);
+    await pumpProjectList(tester);
 
     await tester.ensureVisible(find.byTooltip('Daily Goal Settings'));
     await tester.tap(find.byTooltip('Daily Goal Settings'));
@@ -83,7 +83,7 @@ void main() {
   testWidgets(
     'todo list settings and theme buttons are visible and clickable',
     (tester) async {
-      await _pumpTodoList(tester);
+      await pumpTodoList(tester);
 
       await tester.ensureVisible(find.byTooltip('Daily Goal Settings'));
       await tester.tap(find.byTooltip('Daily Goal Settings'));
@@ -103,7 +103,7 @@ void main() {
   testWidgets('reports settings and theme buttons are visible and clickable', (
     tester,
   ) async {
-    await _pumpReports(tester);
+    await pumpReports(tester);
 
     await tester.ensureVisible(find.byTooltip('Daily Goal Settings'));
     await tester.tap(find.byTooltip('Daily Goal Settings'));

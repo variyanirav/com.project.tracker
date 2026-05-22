@@ -24,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   // Getters for DAOs (optional, for convenience)
   late final projectsDao = ProjectsDao(this);
@@ -77,6 +77,17 @@ class AppDatabase extends _$AppDatabase {
           if (!await _columnExists('tasks', 'estimated_hours')) {
             await m.addColumn(tasks, tasks.estimatedHours);
           }
+        }
+        if (from < 9) {
+          if (!await _columnExists('tasks', 'deleted_at')) {
+            await m.addColumn(tasks, tasks.deletedAt);
+          }
+          if (!await _columnExists('tasks', 'deleted_status')) {
+            await m.addColumn(tasks, tasks.deletedStatus);
+          }
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_tasks_deleted_at ON tasks(deleted_at)',
+          );
         }
       },
     );
@@ -272,7 +283,7 @@ class TasksDao {
     int offset = 0,
   }) {
     return (db.select(db.tasks)
-          ..where((t) => t.projectId.equals(projectId))
+          ..where((t) => t.projectId.equals(projectId) & t.deletedAt.isNull())
           ..orderBy([
             (t) =>
                 OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc),
@@ -281,11 +292,31 @@ class TasksDao {
         .get();
   }
 
+  /// Get deleted tasks for a project
+  Future<List<TaskData>> getDeletedTasksByProject(String projectId) {
+    return (db.select(db.tasks)
+          ..where(
+            (t) => t.projectId.equals(projectId) & t.deletedAt.isNotNull(),
+          )
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.deletedAt, mode: OrderingMode.desc),
+          ]))
+        .get();
+  }
+
   /// Get single task by ID
   Future<TaskData?> getTaskById(String id) async {
     return (db.select(
       db.tasks,
-    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    )..where((t) => t.id.equals(id) & t.deletedAt.isNull())).getSingleOrNull();
+  }
+
+  /// Get deleted task by ID
+  Future<TaskData?> getDeletedTaskById(String id) async {
+    return (db.select(db.tasks)
+          ..where((t) => t.id.equals(id) & t.deletedAt.isNotNull()))
+        .getSingleOrNull();
   }
 
   /// Create task
@@ -298,9 +329,39 @@ class TasksDao {
     return db.update(db.tasks).replace(task);
   }
 
-  /// Delete task
-  Future<int> deleteTask(String id) {
+  /// Soft delete task by moving it to Trash
+  Future<int> deleteTask(String id) async {
+    final currentTask = await getTaskById(id);
+    if (currentTask == null) return 0;
+
+    final now = DateTime.now().toUtc();
+    return (db.update(db.tasks)..where((t) => t.id.equals(id))).write(
+      TasksCompanion(
+        deletedAt: Value(now),
+        deletedStatus: Value(currentTask.status),
+        updatedAt: Value(now),
+      ),
+    );
+  }
+
+  /// Permanently delete task from the database
+  Future<int> permanentlyDeleteTask(String id) {
     return (db.delete(db.tasks)..where((t) => t.id.equals(id))).go();
+  }
+
+  /// Restore a task from Trash
+  Future<int> restoreDeletedTask(String id) async {
+    final deletedTask = await getDeletedTaskById(id);
+    if (deletedTask == null) return 0;
+
+    return (db.update(db.tasks)..where((t) => t.id.equals(id))).write(
+      TasksCompanion(
+        status: Value(deletedTask.deletedStatus ?? deletedTask.status),
+        deletedAt: const Value(null),
+        deletedStatus: const Value(null),
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    );
   }
 
   /// Get tasks for today by project
@@ -312,6 +373,7 @@ class TasksDao {
     return (db.select(db.tasks)..where(
           (t) =>
               t.projectId.equals(projectId) &
+              t.deletedAt.isNull() &
               t.createdAt.isBetweenValues(todayStart, tomorrowStart),
         ))
         .get();
@@ -319,14 +381,18 @@ class TasksDao {
 
   /// Update task status
   Future<int> updateTaskStatus(String taskId, String status) {
-    return (db.update(db.tasks)..where((t) => t.id.equals(taskId))).write(
+    return (db.update(
+      db.tasks,
+    )..where((t) => t.id.equals(taskId) & t.deletedAt.isNull())).write(
       TasksCompanion(status: Value(status), updatedAt: Value(DateTime.now())),
     );
   }
 
   /// Update task total seconds
   Future<int> updateTaskTotalSeconds(String taskId, int totalSeconds) {
-    return (db.update(db.tasks)..where((t) => t.id.equals(taskId))).write(
+    return (db.update(
+      db.tasks,
+    )..where((t) => t.id.equals(taskId) & t.deletedAt.isNull())).write(
       TasksCompanion(
         totalSeconds: Value(totalSeconds),
         updatedAt: Value(DateTime.now()),

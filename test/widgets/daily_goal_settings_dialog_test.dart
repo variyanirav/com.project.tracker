@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:project_tracker/presentation/widgets/dialogs/daily_goal_settings_dialog.dart';
 
 void main() {
-  Future<void> _openDialog(
+  Future<void> openDialog(
     WidgetTester tester, {
     required int currentGoalHours,
     required ValueChanged<int> onSavePressed,
@@ -39,7 +39,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1400, 1000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await _openDialog(tester, currentGoalHours: 10, onSavePressed: (_) {});
+    await openDialog(tester, currentGoalHours: 10, onSavePressed: (_) {});
 
     final slider = tester.widget<Slider>(find.byType(Slider));
     expect(slider.value, 10.0);
@@ -54,7 +54,7 @@ void main() {
 
     int? savedHours;
 
-    await _openDialog(
+    await openDialog(
       tester,
       currentGoalHours: 8,
       onSavePressed: (hours) {

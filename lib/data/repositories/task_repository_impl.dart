@@ -26,8 +26,16 @@ class TaskRepositoryImpl implements ITaskRepository {
   }
 
   @override
+  Future<List<TaskEntity>> getDeletedTasksByProject(String projectId) async {
+    final tasks = await db.tasksDao.getDeletedTasksByProject(projectId);
+    return tasks.map(_toEntity).toList();
+  }
+
+  @override
   Future<List<TaskEntity>> getAllTasks({String? status}) async {
-    final tasks = await (db.select(db.tasks)).get();
+    final tasks = await (db.select(
+      db.tasks,
+    )..where((t) => t.deletedAt.isNull())).get();
     if (status != null) {
       return tasks.where((t) => t.status == status).map(_toEntity).toList();
     }
@@ -42,7 +50,9 @@ class TaskRepositoryImpl implements ITaskRepository {
 
   @override
   Future<List<TaskEntity>> getTasksByDate(DateTime date) async {
-    final tasks = await (db.select(db.tasks)).get();
+    final tasks = await (db.select(
+      db.tasks,
+    )..where((t) => t.deletedAt.isNull())).get();
     return tasks
         .where((t) => TimezoneHelper.isSameDay(t.createdAt, date))
         .map(_toEntity)
@@ -74,6 +84,8 @@ class TaskRepositoryImpl implements ITaskRepository {
       isRunning: false,
       lastStartedAt: null,
       lastSessionId: null,
+      deletedAt: null,
+      deletedStatus: null,
       createdAt: now,
       updatedAt: now,
     );
@@ -97,6 +109,8 @@ class TaskRepositoryImpl implements ITaskRepository {
       isRunning: task.isRunning,
       lastStartedAt: task.lastStartedAt,
       lastSessionId: task.lastSessionId,
+      deletedAt: task.deletedAt,
+      deletedStatus: task.deletedStatus,
       createdAt: task.createdAt,
       updatedAt: TimezoneHelper.getCurrentUtc(),
     );
@@ -107,6 +121,11 @@ class TaskRepositoryImpl implements ITaskRepository {
   @override
   Future<void> deleteTask(String id) async {
     await db.tasksDao.deleteTask(id);
+  }
+
+  @override
+  Future<void> permanentlyDeleteTask(String id) async {
+    await db.tasksDao.permanentlyDeleteTask(id);
   }
 
   @override
@@ -142,7 +161,7 @@ class TaskRepositoryImpl implements ITaskRepository {
   Future<List<TaskEntity>> getRunningTasks() async {
     final tasks = await (db.select(
       db.tasks,
-    )..where((t) => t.isRunning.equals(true))).get();
+    )..where((t) => t.isRunning.equals(true) & t.deletedAt.isNull())).get();
     return tasks.map(_toEntity).toList();
   }
 
@@ -164,7 +183,9 @@ class TaskRepositoryImpl implements ITaskRepository {
     int minSeconds,
     int maxSeconds,
   ) async {
-    final tasks = await (db.select(db.tasks)).get();
+    final tasks = await (db.select(
+      db.tasks,
+    )..where((t) => t.deletedAt.isNull())).get();
     return tasks
         .where(
           (t) => t.totalSeconds >= minSeconds && t.totalSeconds <= maxSeconds,
@@ -190,7 +211,9 @@ class TaskRepositoryImpl implements ITaskRepository {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    final tasks = await (db.select(db.tasks)).get();
+    final tasks = await (db.select(
+      db.tasks,
+    )..where((t) => t.deletedAt.isNull())).get();
     return tasks
         .where(
           (t) =>
@@ -211,6 +234,11 @@ class TaskRepositoryImpl implements ITaskRepository {
   @override
   Future<void> unarchiveTask(String id) async {
     await updateTaskStatus(id, 'complete');
+  }
+
+  @override
+  Future<void> restoreDeletedTask(String id) async {
+    await db.tasksDao.restoreDeletedTask(id);
   }
 
   @override
@@ -236,6 +264,8 @@ class TaskRepositoryImpl implements ITaskRepository {
       isRunning: data.isRunning,
       lastStartedAt: data.lastStartedAt,
       lastSessionId: data.lastSessionId,
+      deletedAt: data.deletedAt,
+      deletedStatus: data.deletedStatus,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     );

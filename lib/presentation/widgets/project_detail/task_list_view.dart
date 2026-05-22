@@ -25,6 +25,7 @@ class TaskListView extends ConsumerStatefulWidget {
   final Function(TaskEntity task) onDeletePressed;
   final Function(TaskEntity task)? onArchivePressed;
   final Function(TaskEntity task)? onRestorePressed;
+  final bool allowPermanentDeleteAction;
   final bool readOnly;
   final bool showStatusFilters;
   final String emptyTitle;
@@ -43,6 +44,7 @@ class TaskListView extends ConsumerStatefulWidget {
     required this.onDeletePressed,
     this.onArchivePressed,
     this.onRestorePressed,
+    this.allowPermanentDeleteAction = false,
     this.readOnly = false,
     this.showStatusFilters = true,
     this.emptyTitle = 'No records found',
@@ -220,6 +222,8 @@ class _TaskListViewState extends ConsumerState<TaskListView> {
                         onDeletePressed: widget.onDeletePressed,
                         onArchivePressed: widget.onArchivePressed,
                         onRestorePressed: widget.onRestorePressed,
+                        allowPermanentDeleteAction:
+                            widget.allowPermanentDeleteAction,
                         readOnly: widget.readOnly,
                         compact: compact,
                       ),
@@ -283,6 +287,7 @@ class _TaskListItem extends StatelessWidget {
   final Function(TaskEntity task) onDeletePressed;
   final Function(TaskEntity task)? onArchivePressed;
   final Function(TaskEntity task)? onRestorePressed;
+  final bool allowPermanentDeleteAction;
   final bool readOnly;
   final bool compact;
 
@@ -297,6 +302,7 @@ class _TaskListItem extends StatelessWidget {
     required this.onDeletePressed,
     required this.readOnly,
     required this.compact,
+    required this.allowPermanentDeleteAction,
     this.onArchivePressed,
     this.onRestorePressed,
   });
@@ -424,6 +430,14 @@ class _TaskListItem extends StatelessWidget {
                               ),
                             );
                           }
+                          if (allowPermanentDeleteAction) {
+                            items.add(
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Text('Delete Permanently'),
+                              ),
+                            );
+                          }
                         } else {
                           items.addAll([
                             const PopupMenuItem(
@@ -432,7 +446,7 @@ class _TaskListItem extends StatelessWidget {
                             ),
                             const PopupMenuItem(
                               value: 'delete',
-                              child: Text('Delete'),
+                              child: Text('Move to Trash'),
                             ),
                             if (status == TaskStatus.complete &&
                                 onArchivePressed != null)

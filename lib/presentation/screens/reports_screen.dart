@@ -568,7 +568,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     child: DataTable(
                       dividerThickness: 0,
                       dataRowHeight: 42,
-                      headingRowColor: MaterialStatePropertyAll(
+                      headingRowColor: WidgetStatePropertyAll(
                         palette.tableHeader,
                       ),
                       dataTextStyle: AppTypography.bodySmall.copyWith(
@@ -588,7 +588,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         final index = entry.key;
                         final row = entry.value;
                         return DataRow(
-                          color: MaterialStatePropertyAll(
+                          color: WidgetStatePropertyAll(
                             index.isEven ? palette.panel : palette.panelHigh,
                           ),
                           cells: [
@@ -663,7 +663,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     child: DataTable(
                       dividerThickness: 0,
                       dataRowHeight: 42,
-                      headingRowColor: MaterialStatePropertyAll(
+                      headingRowColor: WidgetStatePropertyAll(
                         palette.tableHeader,
                       ),
                       dataTextStyle: AppTypography.bodySmall.copyWith(
@@ -683,7 +683,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         final index = entry.key;
                         final item = entry.value;
                         return DataRow(
-                          color: MaterialStatePropertyAll(
+                          color: WidgetStatePropertyAll(
                             index.isEven ? palette.panel : palette.panelHigh,
                           ),
                           cells: [
