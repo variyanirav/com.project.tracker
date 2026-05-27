@@ -67,7 +67,7 @@ class _TaskListViewState extends ConsumerState<TaskListView> {
     _pageSize = widget.tasksPerPage;
   }
 
-  List<TaskEntity> get _filteredTasks {
+  List<TaskEntity> _filteredTasks() {
     if (!widget.showStatusFilters || _statusFilter == 'all') {
       return widget.tasks;
     }
@@ -77,8 +77,7 @@ class _TaskListViewState extends ConsumerState<TaskListView> {
     }).toList();
   }
 
-  List<TaskEntity> get _paginatedTasks {
-    final filtered = _filteredTasks;
+  List<TaskEntity> _paginatedTasks(List<TaskEntity> filtered) {
     if (_pageSize == -1) {
       return filtered;
     }
@@ -94,12 +93,29 @@ class _TaskListViewState extends ConsumerState<TaskListView> {
   @override
   Widget build(BuildContext context) {
     if (widget.tasks.isEmpty) {
-      return const EmptyTasksState();
+      if (widget.emptyTitle == 'No records found' &&
+          widget.emptyMessage ==
+              'Try changing the status filter or rows selection.') {
+        return const EmptyTasksState();
+      }
+
+      final isSearchEmptyState =
+          widget.emptyTitle == 'No tasks match your search';
+      return AppEmptyState(
+        icon: isSearchEmptyState ? Icons.search_off : Icons.task_outlined,
+        title: widget.emptyTitle,
+        message: widget.emptyMessage,
+      );
     }
 
     final categoriesAsync = ref.watch(categoriesProvider);
-    final filteredTasks = _filteredTasks;
-    final visibleTasks = _paginatedTasks;
+    final categories = categoriesAsync.asData?.value ?? const [];
+    final categoryMap = {
+      for (final category in categories) category.id: category.name,
+      AppDatabase.uncategorizedCategoryId: 'Uncategorized',
+    };
+    final filteredTasks = _filteredTasks();
+    final visibleTasks = _paginatedTasks(filteredTasks);
 
     final pageSize = _pageSize == -1 ? filteredTasks.length : _pageSize;
     final safePageSize = pageSize == 0 ? 1 : pageSize;
@@ -195,11 +211,6 @@ class _TaskListViewState extends ConsumerState<TaskListView> {
         else
           LayoutBuilder(
             builder: (context, constraints) {
-              final categories = categoriesAsync.asData?.value ?? const [];
-              final categoryMap = {
-                for (final category in categories) category.id: category.name,
-                AppDatabase.uncategorizedCategoryId: 'Uncategorized',
-              };
               final compact = constraints.maxWidth < 900;
 
               return Column(

@@ -103,4 +103,22 @@ abstract class ITaskRepository {
 
   /// Get archived tasks for a project
   Future<List<TaskEntity>> getArchivedTasksByProject(String projectId);
+
+  /// Search active project tasks by query text
+  Future<List<TaskEntity>> searchActiveTasksByProject(
+    String projectId,
+    String query,
+  );
+
+  /// Search archived project tasks by query text
+  Future<List<TaskEntity>> searchArchivedTasksByProject(
+    String projectId,
+    String query,
+  );
+
+  /// Search deleted project tasks by query text
+  Future<List<TaskEntity>> searchDeletedTasksByProject(
+    String projectId,
+    String query,
+  );
 }

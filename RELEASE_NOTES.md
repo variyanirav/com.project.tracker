@@ -1,87 +1,69 @@
-# Release Notes - Project Tracker v1.4.0
+# Release Notes - Project Tracker v1.4.1
 
-**Release Date:** May 22, 2026  
-**Version:** 1.4.0 (Build 6)  
+**Release Date:** May 27, 2026  
+**Version:** 1.4.1 (Build 7)  
 **Status:** ✅ Stable Release
 
 ---
 
 ## 🎉 Highlights
 
-### Trash and Task Export Release
-This release adds a recoverable Trash flow for tasks and upgrades CSV exports to a task-centric format that includes both estimation and actual hours.
+### Task Search and Release Polish
+This release adds a polished task search experience to the Project Tasks section, with a dedicated filter panel, DB-backed live filtering, and release-note and validation updates.
 
 **Key Highlights:**
-- ✅ Delete now moves tasks to Trash instead of permanently removing them
-- ✅ Trash tab supports restore and permanent delete actions
-- ✅ Deleted tasks keep their original status for accurate restore behavior
-- ✅ CSV task exports now include all non-archived, non-deleted tasks even when they have no sessions
-- ✅ Estimation and actual duration now appear side by side in export output
-- ✅ Export output now includes Status, Category, Session Start, End Date, Start Note, and End Note
-- ✅ Grand total row added for estimation and actual hours
-- ✅ Backward-compatible database migration adds `deleted_at` and `deleted_status` fields
+- ✅ Search field appears inside the Project Tasks section as a local filter panel
+- ✅ Search matches task name, details, category, status, and estimate metadata
+- ✅ Search runs through the repository layer with debounce
+- ✅ Search works across active, archive, and trash views
+- ✅ Empty and whitespace-only input preserves the full list
+- ✅ No-match state shows a centered, readable empty message in the task area
+- ✅ Release script now includes a dedicated search regression test
 
 ---
 
-## 🆕 What's New in v1.4.0
+## 🆕 What's New in v1.4.1
 
-### 1. Recoverable Trash for Tasks
-- **Soft Delete**: Deleting a task moves it to Trash instead of removing it immediately
-- **Restore Workflow**: Tasks can be restored from Trash and regain their previous status
-- **Permanent Delete**: Trash entries can also be removed permanently when needed
-- **Database Migration**: Added `deleted_at` and `deleted_status` to preserve trash state
+### 1. Project Detail Task Search
+- **Live Search**: Filter tasks as you type without leaving the current page
+- **Search Scope**: Matches task title, description, category, status, and estimate info
+- **Search Placement**: The search control now sits inside the Project Tasks section instead of above the timer
+- **DB-Backed Queries**: Search requests flow through the repository layer with debouncing
+- **View Coverage**: Active, archive, and trash views all use the same search path
+- **Empty Handling**: Blank or whitespace-only input behaves as no search
+- **No Results State**: Centered empty state keeps the screen polished when nothing matches
 
 **Files Updated:**
-- `lib/data/database/tables/tasks_table.dart`
-- `lib/data/database/app_database.dart`
-- `lib/domain/entities/task_entity.dart`
-- `lib/domain/repositories/itask_repository.dart`
-- `lib/data/repositories/task_repository_impl.dart`
+- `lib/presentation/screens/project_detail_screen.dart`
+- `lib/presentation/widgets/project_detail/task_list_view.dart`
+- `test/screens/project_detail_search_test.dart`
+
+### 2. Release Validation Refresh
+- **Focused Search Regression**: Added coverage for normal queries, whitespace input, and no-match output
+- **Release Script Coverage**: Safe macOS release now validates the search feature explicitly
+- **Docs Updated**: Version and release notes now reflect the new build number
+
+**Files Updated:**
+- `scripts/release_macos_safe.sh`
+- `pubspec.yaml`
+- `lib/core/constants/app_constants.dart`
+- `README.md`
+- `DELIVERY_SUMMARY.md`
+
+### 3. Previously Delivered Features
+- **Trash Flow**: Recoverable task deletion remains available in Project Details
+- **Task Export**: Task-centric reporting and CSV export stay intact
+
+**Files Updated:**
 - `lib/presentation/screens/project_detail_screen.dart`
 - `lib/presentation/providers/task_provider.dart`
 
-### 2. Task-Centric CSV Export
-- **All Tasks Included**: Non-archived and non-deleted tasks export even without timer sessions
-- **Column Layout**: Task, Billing Type, Category, Status, Estimation, Actual, Session Start, End Date, Start Note, End Note
-- **Totals Footer**: Grand total rows summarize estimation and actual hours for the export scope
-- **Session Notes**: Multiple session notes are joined into the export row for traceability
-
-**Files Updated:**
-- `lib/presentation/providers/reports_provider.dart`
-- `lib/presentation/screens/reports_screen.dart`
-
-### 3. Updated Release Validation
-- **Trash Flow Tests**: Added widget coverage for move-to-trash, restore, archive separation, and permanent delete
-- **Report Export Tests**: Added provider coverage for task-only exports, empty tasks, exclusion rules, and footer totals
-- **Reports Screen Smoke Test**: Updated to match the current export panel control and labels
-
-**Files Updated:**
-- `test/data/task_repository_impl_test.dart`
-- `test/screens/project_detail_trash_flow_test.dart`
-- `test/providers/reports_provider_test.dart`
-- `test/screens/reports_screen_test.dart`
-
-### 4. Data Model and Migration
-- **Database Schema**: Added nullable `deleted_at` and `deleted_status` columns in `tasks`
-- **Schema Version**: Bumped database schema to 9
-- **Persistence Wiring**: Entity/model/repository flow now carries trash metadata end-to-end
-
-**Files Updated:**
-- `lib/data/database/app_database.dart`
-- `lib/domain/entities/task_entity.dart`
-- `lib/domain/repositories/itask_repository.dart`
-- `lib/data/repositories/task_repository_impl.dart`
-
 ---
 
-## ✅ Validation (v1.4.0)
+## ✅ Validation (v1.4.1)
 
-- `flutter pub run build_runner build --delete-conflicting-outputs`
-- `flutter test test/data/task_repository_impl_test.dart`
-- `flutter test test/providers/reports_provider_test.dart`
-- `flutter test test/screens/project_detail_trash_flow_test.dart`
-- `flutter test test/screens/reports_screen_test.dart`
-- `flutter analyze` (no new errors from this release)
+- `flutter test test/screens/project_detail_search_test.dart`
+- `flutter test test/screens/project_detail_screen_test.dart` (search slice)
 
 ---
 

@@ -11,6 +11,7 @@ import 'package:project_tracker/presentation/providers/database_provider.dart';
 import 'package:project_tracker/presentation/providers/timer_provider.dart';
 import 'package:project_tracker/presentation/routes/app_router.dart';
 import 'package:project_tracker/presentation/screens/project_detail_screen.dart';
+import 'package:project_tracker/presentation/widgets/project_detail/task_list_view.dart';
 
 class _FakeTimerNotifier extends TimerStateNotifier {
   _FakeTimerNotifier(super.ref, TimerState initial) {
@@ -177,8 +178,67 @@ void main() {
       },
     );
 
+    testWidgets('3) Task search filters the project list by name and details', (
+      tester,
+    ) async {
+      await pumpScreen(tester);
+
+      final searchField = find.byType(TextField);
+      expect(searchField, findsOneWidget);
+
+      await tester.enterText(searchField, 'Old');
+      await tester.pumpAndSettle();
+
+      final taskList = find.byType(TaskListView);
+      expect(
+        find.descendant(of: taskList, matching: find.text('Old Task')),
+        findsAtLeastNWidgets(1),
+      );
+      expect(
+        find.descendant(of: taskList, matching: find.text('Today Task')),
+        findsNothing,
+      );
+    });
+
     testWidgets(
-      '3) Completed task can be archived and restored from Archive tab',
+      '4) Whitespace search behaves like an empty search and keeps all tasks visible',
+      (tester) async {
+        await pumpScreen(tester);
+
+        final searchField = find.byType(TextField);
+        expect(searchField, findsOneWidget);
+
+        await tester.enterText(searchField, '   ');
+        await tester.pumpAndSettle();
+
+        expect(find.text('Today Task'), findsAtLeastNWidgets(1));
+        expect(find.text('Old Task'), findsOneWidget);
+        expect(find.text('No tasks match your search'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      '5) No matching search shows the centered empty state message',
+      (tester) async {
+        await pumpScreen(tester);
+
+        final searchField = find.byType(TextField);
+        await tester.enterText(searchField, 'zzzz-not-found');
+        await tester.pumpAndSettle();
+
+        expect(find.text('No tasks match your search'), findsOneWidget);
+        expect(
+          find.text(
+            'Try a different keyword or clear the search to see every task.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('No records found'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      '6) Completed task can be archived and restored from Archive tab',
       (tester) async {
         final completedTask = await taskRepo.createTask(
           projectId: projectId,
@@ -272,7 +332,7 @@ void main() {
     );
 
     testWidgets(
-      '3) Info dialog shows correct title, status, timer status, description and date',
+      '7) Info dialog shows correct title, status, timer status, description and date',
       (tester) async {
         await pumpScreen(tester);
 
@@ -324,7 +384,7 @@ void main() {
     );
 
     testWidgets(
-      '4) Edit button updates title, progress status and description visible via info and list',
+      '8) Edit button updates title, progress status and description visible via info and list',
       (tester) async {
         await pumpScreen(tester);
 
@@ -406,7 +466,7 @@ void main() {
       expect(find.text('Old Task'), findsOneWidget);
     });
 
-    testWidgets('6) Filter with no matching records shows no-records message', (
+    testWidgets('9) Filter with no matching records shows no-records message', (
       tester,
     ) async {
       await pumpScreen(tester);
@@ -418,7 +478,7 @@ void main() {
       expect(find.text('Task ID'), findsNothing);
     });
 
-    testWidgets('7) Empty task dataset shows no-records message', (
+    testWidgets('10) Empty task dataset shows no-records message', (
       tester,
     ) async {
       await taskRepo.deleteTask(todayTaskId);

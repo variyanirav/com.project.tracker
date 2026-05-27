@@ -4,7 +4,7 @@ class AppConstants {
 
   // ============ APP INFO ============
   static const String appName = 'TimeTracker';
-  static const String appVersion = '1.3.0';
+  static const String appVersion = '1.4.1';
   static const String bundleId = 'com.project.tracker';
 
   // ============ UI CONSTANTS ============

@@ -32,26 +32,31 @@ A professional macOS desktop application for tracking billable hours on projects
 - **Restore Workflow**: Restore button returns tasks to completed status with confirmation
 - **Full Test Coverage**: 9 comprehensive widget tests validate archive flow and permissions
 
-### Focus Timer Release (Latest - v1.3.0)
+### Focus Timer Release (v1.3.0)
 - **Standalone Focus Mode**: Dedicated timer for healthy work/break cycles, separate from task tracking
 - **Local Persistence**: Active focus state restores after restart without cloud sync
 - **Phase Tracking**: Tracks each focus phase with history and summary cards
 - **Theme Parity**: Matches the current light/dark themes, dialog widths, and typography
 - **Production Validation**: Focus timer domain, data, provider, screen, navigation, and integration tests pass
 
-### Trash and Export Release (Latest - v1.4.0)
-- **Recoverable Trash**: Deleting a task now moves it to Trash instead of hard deleting it
-- **Restore and Purge**: Trash supports restore back to the previous task status or permanent delete
-- **Task-Centric CSV Export**: Exported task data now includes estimation, actual hours, status, category, and session notes
-- **Totals Row**: CSV exports now include total estimation and actual hours at the bottom
+### Task Search Release (Latest - v1.4.1)
+- **Project Detail Search**: Search tasks by title, description, category, and status from a dedicated filter panel inside the Project Tasks section
+- **DB-Backed Filtering**: Search queries run through the repository layer with debouncing and cover active, archive, and trash views
+- **Polished Empty State**: No-result searches show a centered empty state with clear guidance
+- **Whitespace Safe**: Empty or whitespace-only input keeps the full list visible
+- **Release Validation**: Dedicated search regression coverage is now part of the release flow
 
-## 🏗️ Architecture
+### Version 1.4.1 - Task Search Release
+- Added a dedicated Project Tasks search panel inside the task section rather than above the timer
+- Search now queries the database with debounce and supports active, archive, and trash views
+- Added a polished empty state for no-match results and kept whitespace input safe
+- Added dedicated regression tests for search behavior and view coverage
 
-```
-Presentation Layer (Screens, Widgets, Riverpod Providers)
+### Version 1.3.0 - Focus Timer Release
         ↓
+**Last Updated**: May 27, 2026  
 Domain Layer (Business Logic, Entities, Repository Interfaces)
-        ↓
+**Current Version**: 1.4.1
 Data Layer (Repositories, Models, Drift ORM, SQLite Database)
 ```
 

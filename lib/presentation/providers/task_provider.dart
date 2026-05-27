@@ -39,6 +39,74 @@ final deletedTasksByProjectProvider =
       return await repository.getDeletedTasksByProject(projectId);
     });
 
+/// Search mode for project detail task queries
+enum ProjectTaskViewMode { active, archived, trash }
+
+/// Search parameters for project detail task queries
+class ProjectTaskSearchParams {
+  final String projectId;
+  final ProjectTaskViewMode viewMode;
+  final String query;
+
+  const ProjectTaskSearchParams({
+    required this.projectId,
+    required this.viewMode,
+    required this.query,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    return other is ProjectTaskSearchParams &&
+        other.projectId == projectId &&
+        other.viewMode == viewMode &&
+        other.query == query;
+  }
+
+  @override
+  int get hashCode => Object.hash(projectId, viewMode, query);
+}
+
+/// Provider for DB-backed project task search
+final searchedTasksByProjectProvider =
+    FutureProvider.family<List<TaskEntity>, ProjectTaskSearchParams>((
+      ref,
+      params,
+    ) async {
+      final repository = ref.watch(taskRepositoryProvider);
+      final query = params.query.trim();
+
+      if (query.isEmpty) {
+        switch (params.viewMode) {
+          case ProjectTaskViewMode.active:
+            return repository
+                .getTasksByProject(params.projectId)
+                .then(
+                  (tasks) =>
+                      tasks.where((task) => task.status != 'archived').toList(),
+                );
+          case ProjectTaskViewMode.archived:
+            return repository.getArchivedTasksByProject(params.projectId);
+          case ProjectTaskViewMode.trash:
+            return repository.getDeletedTasksByProject(params.projectId);
+        }
+      }
+
+      switch (params.viewMode) {
+        case ProjectTaskViewMode.active:
+          return repository.searchActiveTasksByProject(params.projectId, query);
+        case ProjectTaskViewMode.archived:
+          return repository.searchArchivedTasksByProject(
+            params.projectId,
+            query,
+          );
+        case ProjectTaskViewMode.trash:
+          return repository.searchDeletedTasksByProject(
+            params.projectId,
+            query,
+          );
+      }
+    });
+
 /// Provider for tasks filtered by status
 final tasksByStatusProvider = FutureProvider.family<List<TaskEntity>, String>((
   ref,

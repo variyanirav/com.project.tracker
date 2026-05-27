@@ -1,6 +1,6 @@
 # TimeTracker - Project Delivery Summary
 
-**Delivered:** April 19, 2026 (Release v1.3.0)  
+**Delivered:** May 27, 2026 (Release v1.4.1)  
 **Status:** ✅ Production Ready for macOS Desktop
 
 ---
@@ -44,6 +44,13 @@
 - ✅ **Task Visibility**: Toggle between active and archived tasks
 - ✅ **Quick Add**: Inline task creation in project detail
 - ✅ **Bulk Operations**: Multi-select, batch status updates
+
+### 7. Project Detail Search
+- ✅ **Live Task Search**: Search by title, details, category, status, and estimate metadata from the Project Tasks section
+- ✅ **Task-Local Placement**: Search lives inside the task section instead of above the timer
+- ✅ **DB-Backed Queries**: Debounced repository search is used for active, archive, and trash views
+- ✅ **Whitespace Handling**: Blank input preserves the full task list
+- ✅ **Empty-State UX**: No-match results show a centered empty state with guidance
 
 ### 6. Archive & Advanced Features (NEW - v1.2.0)
 - ✅ **Archive System**: Soft-delete completed tasks with restore capability

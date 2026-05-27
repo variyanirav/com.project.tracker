@@ -21,14 +21,15 @@ mkdir -p "$DB_BACKUP_DIR" "$APP_BACKUP_DIR"
 
 echo "[1/4] Looking for existing database files..."
 DB_FILES=()
-while IFS= read -r db_path; do
-  [[ -z "$db_path" ]] && continue
-  DB_FILES+=("$db_path")
-done < <(
-  find "$HOME/Library" \
-    \( -path '*/Containers/*' -o -path '*/Application Support/*' \) \
-    -name 'time_tracker.db' 2>/dev/null || true
-)
+for search_root in "$HOME/Library/Application Support" "$HOME/Library/Containers"; do
+  [[ -d "$search_root" ]] || continue
+  while IFS= read -r db_path; do
+    [[ -z "$db_path" ]] && continue
+    DB_FILES+=("$db_path")
+  done < <(
+    find "$search_root" -name 'time_tracker.db' 2>/dev/null || true
+  )
+done
 
 if [[ ${#DB_FILES[@]} -eq 0 ]]; then
   echo "No existing time_tracker.db found. Continuing..."
@@ -43,6 +44,7 @@ fi
 echo "[2/5] Running focused tests..."
 cd "$WORKSPACE_DIR"
 flutter test \
+  test/screens/project_detail_search_test.dart \
   test/data/task_repository_impl_test.dart \
   test/providers/reports_provider_test.dart \
   test/screens/project_detail_trash_flow_test.dart \

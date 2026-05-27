@@ -247,6 +247,45 @@ class TaskRepositoryImpl implements ITaskRepository {
     return tasks;
   }
 
+  @override
+  Future<List<TaskEntity>> searchActiveTasksByProject(
+    String projectId,
+    String query,
+  ) async {
+    return _searchTasksByProject(
+      projectId: projectId,
+      query: query,
+      deletedOnly: false,
+      statusFilter: 'archived',
+      excludeStatus: true,
+    );
+  }
+
+  @override
+  Future<List<TaskEntity>> searchArchivedTasksByProject(
+    String projectId,
+    String query,
+  ) async {
+    return _searchTasksByProject(
+      projectId: projectId,
+      query: query,
+      deletedOnly: false,
+      statusFilter: 'archived',
+    );
+  }
+
+  @override
+  Future<List<TaskEntity>> searchDeletedTasksByProject(
+    String projectId,
+    String query,
+  ) async {
+    return _searchTasksByProject(
+      projectId: projectId,
+      query: query,
+      deletedOnly: true,
+    );
+  }
+
   /// Helper: Convert database TaskData to domain TaskEntity
   TaskEntity _toEntity(TaskData data) {
     return TaskEntity(
@@ -268,6 +307,86 @@ class TaskRepositoryImpl implements ITaskRepository {
       deletedStatus: data.deletedStatus,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
+    );
+  }
+
+  Future<List<TaskEntity>> _searchTasksByProject({
+    required String projectId,
+    required String query,
+    required bool deletedOnly,
+    String? statusFilter,
+    bool excludeStatus = false,
+  }) async {
+    final normalizedQuery = query.trim().toLowerCase();
+    final likeQuery = '%$normalizedQuery%';
+
+    final rows = await db
+        .customSelect(
+          '''
+      SELECT
+        id,
+        project_id,
+        category_id,
+        task_name,
+        description,
+        estimated_hours,
+        status,
+        is_billable,
+        total_seconds,
+        is_running,
+        last_started_at,
+        last_session_id,
+        deleted_at,
+        deleted_status,
+        created_at,
+        updated_at
+      FROM tasks
+      WHERE project_id = ?
+        AND ${deletedOnly ? 'deleted_at IS NOT NULL' : 'deleted_at IS NULL'}
+        ${statusFilter != null ? (excludeStatus ? 'AND status != ?' : 'AND status = ?') : ''}
+        AND (
+          lower(task_name) LIKE ? OR
+          lower(COALESCE(description, '')) LIKE ? OR
+          lower(status) LIKE ? OR
+          lower(COALESCE(deleted_status, '')) LIKE ?
+        )
+      ORDER BY created_at DESC
+      ''',
+          variables: [
+            Variable.withString(projectId),
+            if (statusFilter != null) Variable.withString(statusFilter),
+            Variable.withString(likeQuery),
+            Variable.withString(likeQuery),
+            Variable.withString(likeQuery),
+            Variable.withString(likeQuery),
+          ],
+        )
+        .get();
+
+    return rows.map(_taskFromRow).toList();
+  }
+
+  TaskEntity _taskFromRow(QueryRow row) {
+    return TaskEntity(
+      id: row.read<String>('id'),
+      projectId: row.read<String>('project_id'),
+      categoryId: row.readNullable<String>('category_id'),
+      taskName: row.read<String>('task_name'),
+      description:
+          row.readNullable<String>('description')?.trim().isNotEmpty == true
+          ? row.readNullable<String>('description')
+          : null,
+      estimatedHours: row.readNullable<double>('estimated_hours'),
+      status: row.read<String>('status'),
+      isBillable: row.read<bool>('is_billable'),
+      totalSeconds: row.read<int>('total_seconds'),
+      isRunning: row.read<bool>('is_running'),
+      lastStartedAt: row.readNullable<DateTime>('last_started_at'),
+      lastSessionId: row.readNullable<String>('last_session_id'),
+      deletedAt: row.readNullable<DateTime>('deleted_at'),
+      deletedStatus: row.readNullable<String>('deleted_status'),
+      createdAt: row.read<DateTime>('created_at'),
+      updatedAt: row.read<DateTime>('updated_at'),
     );
   }
 }
